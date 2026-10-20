@@ -43,6 +43,10 @@ def review_of(unit_title, lessons):
     }
 
 
+# Dialogue guidé rattaché à chaque unité (rempli dans main) : id d'unité → dialogue
+DIALOGUE_OF_UNIT = {}
+
+
 def build_level(lid, code, name, emoji, desc, units):
     out_units = []
     for u, (utitle, uemoji, goal, lessons) in enumerate(units, 1):
@@ -50,6 +54,9 @@ def build_level(lid, code, name, emoji, desc, units):
         out = [{"id": f"{uid}.{n}", "emoji": le, "title": lt, "content": {"title": lt, **c}}
                for n, (le, lt, c) in enumerate(lessons, 1)]
         review = review_of(utitle, lessons)
+        sc = DIALOGUE_OF_UNIT.get(uid)
+        if sc:
+            out.append({"id": f"{uid}.dialogue", "emoji": "🎭", "title": f"Dialogue : {sc['title']}", "dialogue": sc["id"]})
         out.append({"id": f"{uid}.review", "emoji": "🏁", "title": "Bilan de l’unité", "review": True, "content": review})
         out_units.append({"id": uid, "emoji": uemoji, "title": utitle, "goal": goal, "lessons": out})
     return {"id": lid, "code": code, "name": name, "emoji": emoji, "desc": desc, "units": out_units}
@@ -85,7 +92,20 @@ def check_lesson(where, c, problems):
             bad(f"exercice sans explication : {x}")
 
 
+def load_scenarios():
+    from dialogues import SCENARIOS
+    from dialogues_unites import NOUVEAUX, RATTACHEMENTS, UNITES_NOUVEAUX
+    links = {**RATTACHEMENTS, **UNITES_NOUVEAUX}
+    scenarios = [dict(sc) for sc in SCENARIOS + NOUVEAUX]
+    for sc in scenarios:
+        if sc["id"] in links:
+            sc["unit"] = links[sc["id"]]
+            DIALOGUE_OF_UNIT[sc["unit"]] = sc
+    return scenarios
+
+
 def main():
+    scenarios = load_scenarios()
     levels = [build_level(PRE[0], PRE[1], PRE[2], PRE[3], PRE[5],
                           [(t, em, g, [(le, lt, c) for le, lt, c in ls]) for t, em, g, ls in PRE[6]])]
     missing = []
@@ -99,19 +119,21 @@ def main():
         if units:
             levels.append(build_level(lid, code, name, emoji, desc, units))
 
-    scenarios = []
-    try:
-        scenarios = importlib.import_module("dialogues").SCENARIOS
-    except ModuleNotFoundError:
-        missing.append("dialogues")
-
     problems = []
     ids = []
     for lv in levels:
         for u in lv["units"]:
             for l in u["lessons"]:
                 ids.append(l["id"])
-                check_lesson(l["id"], l["content"], problems)
+                if "dialogue" not in l:
+                    check_lesson(l["id"], l["content"], problems)
+            if lv["id"] != "pre" and u["id"] not in DIALOGUE_OF_UNIT:
+                problems.append(f"unité {u['id']} sans dialogue guidé")
+            sc = DIALOGUE_OF_UNIT.get(u["id"])
+            if sc and sc["level"] != lv["code"]:
+                problems.append(f"dialogue {sc['id']} : niveau {sc['level']} ≠ unité {lv['code']}")
+    if len({s["id"] for s in scenarios}) != len(scenarios):
+        problems.append("dialogues : identifiants en double")
     if len(ids) != len(set(ids)):
         problems.append("identifiants en double")
     for s in scenarios:
@@ -126,7 +148,7 @@ def main():
     path = os.path.join(ROOT, "public", "curriculum.json")
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
-    total = sum(1 for i in ids if not i.endswith(".review"))
+    total = sum(1 for i in ids if not i.endswith((".review", ".dialogue")))
     print(f"{path} : {len(levels)} niveaux, {sum(len(lv['units']) for lv in levels)} unités, "
           f"{total} leçons + bilans, {len(scenarios)} dialogues, {os.path.getsize(path) // 1024} Ko")
     if missing:

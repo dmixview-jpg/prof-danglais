@@ -975,6 +975,18 @@ h2 { display: flex; align-items: center; gap: 8px; font-weight: 700; }
 .scenario-meta .level-chip { background: rgba(255, 255, 255, .7); }
 .scenario-meta .level-chip.mine { background: var(--accent); color: #fff; }
 .scenario-stars { color: #ffb300; letter-spacing: 1px; }
+.scenario-unit { font-size: .75rem; font-weight: 700; opacity: .7; }
+.scenario-new { font-size: .75rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: rgba(255, 255, 255, .7); }
+@media (prefers-color-scheme: dark) { .scenario-new { background: rgba(255, 255, 255, .12); } }
+.dlg-levels { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 12px; }
+.dlg-level {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 52px;
+  border: 0; border-radius: 16px; background: var(--surface); cursor: pointer;
+  box-shadow: 0 3px 0 var(--border), var(--card-shadow);
+}
+.dlg-level.on { background: var(--grad); color: #fff; box-shadow: 0 3px 0 #1d3f99; }
+.node.dialogue { border-radius: 24px; }
+.node.dialogue.todo { background: var(--p-lilac); box-shadow: 0 6px 0 color-mix(in srgb, var(--p-lilac) 70%, #18203a 14%), 0 10px 18px -8px rgba(24, 32, 58, .3); }
 
 .dlg-progress { margin-top: -4px; }
 .dlg-intro { align-self: center; padding: 8px 14px; border-radius: 999px; background: var(--surface-2); font-size: .9rem; font-weight: 700; text-align: center; }

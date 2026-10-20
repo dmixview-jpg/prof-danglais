@@ -65,21 +65,22 @@ test('aucune route d’IA : seules les requêtes GET sont acceptées', async () 
 
 test('parcours complet : 7 niveaux, de Pré-A1 à C2, toutes les leçons rédigées', () => {
   assert.deepEqual(COURSE.levels.map((l) => l.code), ['Pré-A1', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
-  const lessons = COURSE.levels.flatMap((l) => l.units.flatMap((u) => u.lessons));
+  const all = COURSE.levels.flatMap((l) => l.units.flatMap((u) => u.lessons));
+  const lessons = all.filter((l) => !l.dialogue);
   assert.equal(lessons.filter((l) => !l.review).length, 179);
   assert.equal(lessons.filter((l) => l.review).length, 36);
+  const ids = all.map((l) => l.id);
   for (const l of lessons) {
     assert.ok(l.content, `${l.id} : contenu manquant`);
     assert.ok(!('brief' in l), `${l.id} : reste un objectif destiné à l’IA`);
   }
-  const ids = lessons.map((l) => l.id);
   assert.equal(new Set(ids).size, ids.length, 'identifiants uniques');
 });
 
 test('chaque leçon est complète et ses exercices sont valides', () => {
   for (const level of COURSE.levels) {
     for (const unit of level.units) {
-      for (const { id, content: c } of unit.lessons) {
+      for (const { id, content: c } of unit.lessons.filter((l) => !l.dialogue)) {
         assert.ok(c.title && c.objective, `${id} : titre ou objectif`);
         assert.ok(c.explanation.length >= 2 && c.explanation.every((s) => s.text), `${id} : explications`);
         assert.ok(c.examples.length >= 2 && c.examples.every((x) => x.en && x.fr), `${id} : exemples`);
@@ -103,10 +104,26 @@ test('chaque leçon est complète et ses exercices sont valides', () => {
   }
 });
 
-test('dialogues guidés : 12 situations, de A1 à C1, réponses valides', () => {
+test('un dialogue guidé par unité, de A1 à C2, placé avant le bilan', () => {
+  const byId = new Map(COURSE.scenarios.map((s) => [s.id, s]));
+  for (const level of COURSE.levels.filter((l) => l.id !== 'pre')) {
+    for (const unit of level.units) {
+      const nodes = unit.lessons.filter((l) => l.dialogue);
+      assert.equal(nodes.length, 1, `${unit.id} : un dialogue`);
+      const sc = byId.get(nodes[0].dialogue);
+      assert.ok(sc, `${unit.id} : dialogue ${nodes[0].dialogue} introuvable`);
+      assert.equal(sc.unit, unit.id);
+      assert.equal(sc.level, level.code, `${sc.id} : niveau de l’unité`);
+      assert.equal(unit.lessons.at(-2).id, nodes[0].id, `${unit.id} : dialogue juste avant le bilan`);
+    }
+  }
+});
+
+test('dialogues guidés : 35 situations, de A1 à C2, réponses valides', () => {
   const sc = COURSE.scenarios;
-  assert.equal(sc.length, 12);
-  assert.ok(new Set(sc.map((s) => s.level)).size >= 5);
+  assert.equal(sc.length, 35);
+  assert.equal(new Set(sc.map((s) => s.id)).size, 35);
+  assert.deepEqual([...new Set(sc.map((s) => s.level))].sort(), ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
   for (const s of sc) {
     assert.ok(s.title && s.intro && s.emoji, `${s.id} : en-tête`);
     assert.ok(s.turns[0].coach, `${s.id} : le chat parle en premier`);

@@ -316,6 +316,7 @@ levelSelect.addEventListener('change', () => {
   openUnits.clear();
   renderPath();
   renderContinue();
+  dlgLevel = levelSelect.value;
   renderScenarios();
   toast(`Niveau ${levelSelect.value} : ton parcours est à jour`);
 });
@@ -473,7 +474,7 @@ function renderPath() {
       const off = OFFSETS[i % OFFSETS.length];
       return h('div', { class: `node-row ${state}${off > 0 ? ' buddy-left' : ''}`, style: `--off:${off}px` },
         h('button', {
-          type: 'button', class: `node ${state}${lesson.review ? ' review' : ''}`,
+          type: 'button', class: `node ${state}${lesson.review ? ' review' : ''}${lesson.dialogue ? ' dialogue' : ''}`,
           'aria-label': `${lesson.title}${prog ? ', terminée' : ''}`,
           onclick: () => openCourseLesson(lesson.id),
         }, h('span', { 'aria-hidden': 'true' }, lesson.emoji)),
@@ -513,6 +514,13 @@ $('#back-home').addEventListener('click', showHome);
 function openCourseLesson(id) {
   const e = courseIndex.get(id);
   if (!e) return;
+  // le dialogue guidé de l'unité s'ouvre dans l'onglet Conversation
+  if (e.lesson.dialogue) {
+    showTab('chat');
+    startDialogue(e.lesson.dialogue);
+    return;
+  }
+  if ($('#panel-lesson').hidden) showTab('lesson');
   showLessonView(`${crumbOf(id)} · ${e.lesson.review ? 'Bilan' : `Leçon ${id.split('.')[2]}`}`);
   renderLesson({ ...e.lesson.content, level: e.level.code }, id);
 }
@@ -527,7 +535,7 @@ function searchLessons(query) {
   const hits = [];
   for (const id of courseOrder) {
     const { lesson, unit, level } = courseIndex.get(id);
-    if (lesson.review) continue;
+    if (lesson.review || !lesson.content) continue;
     const c = lesson.content;
     const text = fold([lesson.title, c.objective, unit.title, level.code, level.name,
       ...(c.vocab || []).map((v) => v.word)].join(' '));
@@ -858,21 +866,33 @@ const getDialogueStars = () => store.get(KEYS.dialogues, {});
 let dialogue = null; // { scenario, idx, correct, asked }
 
 const LEVEL_ORDER = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+let dlgLevel = null; // niveau affiché dans la liste des situations (par défaut : le tien)
+
 function renderScenarios() {
   if (!COURSE) return;
   const best = getDialogueStars();
   const mine = getLevel();
-  // les situations de ton niveau d'abord, puis les autres dans l'ordre des niveaux
-  const list = [...COURSE.scenarios].sort((a, b) =>
-    (a.level === mine ? -1 : 0) - (b.level === mine ? -1 : 0) || LEVEL_ORDER.indexOf(a.level) - LEVEL_ORDER.indexOf(b.level));
+  if (!dlgLevel) dlgLevel = mine;
+  // onglets de niveau, avec le nombre de situations réussies
+  $('#dlg-levels').replaceChildren(...LEVEL_ORDER.map((lv) => {
+    const all = COURSE.scenarios.filter((sc) => sc.level === lv);
+    const done = all.filter((sc) => best[sc.id]).length;
+    return h('button', {
+      type: 'button', class: `dlg-level${lv === dlgLevel ? ' on' : ''}`, 'aria-pressed': String(lv === dlgLevel),
+      onclick: () => { dlgLevel = lv; renderScenarios(); },
+    }, h('span', { class: 'pill-code' }, lv), h('span', { class: 'pill-count' }, `${done}/${all.length}`));
+  }));
+  const list = COURSE.scenarios.filter((sc) => sc.level === dlgLevel)
+    .sort((a, b) => (a.unit || 'zz').localeCompare(b.unit || 'zz'));
   $('#scenario-chips').replaceChildren(...list.map((sc, i) => {
     const stars = best[sc.id] || 0;
     return h('button', { type: 'button', class: `scenario-card tint-${i % 6}`, onclick: () => startDialogue(sc.id) },
       h('span', { class: 'scenario-emoji', 'aria-hidden': 'true' }, sc.emoji),
       h('span', { class: 'scenario-title' }, sc.title),
+      h('span', { class: 'scenario-unit' }, sc.unit ? `Unité ${sc.unit.split('.')[1]}` : 'Bonus'),
       h('span', { class: 'scenario-meta' },
-        h('span', { class: `level-chip${sc.level === mine ? ' mine' : ''}` }, sc.level),
-        stars ? h('span', { class: 'scenario-stars', 'aria-label': `${stars} étoiles sur 3` }, '★'.repeat(stars) + '☆'.repeat(3 - stars)) : null));
+        stars ? h('span', { class: 'scenario-stars', 'aria-label': `${stars} étoiles sur 3` }, '★'.repeat(stars) + '☆'.repeat(3 - stars))
+          : h('span', { class: 'scenario-new' }, 'À faire')));
   }));
 }
 
@@ -987,6 +1007,9 @@ function endDialogue() {
   const best = getDialogueStars();
   if (!best[scenario.id] || best[scenario.id] < stars) best[scenario.id] = stars;
   store.set(KEYS.dialogues, best);
+  // un dialogue rattaché à une unité compte comme une étape du parcours
+  const courseId = scenario.unit && courseIndex.has(`${scenario.unit}.dialogue`) ? `${scenario.unit}.dialogue` : null;
+  const result = courseId ? completeCourseLesson(courseId, correct, asked) : null;
   $('#dlg-progress').style.width = '100%';
   $('#dlg-choices').replaceChildren(h('div', { class: 'card score-screen dlg-end' },
     mascot(correct / asked >= 0.5 ? 'happy' : 'wave', 'score-buddy'),
@@ -995,7 +1018,9 @@ function endDialogue() {
     h('div', { class: 'score-text' }, `${correct} / ${asked} bonnes réponses`),
     h('div', { class: 'score-actions' },
       h('button', { type: 'button', class: 'btn ghost', onclick: () => startDialogue(scenario.id) }, '🔁 Recommencer'),
-      h('button', { type: 'button', class: 'btn primary', onclick: showDialogueHome }, '🎭 Autre situation'))));
+      result && result.nextId
+        ? h('button', { type: 'button', class: 'btn primary', onclick: () => { showDialogueHome(); openCourseLesson(result.nextId); } }, 'Suite du parcours →')
+        : h('button', { type: 'button', class: 'btn primary', onclick: showDialogueHome }, '🎭 Autre situation'))));
   if (correct === asked) confetti();
   scrollChat();
 }

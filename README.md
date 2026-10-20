@@ -5,7 +5,8 @@ Ton coach d'anglais personnel, pensé pour un francophone du Québec et utilisé
 **100 % gratuit, sans IA, sans compte et sans clé.** Toutes les leçons et tous les dialogues sont rédigés d'avance et intégrés à l'app. Rien n'est envoyé sur Internet. Une fois chargée, l'app fonctionne **entièrement hors ligne**.
 
 - **Un parcours complet, de l'alphabet à la maîtrise** :
-  - 7 niveaux (Pré-A1, A1, A2, B1, B2, C1, C2), 36 unités et **179 leçons rédigées**, plus un bilan par unité ;
+  - 7 niveaux (Pré-A1, A1, A2, B1, B2, C1, C2), 36 unités et **179 leçons rédigées** ;
+  - à la fin de chaque unité, de A1 à C2 : un **dialogue guidé** sur le thème de l'unité, puis un bilan ;
   - le bouton « Continuer » ouvre toujours ta prochaine leçon ;
   - chaque leçon terminée rapporte jusqu'à 3 étoiles.
 - **Chaque leçon** contient :
@@ -16,7 +17,8 @@ Ton coach d'anglais personnel, pensé pour un francophone du Québec et utilisé
   - une astuce sur les pièges des francophones ;
   - des exercices de 3 types : choix de réponse, écoute (« Qu'as-tu entendu? ») et remise des mots en ordre.
 - **Recherche** : trouve une leçon par mot-clé (ex. : « present perfect », « courriel »).
-- **Conversation : 12 dialogues guidés**, de A1 à C1 (café, médecin, entrevue d'embauche, négociation de salaire…).
+- **Conversation : 35 dialogues guidés**, de A1 à C2, un par unité du parcours, plus un dialogue bonus. Exemples : café, famille, médecin, entrevue d'embauche, mystère au bureau, discours de retraite, soirée de hockey, débat public.
+  - Des onglets de niveau (A1 à C2) affichent les situations de ton niveau, avec ta progression.
   - Le petit chat te parle avec la voix ; tu choisis ta réponse parmi 3.
   - Une erreur? Une correction en français apparaît dans l'encadré jaune « Correction ».
   - La traduction de chaque réplique est disponible au besoin.
@@ -44,7 +46,9 @@ Le programme suit le **Cadre européen commun de référence (CECR)**, comme les
 | 🏔️ **C1 · Avancé** | T'exprimer avec précision dans tous les contextes | inversion, subjonctif, écriture professionnelle, idiomes, accents |
 | 🏆 **C2 · Maîtrise** | Comprendre et t'exprimer comme un natif instruit | connotations, figures de style, culture anglophone, écriture experte, art oratoire |
 
-Le niveau choisi dans l'en-tête et celui du parcours vont ensemble : changer l'un change l'autre. Les dialogues de ton niveau s'affichent en premier.
+Le niveau choisi dans l'en-tête et celui du parcours vont ensemble : changer l'un change l'autre. Il sélectionne aussi les dialogues de ton niveau dans l'onglet Conversation.
+
+Chaque unité de A1 à C2 se termine par un **dialogue guidé** (nœud 🎭 dans le chemin) qui met en pratique la grammaire et le vocabulaire de l'unité : passé simple pour « Ta fin de semaine », conditionnels pour « Et si on déménageait? », déduction pour « Le mystère du bureau », inversion pour « Un discours pour une collègue »… Réussir le dialogue fait avancer le parcours, que tu l'ouvres depuis le chemin ou depuis l'onglet Conversation.
 
 ### Modifier ou ajouter du contenu
 
@@ -54,7 +58,8 @@ Le contenu est écrit en Python, dans un format simple, dans `outils/programme/`
 |---|---|
 | `premiers_pas.py` | Niveau Pré-A1 |
 | `contenu/a1_u1.py` … `contenu/c2_u4.py` | Une unité par fichier (5 leçons) |
-| `contenu/dialogues.py` | Les dialogues guidés |
+| `contenu/dialogues.py` | Les premiers dialogues guidés |
+| `contenu/dialogues_unites.py` | Les dialogues des unités, et l'unité à laquelle chaque dialogue est rattaché |
 | `aide.py` | Les petites fonctions pour écrire une leçon : étape, exemple, mot, réplique, exercice |
 
 Après une modification, régénère le fichier lu par l'app :
@@ -178,7 +183,7 @@ prof-danglais/
 │   ├── construire.py
 │   ├── aide.py
 │   ├── premiers_pas.py
-│   └── contenu/               # a1_u1.py … c2_u4.py, dialogues.py
+│   └── contenu/               # a1_u1.py … c2_u4.py, dialogues.py, dialogues_unites.py
 └── public/                    # L'app (à publier telle quelle)
     ├── index.html
     ├── styles.css
