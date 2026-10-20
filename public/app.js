@@ -149,6 +149,15 @@ async function api(path, body, { signal } = {}) {
 
 // ---------- Niveau ----------
 const levelSelect = $('#level');
+const LEVEL_NAMES = { A1: 'Débutant', A2: 'Élémentaire', B1: 'Intermédiaire', B2: 'Avancé', C1: 'Autonome' };
+const compactHeader = matchMedia('(max-width: 419px), (min-width: 700px) and (max-width: 939px)');
+function labelLevels() {
+  for (const opt of levelSelect.options) {
+    opt.textContent = compactHeader.matches ? `Niveau ${opt.value}` : `${opt.value} · ${LEVEL_NAMES[opt.value]}`;
+  }
+}
+labelLevels();
+compactHeader.addEventListener?.('change', labelLevels);
 const getLevel = () => (LEVELS.includes(store.get(KEYS.level)) ? store.get(KEYS.level) : 'A2');
 levelSelect.value = getLevel();
 levelSelect.addEventListener('change', () => {
@@ -327,16 +336,16 @@ function renderLesson(lesson) {
   });
 
   root.replaceChildren(
-    h('div', { class: 'card' },
+    h('div', { class: 'card lesson-main' },
       h('div', { class: 'lead-meta' },
         lesson.sample ? h('span', { class: 'badge' }, 'Exemple') : null,
         lesson.level ? h('span', null, `Niveau ${lesson.level}`) : null),
       h('h1', null, lesson.title),
       lesson.objective ? h('p', { class: 'objective' }, h('strong', null, 'Objectif : '), lesson.objective) : null,
       (lesson.explanation || []).map((p) => h('p', null, p))),
-    examples.childElementCount ? h('div', { class: 'card' }, h('h2', null, h('span', { class: 'mark' }, 'Exemples')), examples) : null,
-    vocab.childElementCount ? h('div', { class: 'card' }, h('h2', null, h('span', { class: 'mark' }, 'Vocabulaire')), vocab) : null,
-    quiz.length ? h('div', { class: 'card' }, h('h2', null, h('span', { class: 'mark' }, 'À toi de jouer')), quiz, score) : null,
+    examples.childElementCount ? h('div', { class: 'card lesson-examples' }, h('h2', null, h('span', { class: 'mark' }, 'Exemples')), examples) : null,
+    vocab.childElementCount ? h('div', { class: 'card lesson-vocab' }, h('h2', null, h('span', { class: 'mark' }, 'Vocabulaire')), vocab) : null,
+    quiz.length ? h('div', { class: 'card lesson-quiz' }, h('h2', null, h('span', { class: 'mark' }, 'À toi de jouer')), quiz, score) : null,
   );
 }
 
@@ -608,6 +617,17 @@ $('#vocab-form').addEventListener('submit', (e) => {
   $('#vocab-fr').value = '';
   toast(`« ${en} » ajouté`);
   renderVocab();
+});
+
+// Sur iPhone, le clavier remonte la barre d'onglets fixe : on la cache pendant la saisie.
+const isTextField = (el) => el && el.matches && el.matches('input[type="text"], input[type="password"], textarea');
+document.addEventListener('focusin', (e) => {
+  if (isTextField(e.target)) document.body.classList.add('keyboard');
+});
+document.addEventListener('focusout', () => {
+  setTimeout(() => {
+    if (!isTextField(document.activeElement)) document.body.classList.remove('keyboard');
+  }, 50);
 });
 
 // =====================================================================
