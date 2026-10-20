@@ -125,46 +125,50 @@ function greet() {
   $('#hello').textContent = hour < 5 ? 'Bonne nuit! 🌙' : hour < 12 ? 'Bonjour! ☀️' : hour < 18 ? 'Bon après-midi! 👋' : 'Bonsoir! 🌆';
 }
 
-// ---------- Mascotte animée (dessin SVG, aucune image à télécharger) ----------
+// ---------- Mascotte : un petit chat bleu animé (dessin SVG, aucune image à télécharger) ----------
 // Humeurs : idle, wave, think, talk, happy, oops.
 let mascotCount = 0;
 function mascot(mood = 'idle', cls = '') {
   const id = `mg${++mascotCount}`;
   const el = h('span', { class: `mascot ${cls}`, 'aria-hidden': 'true', 'data-mood': mood, 'data-base': mood });
   el.innerHTML = `
-<svg viewBox="-10 -4 140 136" focusable="false">
+<svg viewBox="-12 -6 144 138" focusable="false">
   <defs>
     <linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#6d97ff"/><stop offset="1" stop-color="#2b59c3"/>
+      <stop offset="0" stop-color="#86acff"/><stop offset="1" stop-color="#3f6ff0"/>
     </linearGradient>
   </defs>
-  <ellipse class="m-shadow" cx="60" cy="126" rx="34" ry="5"/>
+  <ellipse class="m-shadow" cx="60" cy="127" rx="36" ry="5"/>
   <g class="m-all">
-    <path fill="url(#${id})" d="M36 30 H84 A28 28 0 0 1 112 58 V80 A28 28 0 0 1 84 108 H50 L30 122 L34 107 A28 28 0 0 1 8 80 V58 A28 28 0 0 1 36 30 Z"/>
-    <ellipse class="m-gloss" cx="38" cy="45" rx="15" ry="6" transform="rotate(-20 38 45)"/>
-    <path class="m-arm m-arm-l" d="M11 80 q-14 2 -14 16"/>
-    <path class="m-arm m-arm-r" d="M109 80 q14 2 14 16"/>
-    <g class="m-cap">
-      <path d="M38 24 v11 q22 9 44 0 v-11 z" fill="#18203a"/>
-      <polygon points="60,4 103,18 60,32 17,18" fill="#26315a"/>
-      <g class="m-tassel">
-        <path d="M60 18 L95 22 V38" stroke="#ffe166" stroke-width="3" fill="none" stroke-linecap="round"/>
-        <circle cx="95" cy="41" r="4.5" fill="#ffe166"/>
+    <path class="m-tail" d="M34 116 C 4 118, -4 88, 14 74"/>
+    <ellipse cx="60" cy="102" rx="31" ry="24" fill="url(#${id})"/>
+    <ellipse class="m-belly" cx="60" cy="106" rx="17" ry="15"/>
+    <ellipse class="m-paw" cx="47" cy="123" rx="9" ry="5.5"/>
+    <ellipse class="m-paw" cx="73" cy="123" rx="9" ry="5.5"/>
+    <g class="m-head">
+      <g class="m-ear m-ear-l"><path d="M24 46 L27 8 L55 28 Z" class="m-ear-out"/><path d="M31 38 L32.5 17 L48 29 Z" class="m-ear-in"/></g>
+      <g class="m-ear m-ear-r"><path d="M96 46 L93 8 L65 28 Z" class="m-ear-out"/><path d="M89 38 L87.5 17 L72 29 Z" class="m-ear-in"/></g>
+      <ellipse cx="60" cy="58" rx="41" ry="34" fill="url(#${id})"/>
+      <ellipse class="m-gloss" cx="38" cy="38" rx="13" ry="5.5" transform="rotate(-22 38 38)"/>
+      <g class="m-eyes">
+        <g class="m-eye"><ellipse cx="44" cy="59" rx="9" ry="10.5" fill="#fff"/><circle class="m-pupil" cx="45.5" cy="61" r="5.8"/><circle cx="48" cy="58" r="2.1" fill="#fff"/></g>
+        <g class="m-eye"><ellipse cx="76" cy="59" rx="9" ry="10.5" fill="#fff"/><circle class="m-pupil" cx="77.5" cy="61" r="5.8"/><circle cx="80" cy="58" r="2.1" fill="#fff"/></g>
       </g>
+      <path class="m-eyes-happy" d="M36 62 q8 -10 16 0 M68 62 q8 -10 16 0"/>
+      <ellipse class="m-cheek" cx="32" cy="73" rx="6.5" ry="3.8"/>
+      <ellipse class="m-cheek" cx="88" cy="73" rx="6.5" ry="3.8"/>
+      <path class="m-whiskers" d="M27 69 l-17 -4 M27 75 l-17 1 M93 69 l17 -4 M93 75 l17 1"/>
+      <path class="m-nose" d="M55.5 69 h9 l-4.5 5 z"/>
+      <path class="m-mouth m-smile" d="M52 76 q4 4.5 8 0 q4 4.5 8 0"/>
+      <g class="m-mouth m-open"><ellipse cx="60" cy="80" rx="6.5" ry="5.5"/><ellipse cx="60" cy="83" rx="4" ry="2.2" fill="#ff8fa3"/></g>
+      <circle class="m-mouth m-o" cx="60" cy="80" r="3.6"/>
     </g>
-    <g class="m-eyes">
-      <g class="m-eye"><ellipse cx="45" cy="64" rx="10" ry="11" fill="#fff"/><circle class="m-pupil" cx="47" cy="66" r="5.5"/><circle cx="49.5" cy="63" r="2" fill="#fff"/></g>
-      <g class="m-eye"><ellipse cx="75" cy="64" rx="10" ry="11" fill="#fff"/><circle class="m-pupil" cx="77" cy="66" r="5.5"/><circle cx="79.5" cy="63" r="2" fill="#fff"/></g>
-    </g>
-    <path class="m-eyes-happy" d="M36 67 q9 -12 18 0 M66 67 q9 -12 18 0"/>
-    <ellipse class="m-cheek" cx="31" cy="83" rx="6.5" ry="3.5"/>
-    <ellipse class="m-cheek" cx="89" cy="83" rx="6.5" ry="3.5"/>
-    <path class="m-mouth m-smile" d="M50 84 q10 9 20 0"/>
-    <g class="m-mouth m-open"><ellipse cx="60" cy="88" rx="8.5" ry="6.5"/><ellipse cx="60" cy="92" rx="5" ry="2.5" fill="#ff8fa3"/></g>
-    <circle class="m-mouth m-o" cx="60" cy="89" r="4.5"/>
+    <path class="m-arm m-arm-l" d="M35 96 q-7 9 -4 19"/>
+    <path class="m-arm m-arm-r" d="M85 96 q7 9 4 19"/>
+    <g class="m-wave-arm"><path d="M86 99 Q101 94 107 77"/><circle cx="107.5" cy="74" r="6"/></g>
   </g>
-  <g class="m-dots"><circle cx="112" cy="26" r="4"/><circle cx="121" cy="13" r="5"/><circle cx="131" cy="-1" r="6"/></g>
-  <g class="m-stars"><path d="M2 20 l3 7 7 1 -5 5 1 7 -6 -4 -6 4 1 -7 -5 -5 7 -1z"/><path d="M118 36 l2 5 5 1 -4 3 1 5 -4 -3 -4 3 1 -5 -4 -3 5 -1z"/></g>
+  <g class="m-dots"><circle cx="112" cy="22" r="4"/><circle cx="121" cy="9" r="5"/><circle cx="131" cy="-5" r="6"/></g>
+  <g class="m-stars"><path d="M0 14 l3 7 7 1 -5 5 1 7 -6 -4 -6 4 1 -7 -5 -5 7 -1z"/><path d="M116 40 l2 5 5 1 -4 3 1 5 -4 -3 -4 3 1 -5 -4 -3 5 -1z"/></g>
 </svg>`;
   return el;
 }
