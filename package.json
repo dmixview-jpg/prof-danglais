@@ -1,7 +1,7 @@
 {
   "name": "prof-danglais",
   "version": "1.0.0",
-  "description": "Coach d'anglais personnel (PWA) propulsé par Claude",
+  "description": "Coach d'anglais personnel (PWA) avec des modèles d'IA open source gratuits",
   "main": "server.js",
   "private": true,
   "scripts": {

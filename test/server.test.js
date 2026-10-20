@@ -1,9 +1,9 @@
 'use strict';
 
-// Tests du serveur avec un faux fetch Anthropic (aucun appel réseau réel).
+// Tests du serveur avec un faux fournisseur d'IA (aucun appel réseau réel).
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { createServer, extractJson, splitReply } = require('../server.js');
+const { createServer, configFromEnv, extractJson, splitReply } = require('../server.js');
 
 const LESSON = {
   title: 'Le present perfect',
@@ -21,7 +21,7 @@ async function fakeFetch(url, init) {
   return {
     ok: true,
     status: 200,
-    json: async () => ({ content: [{ type: 'text', text: nextText }] }),
+    json: async () => ({ choices: [{ message: { role: 'assistant', content: nextText } }] }),
   };
 }
 
@@ -31,7 +31,8 @@ const realFetch = globalThis.fetch;
 
 test.before(async () => {
   server = createServer({
-    apiKey: 'sk-test', appCode: 'secret', modelLesson: 'lesson-model', modelChat: 'chat-model', fetch: fakeFetch,
+    provider: 'groq', providerName: 'Groq', baseUrl: 'https://api.groq.com/openai/v1', needsKey: true, jsonMode: true,
+    apiKey: 'gsk-test', appCode: 'secret', modelLesson: 'lesson-model', modelChat: 'chat-model', fetch: fakeFetch,
   });
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   base = `http://127.0.0.1:${server.address().port}`;
@@ -91,19 +92,22 @@ test('leçon (JSON dans un bloc ```json)', async () => {
   assert.equal(lesson.exercises.length, 4);
   assert.equal(lesson.vocab.length, 4);
   const call = calls.at(-1);
-  assert.equal(call.url, 'https://api.anthropic.com/v1/messages');
-  assert.equal(call.init.headers['x-api-key'], 'sk-test');
-  assert.equal(call.init.headers['anthropic-version'], '2023-06-01');
+  assert.equal(call.url, 'https://api.groq.com/openai/v1/chat/completions');
+  assert.equal(call.init.headers.authorization, 'Bearer gsk-test');
   assert.equal(call.body.model, 'lesson-model');
-  assert.match(call.body.system, /B1/);
+  assert.deepEqual(call.body.response_format, { type: 'json_object' });
+  assert.equal(call.body.messages[0].role, 'system');
+  assert.match(call.body.messages[0].content, /B1/);
 });
 
 test('leçon : sujet manquant et JSON illisible', async () => {
   let res = await post('/api/lesson', { topic: '  ' });
   assert.equal(res.status, 400);
   nextText = 'désolé, pas de JSON';
+  const before = calls.length;
   res = await post('/api/lesson', { topic: 'x' });
   assert.equal(res.status, 502);
+  assert.equal(calls.length - before, 2, 'un nouvel essai avant d’abandonner');
   assert.match((await res.json()).error, /Réessayez/);
 });
 
@@ -119,8 +123,9 @@ test('conversation : réponse et correction séparées', async () => {
   assert.match(data.fix, /went/);
   const sent = calls.at(-1).body;
   assert.equal(sent.model, 'chat-model');
-  assert.ok(sent.messages.length <= 16);
-  assert.equal(sent.messages[0].role, 'user');
+  assert.equal(sent.messages[0].role, 'system');
+  assert.ok(sent.messages.length <= 17);
+  assert.equal(sent.messages[1].role, 'user');
   assert.equal(sent.messages.at(-1).content, 'I goed to the restaurant.');
 
   nextText = 'Nice! And you?\n---CORRECTION---\nnone';
@@ -133,8 +138,8 @@ test('corps limité à 64 Ko', async () => {
   assert.equal(res.status, 413);
 });
 
-test('erreur Anthropic traduite en français', async () => {
-  const s = createServer({ apiKey: 'k', appCode: '', modelChat: 'm', fetch: async () => ({ ok: false, status: 401, json: async () => ({ error: { message: 'invalid x-api-key' } }) }) });
+test('erreur du fournisseur traduite en français', async () => {
+  const s = createServer({ provider: 'groq', providerName: 'Groq', baseUrl: 'x', needsKey: true, apiKey: 'k', appCode: '', modelChat: 'm', fetch: async () => ({ ok: false, status: 401, json: async () => ({ error: { message: 'Invalid API Key' } }) }) });
   await new Promise((r) => s.listen(0, '127.0.0.1', r));
   const res = await realFetch(`http://127.0.0.1:${s.address().port}/api/chat`, {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }] }),
@@ -150,4 +155,36 @@ test('extractJson et splitReply', () => {
   assert.deepEqual(extractJson('Voici : {"a":3} merci'), { a: 3 });
   assert.equal(extractJson('rien'), null);
   assert.deepEqual(splitReply('Hello?'), { content: 'Hello?', fix: null });
+  assert.deepEqual(splitReply('Hi!\n--- Correction ---\n« I has » → « I have »'), { content: 'Hi!', fix: '« I has » → « I have »' });
+  assert.deepEqual(splitReply('Hi!\n**Correction:** none'), { content: 'Hi!', fix: null });
+  assert.deepEqual(splitReply('<think>hmm</think>Hello!\n---CORRECTION---\nnone'), { content: 'Hello!', fix: null });
+  assert.deepEqual(extractJson('<think>{"no":1}</think>{"a":4}'), { a: 4 });
+});
+
+test('Ollama : sans clé, sans en-tête Authorization', async () => {
+  const saved = { ...process.env };
+  process.env.AI_PROVIDER = 'ollama';
+  delete process.env.AI_API_KEY;
+  delete process.env.MODEL_CHAT;
+  delete process.env.AI_BASE_URL;
+  const config = configFromEnv();
+  process.env = saved;
+  assert.equal(config.baseUrl, 'http://localhost:11434/v1');
+  assert.equal(config.modelChat, 'qwen2.5:7b');
+  let seen;
+  const s = createServer({ ...config, fetch: async (url, init) => {
+    seen = { url, init };
+    return { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: 'Hello!\n---CORRECTION---\nnone' } }] }) };
+  } });
+  await new Promise((r) => s.listen(0, '127.0.0.1', r));
+  const port = s.address().port;
+  const health = await (await realFetch(`http://127.0.0.1:${port}/api/health`)).json();
+  assert.equal(health.hasKey, true);
+  const res = await realFetch(`http://127.0.0.1:${port}/api/chat`, {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }] }),
+  });
+  assert.deepEqual(await res.json(), { content: 'Hello!', fix: null });
+  assert.equal(seen.url, 'http://localhost:11434/v1/chat/completions');
+  assert.equal(seen.init.headers.authorization, undefined);
+  s.close();
 });

@@ -1,7 +1,9 @@
 'use strict';
 
 // Prof d'anglais — serveur sans dépendance (Node.js 18+).
-// Sert public/ et relaie les appels à l'API Anthropic : la clé reste sur le serveur.
+// Sert public/ et relaie les appels vers un modèle open source gratuit
+// (Groq, OpenRouter ou Ollama, via l'API standard « OpenAI-compatible ») :
+// la clé reste sur le serveur.
 
 const http = require('http');
 const fs = require('fs');
@@ -46,15 +48,52 @@ function loadEnv(file = path.join(ROOT, '.env')) {
   }
 }
 
+// Fournisseurs gratuits de modèles open source. Tous parlent le format « OpenAI-compatible ».
+const PROVIDERS = {
+  groq: {
+    name: 'Groq',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    modelLesson: 'llama-3.3-70b-versatile',
+    modelChat: 'llama-3.3-70b-versatile',
+    needsKey: true,
+    jsonMode: true,
+  },
+  openrouter: {
+    name: 'OpenRouter',
+    baseUrl: 'https://openrouter.ai/api/v1',
+    modelLesson: 'meta-llama/llama-3.3-70b-instruct:free',
+    modelChat: 'meta-llama/llama-3.3-70b-instruct:free',
+    needsKey: true,
+    jsonMode: false,
+  },
+  ollama: {
+    name: 'Ollama',
+    baseUrl: 'http://localhost:11434/v1',
+    modelLesson: 'qwen2.5:7b',
+    modelChat: 'qwen2.5:7b',
+    needsKey: false,
+    jsonMode: true,
+  },
+};
+
 function configFromEnv() {
+  const provider = PROVIDERS[String(process.env.AI_PROVIDER || 'groq').toLowerCase()] ? String(process.env.AI_PROVIDER || 'groq').toLowerCase() : 'groq';
+  const preset = PROVIDERS[provider];
   return {
-    apiKey: process.env.ANTHROPIC_API_KEY || '',
+    provider,
+    providerName: preset.name,
+    baseUrl: (process.env.AI_BASE_URL || preset.baseUrl).replace(/\/+$/, ''),
+    apiKey: process.env.AI_API_KEY || '',
+    needsKey: preset.needsKey,
+    jsonMode: preset.jsonMode,
     appCode: process.env.APP_CODE || '',
-    modelLesson: process.env.MODEL_LESSON || 'claude-sonnet-5-5',
-    modelChat: process.env.MODEL_CHAT || 'claude-haiku-5-5',
+    modelLesson: process.env.MODEL_LESSON || preset.modelLesson,
+    modelChat: process.env.MODEL_CHAT || preset.modelChat,
     port: Number(process.env.PORT) || 3000,
   };
 }
+
+const aiReady = (config) => Boolean(config.apiKey) || config.needsKey === false;
 
 // ---------- Utilitaires ----------
 class HttpError extends Error {
@@ -128,7 +167,7 @@ function cleanLevel(level) {
 
 // Extraction tolérante : JSON brut, bloc ```json, ou du premier { au dernier }.
 function extractJson(text) {
-  const t = String(text || '').trim();
+  const t = stripThinking(text);
   const attempts = [t];
   const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (fence) attempts.push(fence[1].trim());
@@ -146,14 +185,23 @@ function extractJson(text) {
   return null;
 }
 
+// Les modèles open source respectent parfois mal le séparateur : on accepte
+// « ---CORRECTION--- », « --- Correction --- », « **CORRECTION:** », etc.
+const SEPARATOR = /(?:^|\n)[ \t*_#>-]*-{2,}[ \t*_]*CORRECTION[ \t*_]*-{2,}[ \t*_:]*|(?:^|\n)[ \t*_#>]*CORRECTION[ \t*_]*:[ \t*_]*/i;
+
 function splitReply(text) {
-  const t = String(text || '');
-  const idx = t.indexOf('---CORRECTION---');
-  if (idx === -1) return { content: t.trim(), fix: null };
-  const content = t.slice(0, idx).trim();
-  let fix = t.slice(idx + '---CORRECTION---'.length).trim();
-  if (!fix || /^["«\s]*none[.!\s»"]*$/i.test(fix)) fix = null;
+  const t = stripThinking(text);
+  const m = SEPARATOR.exec(t);
+  if (!m) return { content: t.trim(), fix: null };
+  const content = t.slice(0, m.index).trim();
+  let fix = t.slice(m.index + m[0].length).trim();
+  if (!fix || /^["«\s*_]*(none|aucune?)[.!\s»"*_]*$/i.test(fix)) fix = null;
   return { content, fix };
+}
+
+// Certains modèles (Qwen3, DeepSeek-R1…) écrivent leur raisonnement entre <think> et </think>.
+function stripThinking(text) {
+  return String(text || '').replace(/<think>[\s\S]*?(<\/think>|$)/gi, '').trim();
 }
 
 const str = (v, max = 600) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
@@ -184,29 +232,39 @@ function normalizeLesson(data) {
   return lesson;
 }
 
-// ---------- Appel Anthropic ----------
-async function callClaude(config, { model, system, messages, maxTokens }) {
-  if (!config.apiKey) {
-    throw new HttpError(500, 'Clé API manquante : ajoutez ANTHROPIC_API_KEY dans le fichier .env, puis redémarrez le serveur.');
+// ---------- Appel au modèle (format OpenAI-compatible) ----------
+async function callAI(config, { model, system, messages, maxTokens, json = false }) {
+  if (!aiReady(config)) {
+    throw new HttpError(500, 'Clé API manquante : ajoutez AI_API_KEY dans le fichier .env (clé gratuite, voir le README), puis redémarrez le serveur.');
   }
   const doFetch = config.fetch || globalThis.fetch;
+  const headers = { 'content-type': 'application/json' };
+  if (config.apiKey) headers.authorization = `Bearer ${config.apiKey}`;
+  if (config.provider === 'openrouter') {
+    headers['x-title'] = "Prof d'anglais";
+  }
+  const body = {
+    model,
+    max_tokens: maxTokens,
+    temperature: 0.7,
+    messages: [{ role: 'system', content: system }, ...messages],
+  };
+  if (json && config.jsonMode) body.response_format = { type: 'json_object' };
+
   let res;
   try {
-    res = await doFetch('https://api.anthropic.com/v1/messages', {
+    res = await doFetch(`${config.baseUrl}/chat/completions`, {
       method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': config.apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({ model, max_tokens: maxTokens, system, messages }),
-      signal: AbortSignal.timeout(90_000),
+      headers,
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(config.provider === 'ollama' ? 180_000 : 90_000),
     });
   } catch (err) {
     const timeout = err && (err.name === 'TimeoutError' || err.name === 'AbortError');
-    throw new HttpError(504, timeout
-      ? 'Claude met trop de temps à répondre. Réessayez dans un instant.'
-      : 'Impossible de joindre le service Anthropic. Vérifiez la connexion Internet du serveur.');
+    if (timeout) throw new HttpError(504, 'Le modèle met trop de temps à répondre. Réessayez dans un instant.');
+    throw new HttpError(504, config.provider === 'ollama'
+      ? 'Ollama ne répond pas : vérifiez que l’application Ollama est ouverte sur cet ordinateur.'
+      : `Impossible de joindre ${config.providerName}. Vérifiez la connexion Internet du serveur.`);
   }
   let data = null;
   try {
@@ -215,21 +273,24 @@ async function callClaude(config, { model, system, messages, maxTokens }) {
     // corps non JSON
   }
   if (!res.ok) {
-    const detail = data && data.error && data.error.message ? ` (${data.error.message})` : '';
-    console.error(`[anthropic] ${res.status}${detail}`);
+    const raw = data && (data.error?.message || data.error || data.message);
+    const detail = raw ? ` (${typeof raw === 'string' ? raw : JSON.stringify(raw)})` : '';
+    console.error(`[${config.provider}] ${res.status}${detail}`);
     const messages = {
-      401: 'Clé API refusée par Anthropic : vérifiez ANTHROPIC_API_KEY dans le fichier .env.',
-      403: 'Accès refusé par Anthropic : vérifiez les droits de votre clé API.',
-      404: 'Modèle introuvable : vérifiez MODEL_LESSON et MODEL_CHAT dans le fichier .env.',
-      429: 'Trop de demandes ou crédit épuisé. Attendez un peu ou vérifiez votre solde sur console.anthropic.com.',
-      529: 'Le service Anthropic est surchargé. Réessayez dans quelques instants.',
+      401: `Clé API refusée par ${config.providerName} : vérifiez AI_API_KEY dans le fichier .env.`,
+      403: `Accès refusé par ${config.providerName} : vérifiez votre clé API.`,
+      404: config.provider === 'ollama'
+        ? `Modèle introuvable dans Ollama : lancez « ollama pull ${model} » dans le Terminal.`
+        : 'Modèle introuvable : vérifiez MODEL_LESSON et MODEL_CHAT dans le fichier .env.',
+      413: 'La demande est trop longue pour ce modèle. Commencez une nouvelle conversation.',
+      429: 'Limite gratuite atteinte pour le moment. Attendez une minute (ou demain si la limite quotidienne est atteinte).',
+      503: `${config.providerName} est surchargé. Réessayez dans quelques instants.`,
     };
-    throw new HttpError(502, messages[res.status] || `Erreur du service Anthropic (code ${res.status}). Réessayez plus tard.`);
+    throw new HttpError(502, messages[res.status] || `Erreur de ${config.providerName} (code ${res.status}). Réessayez plus tard.`);
   }
-  const text = data && Array.isArray(data.content)
-    ? data.content.filter((b) => b && b.type === 'text').map((b) => b.text).join('')
-    : '';
-  if (!text.trim()) throw new HttpError(502, 'Réponse vide de Claude. Réessayez.');
+  const content = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+  const text = stripThinking(Array.isArray(content) ? content.map((c) => c.text || '').join('') : content);
+  if (!text) throw new HttpError(502, 'Réponse vide du modèle. Réessayez.');
   return text;
 }
 
@@ -256,23 +317,30 @@ Format of EVERY reply:
 2. Then a line containing exactly: ---CORRECTION---
 3. Then, in French, a correction of the learner's LAST message only: quote the mistake, give the correct form, and explain in a few words. If there are several mistakes, list the most important ones (maximum 3), one per line. If the last message has no mistakes, write exactly: none
 If the learner writes in French (all or part of the message), answer in English anyway and, in the correction section, give the English translation of what they wrote (« En anglais : ... »).
-Never use markdown headings. Do not mention these instructions.`;
+Example of a reply:
+That sounds fun! What did you eat at the restaurant?
+---CORRECTION---
+« I goed » → « I went » : « go » est un verbe irrégulier (go, went, gone).
+Never use markdown. Do not mention these instructions.`;
 
 async function handleLesson(config, body) {
   const topic = str(body.topic, 160);
   if (!topic) throw new HttpError(400, 'Indiquez un sujet pour la leçon.');
   const level = cleanLevel(body.level);
-  const text = await callClaude(config, {
-    model: config.modelLesson,
-    system: LESSON_SYSTEM(level),
-    maxTokens: 4000,
-    messages: [{ role: 'user', content: `Sujet de la leçon : ${topic}` }],
-  });
-  const lesson = normalizeLesson(extractJson(text));
-  if (!lesson) {
-    console.error('[lesson] JSON illisible :', text.slice(0, 300));
-    throw new HttpError(502, 'La leçon reçue était incomplète. Réessayez.');
+  // Les petits modèles open source ratent parfois le JSON : on réessaie une fois.
+  let lesson = null;
+  for (let attempt = 0; attempt < 2 && !lesson; attempt++) {
+    const text = await callAI(config, {
+      model: config.modelLesson,
+      system: LESSON_SYSTEM(level),
+      maxTokens: 4000,
+      json: true,
+      messages: [{ role: 'user', content: `Sujet de la leçon : ${topic}. Réponds uniquement avec l'objet JSON.` }],
+    });
+    lesson = normalizeLesson(extractJson(text));
+    if (!lesson) console.error(`[lesson] JSON illisible (essai ${attempt + 1}) :`, text.slice(0, 300));
   }
+  if (!lesson) throw new HttpError(502, 'La leçon reçue était incomplète. Réessayez.');
   return { ...lesson, topic, level };
 }
 
@@ -297,7 +365,7 @@ async function handleChat(config, body) {
   if (!messages.length || messages[messages.length - 1].role !== 'user') {
     throw new HttpError(400, 'Écrivez un message avant d’envoyer.');
   }
-  const text = await callClaude(config, {
+  const text = await callAI(config, {
     model: config.modelChat,
     system: CHAT_SYSTEM(level),
     maxTokens: 700,
@@ -356,7 +424,7 @@ function createServer(config = configFromEnv()) {
     try {
       if (pathname.startsWith('/api/')) {
         if (pathname === '/api/health' && req.method === 'GET') {
-          const data = { ok: true, needsCode: Boolean(config.appCode), hasKey: Boolean(config.apiKey) };
+          const data = { ok: true, needsCode: Boolean(config.appCode), hasKey: aiReady(config) };
           return sendJson(res, 200, data);
         }
         const routes = { '/api/lesson': handleLesson, '/api/chat': handleChat };
@@ -388,9 +456,10 @@ if (require.main === module) {
   const config = configFromEnv();
   createServer(config).listen(config.port, () => {
     console.log(`Prof d'anglais prêt : http://localhost:${config.port}`);
-    if (!config.apiKey) console.warn('⚠️  ANTHROPIC_API_KEY manquante : ajoutez-la dans le fichier .env.');
+    console.log(`Modèles : ${config.providerName} · leçons ${config.modelLesson} · conversation ${config.modelChat}`);
+    if (!aiReady(config)) console.warn('⚠️  AI_API_KEY manquante : ajoutez-la dans le fichier .env (clé gratuite, voir le README).');
     if (!config.appCode) console.warn('ℹ️  Aucun APP_CODE : n’importe qui sur le réseau peut utiliser l’app.');
   });
 }
 
-module.exports = { createServer, extractJson, splitReply, normalizeLesson, cleanMessages, loadEnv };
+module.exports = { createServer, configFromEnv, extractJson, splitReply, normalizeLesson, cleanMessages, loadEnv, PROVIDERS };

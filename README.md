@@ -1,11 +1,11 @@
 # Prof d'anglais 🇬🇧💬
 
-Ton coach d'anglais personnel, pensé pour un francophone du Québec et utilisé sur **iPhone et iPad** comme une vraie app (PWA). Il est propulsé par Claude (Anthropic).
+Ton coach d'anglais personnel, pensé pour un francophone du Québec et utilisé sur **iPhone et iPad** comme une vraie app (PWA). L'app est **100 % gratuite** : elle utilise des modèles d'IA **open source** (Llama, Qwen, Mistral, Gemma…) chez des fournisseurs gratuits, ou directement sur ton ordinateur.
 
-- **Leçon** : choisis un sujet. Claude prépare une leçon adaptée à ton niveau, avec des explications en français, des exemples à écouter, du vocabulaire et un petit quiz.
+- **Leçon** : choisis un sujet. L'IA prépare une leçon adaptée à ton niveau, avec des explications en français, des exemples à écouter, du vocabulaire et un petit quiz.
 - **Conversation** : discute en anglais avec « Coach ». Il te répond simplement et corrige ton dernier message dans un encadré jaune.
 - **Vocabulaire** : cartes mémoire (anglais / français). Un mot est maîtrisé après 3 « Je sais ».
-- **Prononciation** : un bouton 🔊 sur chaque exemple, chaque mot et chaque réponse du coach.
+- **Prononciation** : un bouton 🔊 sur chaque exemple, chaque mot et chaque réponse du coach. La voix est celle de l'iPhone : gratuite et sans Internet.
 - Niveaux **A1 à C1**, mode sombre automatique, fonctionne hors ligne pour ce qui est déjà chargé.
 
 La clé API reste sur le serveur : elle n'est jamais envoyée au navigateur.
@@ -25,13 +25,43 @@ Il faut **Node.js 18 ou plus récent**. Aucun autre paquet n'est nécessaire.
 
    Tu dois voir `v18` ou plus.
 
-## 2. Créer ta clé API Anthropic
+## 2. Choisir ton IA gratuite (open source)
 
-1. Va sur <https://console.anthropic.com> et crée un compte (ou connecte-toi).
-2. Dans **Billing**, ajoute un moyen de paiement ou des crédits. L'utilisation est facturée à l'usage : une leçon coûte environ quelques cents, un message de conversation beaucoup moins.
-3. Dans **API Keys**, clique sur **Create Key**, donne-lui un nom (ex. : « prof-danglais ») et **copie la clé** (elle commence par `sk-ant-`). Elle ne s'affiche qu'une fois.
+Le serveur parle le format standard « compatible OpenAI ». Il fonctionne donc avec beaucoup de services. Trois options sont préréglées :
 
-> Ne partage jamais cette clé et ne la mets jamais dans Git.
+| Fournisseur | Modèle par défaut | Coût | Pour qui |
+|---|---|---|---|
+| **Groq** (conseillé) | Llama 3.3 70B (Meta, open source) | Gratuit, sans carte de crédit. Environ 1 000 requêtes par jour et 30 par minute. | Le meilleur choix pour commencer : rapide, bon en français, fonctionne même en ligne (Render). |
+| **OpenRouter** | `meta-llama/llama-3.3-70b-instruct:free` | Gratuit avec les modèles qui finissent par `:free` (limite quotidienne). | Pour essayer d'autres modèles open source gratuits (Qwen, Mistral, Gemma, DeepSeek…). |
+| **Ollama** | Qwen 2.5 7B (Alibaba, open source) | Gratuit et **illimité**, 100 % privé. | Si ton ordinateur a au moins 8 Go de RAM. L'ordinateur doit rester allumé. |
+
+> Les limites gratuites changent parfois. Consulte la page « Limits » de ton fournisseur pour les chiffres à jour.
+
+### Option A : Groq (conseillé)
+
+1. Va sur <https://console.groq.com> et crée un compte gratuit (Google ou courriel).
+2. Ouvre **API Keys** → **Create API Key**, donne-lui un nom (ex. : « prof-danglais ») et **copie la clé** (elle commence par `gsk_`).
+
+### Option B : OpenRouter
+
+1. Va sur <https://openrouter.ai> et crée un compte gratuit.
+2. Ouvre **Keys** → **Create Key** et copie la clé (elle commence par `sk-or-`).
+3. Pour choisir un autre modèle gratuit, cherche les modèles marqués **(free)** sur <https://openrouter.ai/models> et copie leur identifiant (finissant par `:free`) dans `MODEL_LESSON` et `MODEL_CHAT`.
+
+### Option C : Ollama (sur ton ordinateur, sans compte)
+
+1. Installe Ollama depuis <https://ollama.com>, puis ouvre l'application.
+2. Dans le Terminal, télécharge le modèle (environ 4,7 Go) :
+
+   ```bash
+   ollama pull qwen2.5:7b
+   ```
+
+3. Aucune clé n'est nécessaire. Laisse Ollama ouvert pendant que tu utilises l'app.
+
+Autres modèles open source qui fonctionnent bien : `llama3.1:8b`, `gemma3:12b`, `mistral-nemo` (mets le nom dans `MODEL_LESSON` et `MODEL_CHAT` après un `ollama pull`).
+
+> Ne partage jamais ta clé et ne la mets jamais dans Git.
 
 ## 3. Configurer le fichier `.env`
 
@@ -41,22 +71,29 @@ Dans le dossier du projet :
 cp .env.example .env
 ```
 
-Puis ouvre `.env` avec un éditeur de texte et remplis-le :
+Puis ouvre `.env` avec un éditeur de texte et remplis-le. Exemple avec Groq :
 
 ```ini
-ANTHROPIC_API_KEY=sk-ant-ta-cle-ici
+AI_PROVIDER=groq
+AI_API_KEY=gsk_ta-cle-ici
 APP_CODE=un-code-secret-a-toi
-MODEL_LESSON=claude-sonnet-5-5
-MODEL_CHAT=claude-haiku-5-5
-PORT=3000
+```
+
+Exemple avec Ollama :
+
+```ini
+AI_PROVIDER=ollama
+APP_CODE=un-code-secret-a-toi
 ```
 
 | Variable | Rôle | Défaut |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | Ta clé Anthropic (obligatoire) | — |
+| `AI_PROVIDER` | `groq`, `openrouter` ou `ollama` | `groq` |
+| `AI_API_KEY` | Clé gratuite du fournisseur (inutile avec Ollama) | — |
 | `APP_CODE` | Code demandé dans l'app (conseillé à la maison, **obligatoire en ligne**) | aucun |
-| `MODEL_LESSON` | Modèle qui prépare les leçons | `claude-sonnet-5-5` |
-| `MODEL_CHAT` | Modèle de la conversation (rapide et économique) | `claude-haiku-5-5` |
+| `MODEL_LESSON` | Modèle qui prépare les leçons | selon le fournisseur |
+| `MODEL_CHAT` | Modèle de la conversation | selon le fournisseur |
+| `AI_BASE_URL` | Adresse d'un autre service compatible OpenAI (LM Studio, Together, Mistral…) | selon le fournisseur |
 | `PORT` | Port du serveur | `3000` |
 
 ## 4. Démarrer
@@ -65,9 +102,9 @@ PORT=3000
 npm start
 ```
 
-Ouvre <http://localhost:3000> sur ton ordinateur. Pour arrêter le serveur : `Ctrl + C`.
+Le Terminal affiche le fournisseur et les modèles utilisés. Ouvre <http://localhost:3000> sur ton ordinateur. Pour arrêter le serveur : `Ctrl + C`.
 
-Pour lancer les tests (ils simulent Anthropic, aucun appel réel ni frais) :
+Pour lancer les tests (ils simulent l'IA, aucun appel réel) :
 
 ```bash
 npm test
@@ -84,18 +121,21 @@ npm test
 
 > En Wi-Fi local (http), l'app fonctionne, mais le mode hors ligne (service worker) ne s'active qu'en **https**, donc une fois hébergée en ligne.
 
-## 6. Héberger en ligne sur Render (accès partout)
+## 6. Héberger en ligne gratuitement sur Render (accès partout)
+
+Render offre un forfait gratuit pour les petits serveurs. Avec Groq ou OpenRouter, tout reste gratuit. (Ollama, lui, ne fonctionne que sur ton ordinateur.)
 
 1. Mets le projet sur GitHub (le fichier `.env` est exclu grâce au `.gitignore`).
-2. Sur <https://render.com>, crée un compte, puis **New → Web Service** et choisis ton dépôt.
+2. Sur <https://render.com>, crée un compte gratuit, puis **New → Web Service** et choisis ton dépôt.
 3. Réglages :
    - **Runtime** : Node
+   - **Instance type** : Free
    - **Build Command** : `npm install` (rien n'est installé, mais Render l'exige)
    - **Start Command** : `npm start`
-4. Dans **Environment**, ajoute les variables `ANTHROPIC_API_KEY` et **`APP_CODE`**. Ne crée pas `PORT` : Render le fournit lui-même.
+4. Dans **Environment**, ajoute `AI_PROVIDER`, `AI_API_KEY` et **`APP_CODE`**. Ne crée pas `PORT` : Render le fournit lui-même.
 5. Déploie. Ton app est disponible à une adresse du type `https://prof-danglais.onrender.com`.
 
-> ⚠️ **En ligne, le code d'accès est obligatoire.** Sans `APP_CODE`, n'importe qui trouvant l'adresse pourrait utiliser ta clé, et c'est toi qui paierais. Choisis un code long et difficile à deviner.
+> ⚠️ **En ligne, le code d'accès est obligatoire.** Sans `APP_CODE`, n'importe qui trouvant l'adresse pourrait épuiser ta limite gratuite. Choisis un code long et difficile à deviner.
 
 Le forfait gratuit de Render met le service en veille après une période d'inactivité. Le premier chargement peut alors prendre 30 à 60 secondes.
 
@@ -106,7 +146,7 @@ Le forfait gratuit de Render met le service en veille après une période d'inac
 2. Touche le bouton **Partager** (carré avec une flèche vers le haut).
 3. Choisis **Sur l'écran d'accueil**, puis **Ajouter**.
 
-L'icône « EN » bleue apparaît et l'app s'ouvre en plein écran, sans la barre de Safari. Le code d'accès est demandé une fois, puis gardé sur l'appareil.
+L'icône 3D « EN » apparaît et l'app s'ouvre en plein écran, sans la barre de Safari. Le code d'accès est demandé une fois, puis gardé sur l'appareil.
 
 ## 8. Personnaliser
 
@@ -117,11 +157,12 @@ L'icône « EN » bleue apparaît et l'app s'ouvre en plein écran, sans la barr
 | Leçon et mots d'exemple | `public/app.js` : `SAMPLE_LESSON`, `SAMPLE_VOCAB` |
 | Nombre de « Je sais » pour maîtriser un mot | `public/app.js` : `MASTERED` |
 | Vitesse de la voix | `public/app.js` : `u.rate = 0.92` dans `speak()` |
-| Consignes données à Claude (style des leçons, du coach) | `server.js` : `LESSON_SYSTEM` et `CHAT_SYSTEM` |
-| Modèles utilisés | `.env` : `MODEL_LESSON`, `MODEL_CHAT` |
-| Nom et icônes de l'app | `public/manifest.webmanifest`, `public/index.html`, `public/icons/` |
+| Consignes données à l'IA (style des leçons, du coach) | `server.js` : `LESSON_SYSTEM` et `CHAT_SYSTEM` |
+| Fournisseurs et modèles par défaut | `server.js` : `PROVIDERS`, ou `.env` |
+| Icônes 3D | `outils/icones.py` (Python + Pillow), puis `python3 outils/icones.py public/icons` |
+| Nom de l'app | `public/manifest.webmanifest`, `public/index.html` |
 
-Après une modification de fichiers dans `public/`, change le nom du cache dans `public/sw.js` (ex. : `prof-danglais-v2`) pour que les appareils récupèrent la nouvelle version.
+Après une modification de fichiers dans `public/`, change le nom du cache dans `public/sw.js` (ex. : `prof-danglais-v3`) pour que les appareils récupèrent la nouvelle version.
 
 Tes données (niveau, leçon courante, conversation, carnet de vocabulaire) sont enregistrées **dans le navigateur de chaque appareil** (localStorage). Elles ne sont pas synchronisées entre l'iPhone et l'iPad.
 
@@ -129,15 +170,18 @@ Tes données (niveau, leçon courante, conversation, carnet de vocabulaire) sont
 
 | Problème | Solution |
 |---|---|
-| « Clé API manquante » | Le fichier `.env` n'existe pas ou `ANTHROPIC_API_KEY` est vide. Vérifie le fichier, puis redémarre avec `npm start`. |
-| « Clé API refusée par Anthropic » | La clé est mal copiée ou a été supprimée. Crées-en une nouvelle sur console.anthropic.com. |
-| « Trop de demandes ou crédit épuisé » | Ajoute des crédits dans **Billing** sur console.anthropic.com, ou attends une minute. |
-| « Modèle introuvable » | Vérifie l'orthographe de `MODEL_LESSON` / `MODEL_CHAT` dans `.env`, ou supprime ces lignes pour utiliser les valeurs par défaut. |
+| « Clé API manquante » | Le fichier `.env` n'existe pas ou `AI_API_KEY` est vide. Vérifie le fichier, puis redémarre avec `npm start`. |
+| « Clé API refusée » | La clé est mal copiée, a été supprimée, ou ne correspond pas à `AI_PROVIDER` (une clé Groq ne marche pas sur OpenRouter). |
+| « Limite gratuite atteinte » | Attends une minute, ou le lendemain si la limite quotidienne est atteinte. Tu peux aussi passer à un autre fournisseur gratuit ou à Ollama. |
+| « Modèle introuvable » | Vérifie `MODEL_LESSON` / `MODEL_CHAT` dans `.env`, ou laisse-les vides pour les valeurs par défaut. Les modèles gratuits d'OpenRouter changent parfois : choisis-en un autre marqué `:free`. |
+| « Ollama ne répond pas » | Ouvre l'application Ollama. Vérifie dans le Terminal avec `ollama list` que le modèle est téléchargé. |
+| « La leçon reçue était incomplète » | Le modèle a mal formé sa réponse (fréquent avec les petits modèles). Réessaie, ou choisis un modèle plus grand (ex. : Llama 3.3 70B sur Groq). |
+| Les réponses d'Ollama sont très lentes | Normal sur un ordinateur sans carte graphique. Essaie un modèle plus petit, comme `qwen2.5:3b`. |
 | L'iPhone n'arrive pas à ouvrir la page | Même Wi-Fi? Bonne adresse IP? Le serveur tourne-t-il? Le pare-feu de l'ordinateur bloque-t-il `node`? |
 | `EADDRINUSE` au démarrage | Le port est déjà pris : change `PORT` dans `.env` (ex. : `3001`). |
 | Le code d'accès est redemandé | Le code a changé sur le serveur ou est mal saisi. Entre le code actuel. |
 | Pas de son avec 🔊 | Vérifie que l'iPhone n'est pas en mode silencieux (bouton sur le côté) et que le volume est monté. |
-| L'app affiche une ancienne version | Ferme complètement l'app et rouvre-la. Sinon, change le nom du cache dans `public/sw.js`. |
+| L'app affiche une ancienne version ou l'ancienne icône | Supprime l'app de l'écran d'accueil puis ajoute-la de nouveau. Sinon, change le nom du cache dans `public/sw.js`. |
 | `node: command not found` | Node.js n'est pas installé ou le Terminal doit être rouvert après l'installation. |
 | Le premier chargement sur Render est très lent | Normal avec le forfait gratuit : le service se réveille. |
 
@@ -145,10 +189,11 @@ Tes données (niveau, leçon courante, conversation, carnet de vocabulaire) sont
 
 ```
 prof-danglais/
-├── server.js              # Serveur Node sans dépendance + relais vers l'API Anthropic
+├── server.js              # Serveur Node sans dépendance + relais vers l'IA open source
 ├── package.json
 ├── .env.example           # Modèle de configuration
-├── test/server.test.js    # Tests avec un faux Anthropic
+├── test/server.test.js    # Tests avec une fausse IA
+├── outils/icones.py       # Générateur des icônes 3D
 └── public/
     ├── index.html
     ├── styles.css

@@ -624,7 +624,7 @@ showTab(['lesson', 'chat', 'vocab'].includes(store.get(KEYS.tab)) ? store.get(KE
     const info = await res.json();
     if (!info.hasKey) {
       const banner = $('#banner');
-      banner.textContent = '⚠️ Le serveur n’a pas de clé API Anthropic : ajoute ANTHROPIC_API_KEY dans le fichier .env puis redémarre-le.';
+      banner.textContent = '⚠️ Le serveur n’a pas de clé d’IA : ajoute ta clé gratuite AI_API_KEY dans le fichier .env (voir le README), puis redémarre-le.';
       banner.hidden = false;
     }
     if (info.needsCode && !store.get(KEYS.code, '')) await showGate();
