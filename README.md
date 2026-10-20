@@ -150,10 +150,11 @@ L'icône « EN » apparaît et l'app s'ouvre en plein écran, sans la barre de S
 | Nombre de « Je sais » pour maîtriser un mot | `public/app.js` : `MASTERED` |
 | Voix et vitesse | Dans l'app : carte **🔊 Voix américaine**. Dans le code : `pickVoice()` et `RATES` dans `public/app.js` |
 | Mascotte, le petit chat bleu | `public/app.js` : fonction `mascot()`. `public/styles.css` : section « Mascotte : petit chat bleu » |
-| Icônes | `outils/icones.py` (Python + Pillow), puis `python3 outils/icones.py public/icons` |
+| Logo 3D | `outils/logo/logo3d.py` (Blender, moteur Cycles) : refait les rendus `outils/logo/logo-3d-*.png`. Les commandes sont en tête du fichier. |
+| Icônes | `python3 outils/icones.py public/icons` (Python + Pillow) : tire toutes les tailles d'icônes des rendus de `outils/logo/` |
 | Nom de l'app | `public/manifest.webmanifest`, `public/index.html` |
 
-Après une modification de fichiers dans `public/`, change le nom du cache dans `public/sw.js` (ex. : `prof-danglais-v11`). Sinon, les appareils gardent l'ancienne version.
+Après une modification de fichiers dans `public/`, change le nom du cache dans `public/sw.js` (ex. : `prof-danglais-v14`). Sinon, les appareils gardent l'ancienne version.
 
 Tes données (niveau, progression, étoiles, carnet de vocabulaire, voix choisie) sont enregistrées **dans le navigateur de chaque appareil** (localStorage). Elles ne sont pas synchronisées entre l'iPhone et l'iPad.
 
@@ -178,7 +179,8 @@ prof-danglais/
 ├── package.json
 ├── .env.example               # Seul réglage : PORT
 ├── test/server.test.js        # Tests du serveur et de tout le contenu
-├── outils/icones.py           # Générateur des icônes
+├── outils/icones.py           # Icônes de l'app, tirées des rendus du logo
+├── outils/logo/               # Logo 3D : script Blender, rendus HD et police Fredoka (OFL)
 ├── outils/programme/          # Tout le contenu pédagogique (Python) et son générateur
 │   ├── construire.py
 │   ├── aide.py
