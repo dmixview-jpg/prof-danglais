@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+  <div class="bg-blobs" aria-hidden="true"><span></span><span></span><span></span></div>
   <header class="topbar">
     <div class="brand">
       <img src="/icons/favicon-64.png" alt="" width="32" height="32">
@@ -58,17 +59,23 @@
   <main>
     <!-- LEÇON -->
     <section id="panel-lesson" class="panel" role="tabpanel">
-      <form id="lesson-form" class="card lesson-form">
-        <div class="hero-row">
+      <section class="hero-card" aria-labelledby="hero-title">
+        <div class="hero-top">
+          <div class="hero-text">
+            <div class="hello" id="hello">Bonjour! 👋</div>
+            <h1 id="hero-title">On apprend quoi aujourd'hui?</h1>
+          </div>
           <span id="hero-mascot"></span>
-          <label for="topic" class="hero-bubble">Qu'aimerais-tu apprendre?</label>
         </div>
-        <div class="row">
+        <div class="stats" id="stats"></div>
+        <form id="lesson-form" class="hero-search">
+          <label for="topic" class="sr-only">Sujet de la leçon</label>
           <input id="topic" type="text" maxlength="120" autocomplete="off" placeholder="Ex. : le present perfect">
-          <button type="submit" class="btn primary" id="lesson-btn">✨ Créer la leçon</button>
-        </div>
-        <div class="chips" id="topic-chips"></div>
-      </form>
+          <button type="submit" class="btn yellow" id="lesson-btn">✨ Créer</button>
+        </form>
+      </section>
+      <h2 class="section-title">💡 Idées de leçons</h2>
+      <div class="topic-grid" id="topic-chips"></div>
       <div id="lesson-status" class="status" hidden></div>
       <article id="lesson" class="lesson"></article>
     </section>
@@ -76,9 +83,10 @@
     <!-- CONVERSATION -->
     <section id="panel-chat" class="panel" role="tabpanel" hidden>
       <div class="chat-tools">
-        <div class="chips" id="scenario-chips"></div>
+        <button type="button" class="btn ghost small" id="scenario-toggle" aria-expanded="false">🎭 Scénarios</button>
         <button type="button" class="btn ghost small" id="chat-reset">🔄 Nouvelle conversation</button>
       </div>
+      <div class="scenario-grid" id="scenario-chips"></div>
       <div id="chat-log" class="chat-log" aria-live="polite"></div>
       <form id="chat-form" class="chat-form">
         <textarea id="chat-input" rows="1" placeholder="Écris en anglais…" enterkeyhint="send"></textarea>

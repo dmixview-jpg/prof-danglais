@@ -8,6 +8,8 @@ const KEYS = {
   lesson: 'pd.lesson',
   chat: 'pd.chat',
   vocab: 'pd.vocab',
+  days: 'pd.days',
+  lessons: 'pd.lessons',
 };
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1'];
 const MASTERED = 3;
@@ -76,6 +78,51 @@ function onSwipe(el, onLeft, onRight) {
     x0 = null;
     if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.3) (dx < 0 ? onLeft : onRight)();
   });
+}
+
+// ---------- Série de jours et statistiques (motivation) ----------
+const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+function markActive() {
+  const days = store.get(KEYS.days, []);
+  const today = dayKey();
+  if (!days.includes(today)) {
+    store.set(KEYS.days, [...days, today].slice(-400));
+    renderStats();
+  }
+}
+
+function streak() {
+  const days = new Set(store.get(KEYS.days, []));
+  const d = new Date();
+  if (!days.has(dayKey(d))) d.setDate(d.getDate() - 1); // la série tient jusqu'à ce soir
+  let n = 0;
+  while (days.has(dayKey(d))) {
+    n++;
+    d.setDate(d.getDate() - 1);
+  }
+  return n;
+}
+
+function renderStats() {
+  const box = $('#stats');
+  if (!box) return;
+  const s = streak();
+  const mastered = getVocab().filter((w) => w.known >= MASTERED).length;
+  const lessons = store.get(KEYS.lessons, 0);
+  const stat = (icon, value, label) => h('div', { class: 'stat' },
+    h('span', { class: 'stat-icon', 'aria-hidden': 'true' }, icon),
+    h('span', { class: 'stat-value' }, String(value)),
+    h('span', { class: 'stat-label' }, label));
+  box.replaceChildren(
+    stat('🔥', s, s > 1 ? 'jours de suite' : 'jour de suite'),
+    stat('⭐', mastered, mastered > 1 ? 'mots maîtrisés' : 'mot maîtrisé'),
+    stat('📚', lessons, lessons > 1 ? 'leçons' : 'leçon'));
+}
+
+function greet() {
+  const hour = new Date().getHours();
+  $('#hello').textContent = hour < 5 ? 'Bonne nuit! 🌙' : hour < 12 ? 'Bonjour! ☀️' : hour < 18 ? 'Bon après-midi! 👋' : 'Bonsoir! 🌆';
 }
 
 // ---------- Mascotte animée (dessin SVG, aucune image à télécharger) ----------
@@ -322,9 +369,10 @@ const heroMascot = mascot('wave', 'hero-buddy');
 $('#hero-mascot').append(heroMascot);
 setTimeout(() => (heroMascot.dataset.base = 'idle', setMood(heroMascot, 'idle')), 2600);
 
-$('#topic-chips').append(...TOPICS.map((t) =>
-  h('button', { type: 'button', class: 'chip', onclick: () => { $('#topic').value = t.topic; createLesson(t.topic); } },
-    h('span', { class: 'chip-emoji', 'aria-hidden': 'true' }, t.emoji), t.label)
+$('#topic-chips').append(...TOPICS.map((t, i) =>
+  h('button', { type: 'button', class: `topic-tile tint-${i % 6}`, onclick: () => { $('#topic').value = t.topic; createLesson(t.topic); } },
+    h('span', { class: 'topic-emoji', 'aria-hidden': 'true' }, t.emoji),
+    h('span', { class: 'topic-label' }, t.label))
 ));
 
 $('#lesson-form').addEventListener('submit', (e) => {
@@ -355,6 +403,9 @@ async function createLesson(topic) {
   try {
     const lesson = await api('/api/lesson', { topic, level: getLevel() });
     store.set(KEYS.lesson, lesson);
+    store.set(KEYS.lessons, store.get(KEYS.lessons, 0) + 1);
+    markActive();
+    renderStats();
     status.hidden = true;
     renderLesson(lesson);
     $('#lesson').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -376,14 +427,14 @@ function withBlank(question) {
   return out;
 }
 
-const tile = (emoji, fallback) => h('span', { class: 'emoji-tile', 'aria-hidden': 'true' }, emoji || fallback);
+const tile = (emoji, fallback, i = 0) => h('span', { class: `emoji-tile tint-${i % 6}`, 'aria-hidden': 'true' }, emoji || fallback);
 
 // Explication en étapes illustrées, à faire défiler (glisser ou boutons).
 function stepsCard(steps) {
   let i = 0;
   const last = steps.length - 1;
   const track = h('div', { class: 'step-track' }, steps.map((s, k) =>
-    h('div', { class: 'step', 'aria-roledescription': 'étape' },
+    h('div', { class: `step tint-${k % 6}`, 'aria-roledescription': 'étape' },
       h('div', { class: 'step-emoji', 'aria-hidden': 'true' }, s.emoji || STEP_EMOJIS[k % STEP_EMOJIS.length]),
       h('p', null, s.text))));
   const viewport = h('div', { class: 'step-viewport' }, track);
@@ -408,7 +459,7 @@ function stepsCard(steps) {
   onSwipe(viewport, () => go(i + 1), () => go(i - 1));
   go(0);
   return h('div', { class: 'card lesson-steps' },
-    h('h2', null, h('span', { class: 'mark' }, 'Comprendre')),
+    h('h2', null, h('span', { class: 'h-icon', 'aria-hidden': 'true' }, '🧠'), h('span', { class: 'mark' }, 'Comprendre')),
     viewport,
     steps.length > 1 ? h('div', { class: 'steps-nav' }, prev, dots, next) : null);
 }
@@ -438,14 +489,15 @@ function quizCard(exercises) {
           if (good) correct++;
           else buttons[j].classList.add('wrong');
           setMood(buddy, good ? 'happy' : 'oops', 1600);
+          markActive();
           explain.replaceChildren(h('span', { class: 'explain-icon', 'aria-hidden': 'true' }, good ? '🎉' : '💡'), h('span', null, ex.explain || (good ? 'Bravo!' : '')));
           explain.hidden = false;
           next.hidden = false;
         },
-      }, opt));
+      }, h('span', { class: 'opt-letter', 'aria-hidden': 'true' }, 'ABC'[j]), h('span', null, opt)));
     card.replaceChildren(
       h('div', { class: 'quiz-head' },
-        h('h2', null, h('span', { class: 'mark' }, 'Quiz')),
+        h('h2', null, h('span', { class: 'h-icon', 'aria-hidden': 'true' }, '🏆'), h('span', { class: 'mark' }, 'Quiz')),
         h('span', { class: 'quiz-count' }, `${idx + 1} / ${exercises.length}`)),
       h('div', { class: 'progress', 'aria-hidden': 'true' }, h('span', { style: `width:${(idx / exercises.length) * 100}%` })),
       h('div', { class: 'quiz-q' }, buddy, h('div', { class: 'q-bubble', lang: 'en' }, withBlank(ex.question))),
@@ -478,14 +530,14 @@ function renderLesson(lesson) {
   const vocabWords = new Set(getVocab().map((v) => v.en.toLowerCase()));
   const steps = (lesson.explanation || []).map((s) => (typeof s === 'string' ? { emoji: '', text: s } : s)).filter((s) => s && s.text);
 
-  const examples = h('ul', { class: 'list' }, (lesson.examples || []).map((ex) =>
+  const examples = h('ul', { class: 'list' }, (lesson.examples || []).map((ex, i) =>
     h('li', { class: 'example' },
-      tile(ex.emoji, '💬'),
+      tile(ex.emoji, '💬', i),
       h('div', { class: 'txt' }, h('div', { class: 'en', lang: 'en' }, ex.en), h('div', { class: 'fr' }, ex.fr)),
       speakBtn(ex.en))
   ));
 
-  const vocab = h('div', { class: 'vocab-grid' }, (lesson.vocab || []).map((v) => {
+  const vocab = h('div', { class: 'vocab-grid' }, (lesson.vocab || []).map((v, i) => {
     const inBook = vocabWords.has(v.word.toLowerCase());
     const add = h('button', {
       type: 'button', class: 'btn ghost small add-word', disabled: inBook, 'aria-label': `Ajouter « ${v.word} » au carnet`,
@@ -496,7 +548,7 @@ function renderLesson(lesson) {
         toast(`« ${v.word} » ajouté au carnet`);
       },
     }, inBook ? '✓' : '+ Carnet');
-    return h('div', { class: 'word-card' },
+    return h('div', { class: `word-card tint-${(i + 2) % 6}` },
       h('div', { class: 'word-emoji', 'aria-hidden': 'true' }, v.emoji || '📝'),
       h('div', { class: 'en', lang: 'en' }, v.word),
       h('div', { class: 'fr' }, v.fr),
@@ -511,8 +563,8 @@ function renderLesson(lesson) {
       h('h1', null, lesson.title),
       lesson.objective ? h('p', { class: 'objective' }, h('span', { 'aria-hidden': 'true' }, '🎯 '), lesson.objective) : null),
     steps.length ? stepsCard(steps) : null,
-    examples.childElementCount ? h('div', { class: 'card lesson-examples' }, h('h2', null, h('span', { class: 'mark' }, 'Exemples')), examples) : null,
-    vocab.childElementCount ? h('div', { class: 'card lesson-vocab' }, h('h2', null, h('span', { class: 'mark' }, 'Mots utiles')), vocab) : null,
+    examples.childElementCount ? h('div', { class: 'card lesson-examples' }, h('h2', null, h('span', { class: 'h-icon', 'aria-hidden': 'true' }, '💬'), h('span', { class: 'mark' }, 'Exemples')), examples) : null,
+    vocab.childElementCount ? h('div', { class: 'card lesson-vocab' }, h('h2', null, h('span', { class: 'h-icon', 'aria-hidden': 'true' }, '🧩'), h('span', { class: 'mark' }, 'Mots utiles')), vocab) : null,
     (lesson.exercises || []).length ? quizCard(lesson.exercises) : null,
   );
 }
@@ -524,11 +576,11 @@ const WELCOME = "Hi! I'm your English coach. How are you today? Tell me about yo
 
 const SCENARIOS = [
   { emoji: '☀️', label: 'Ma journée', text: "Let's talk about my day. Ask me questions about what I did today." },
-  { emoji: '💼', label: 'Entretien d’embauche', text: "Let's role-play a job interview. You are the interviewer and I am the candidate. Please start." },
+  { emoji: '💼', label: 'Entretien', text: "Let's role-play a job interview. You are the interviewer and I am the candidate. Please start." },
   { emoji: '☕', label: 'Au café', text: "Let's role-play at a café. You are the barista and I am the customer. Please start." },
-  { emoji: '🩺', label: 'Chez le médecin', text: "Let's role-play a visit to the doctor. You are the doctor and I am the patient. Please start." },
-  { emoji: '🏠', label: 'Visiter un appart', text: "Let's role-play visiting an apartment for rent. You are the landlord and I am looking for a place. Please start." },
-  { emoji: '🎸', label: 'Mes loisirs', text: "Let's talk about my hobbies and free time. Ask me questions." },
+  { emoji: '🩺', label: 'Médecin', text: "Let's role-play a visit to the doctor. You are the doctor and I am the patient. Please start." },
+  { emoji: '🏠', label: 'Appartement', text: "Let's role-play visiting an apartment for rent. You are the landlord and I am looking for a place. Please start." },
+  { emoji: '🎸', label: 'Loisirs', text: "Let's talk about my hobbies and free time. Ask me questions." },
 ];
 
 let chat = store.get(KEYS.chat, null);
@@ -538,10 +590,24 @@ let chatController = null;
 const chatLog = $('#chat-log');
 const chatInput = $('#chat-input');
 
-$('#scenario-chips').append(...SCENARIOS.map((s) =>
-  h('button', { type: 'button', class: 'chip', onclick: () => sendChat(s.text) },
-    h('span', { class: 'chip-emoji', 'aria-hidden': 'true' }, s.emoji), s.label)
+$('#scenario-chips').append(...SCENARIOS.map((s, i) =>
+  h('button', { type: 'button', class: `scenario-card tint-${i % 6}`, onclick: () => { scenariosOpen = false; sendChat(s.text); } },
+    h('span', { class: 'scenario-emoji', 'aria-hidden': 'true' }, s.emoji),
+    h('span', null, s.label))
 ));
+
+// La grille de scénarios s'affiche au début, puis se replie pour laisser la place à la discussion.
+let scenariosOpen = false;
+function updateScenarios() {
+  const fresh = chat.length <= 1;
+  $('#scenario-chips').hidden = !(fresh || scenariosOpen);
+  $('#scenario-toggle').hidden = fresh;
+  $('#scenario-toggle').setAttribute('aria-expanded', String(scenariosOpen));
+}
+$('#scenario-toggle').addEventListener('click', () => {
+  scenariosOpen = !scenariosOpen;
+  updateScenarios();
+});
 
 function msgNode(m, live = false) {
   if (m.role === 'user') {
@@ -566,6 +632,7 @@ function renderChat() {
     nodes.unshift(h('div', { class: 'chat-hero' }, mascot('wave', 'hero-buddy'), h('div', { class: 'chat-hero-text' }, 'Parle-moi en anglais!')));
   }
   chatLog.replaceChildren(...nodes);
+  updateScenarios();
   scrollChat();
 }
 
@@ -591,6 +658,8 @@ async function sendChat(text) {
   chatLog.querySelectorAll('.mascot.avatar').forEach((a) => a.classList.add('still'));
   chat.push({ role: 'user', content: text });
   saveChat();
+  updateScenarios();
+  markActive();
   chatLog.append(msgNode(chat[chat.length - 1]));
   const typing = h('div', { class: 'msg assistant typing' },
     mascot('think', 'avatar'),
@@ -735,11 +804,13 @@ function renderFlash() {
     setTimeout(then, reducedMotion() ? 0 : 280);
   };
   const review = () => leave('fly-left', () => {
+    markActive();
     deck.push(deck.shift());
     flipped = false;
     renderFlash();
   });
   const know = () => leave('fly-right', () => {
+    markActive();
     const all = getVocab();
     const w = all.find((x) => x.id === word.id);
     if (w) {
@@ -772,9 +843,9 @@ function renderList() {
   const list = getVocab();
   const mastered = list.filter((w) => w.known >= MASTERED).length;
   $('#vocab-count').textContent = list.length ? `· ${list.length} · ⭐ ${mastered}` : '';
-  $('#vocab-list').replaceChildren(...list.map((w) =>
+  $('#vocab-list').replaceChildren(...list.map((w, i) =>
     h('li', null,
-      tile(w.emoji, '📝'),
+      tile(w.emoji, '📝', i),
       h('div', { class: 'txt' },
         h('div', null,
           h('span', { class: 'en', lang: 'en' }, w.en), ' ',
@@ -795,6 +866,7 @@ function renderList() {
 function renderVocab() {
   renderFlash();
   renderList();
+  renderStats();
 }
 
 $('#vocab-form').addEventListener('submit', (e) => {
@@ -830,6 +902,8 @@ document.addEventListener('focusout', () => {
 // DÉMARRAGE
 // =====================================================================
 if (!Array.isArray(store.get(KEYS.vocab, null))) setVocab(SAMPLE_VOCAB);
+greet();
+renderStats();
 renderLesson(store.get(KEYS.lesson, null) || SAMPLE_LESSON);
 renderChat();
 showTab(['lesson', 'chat', 'vocab'].includes(store.get(KEYS.tab)) ? store.get(KEYS.tab) : 'lesson');
