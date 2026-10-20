@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Prof d'anglais</title>
+  <meta name="description" content="Ton coach d'anglais personnel : leçons, conversation et vocabulaire.">
+  <meta name="theme-color" content="#2b59c3" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121833" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+
+  <!-- Installation sur l'écran d'accueil (iPhone / iPad) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Prof d'anglais">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="icons/favicon-64.png">
+  <link rel="manifest" href="manifest.webmanifest">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="bg-blobs" aria-hidden="true"><span></span><span></span><span></span></div>
+  <header class="topbar">
+    <div class="brand">
+      <img src="icons/icon-192.png" alt="" width="32" height="32">
+      <span>Prof d'anglais</span>
+    </div>
+    <label class="level">
+      <span class="sr-only">Niveau</span>
+      <select id="level" aria-label="Niveau">
+        <option value="A1">A1 · Débutant</option>
+        <option value="A2">A2 · Élémentaire</option>
+        <option value="B1">B1 · Intermédiaire</option>
+        <option value="B2">B2 · Avancé</option>
+        <option value="C1">C1 · Autonome</option>
+        <option value="C2">C2 · Maîtrise</option>
+      </select>
+    </label>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" data-tab="lesson" aria-selected="true">
+        <span class="tab-icon" aria-hidden="true">📘</span><span>Leçon</span>
+      </button>
+      <button class="tab" role="tab" data-tab="chat" aria-selected="false">
+        <span class="tab-icon" aria-hidden="true">💬</span><span>Conversation</span>
+      </button>
+      <button class="tab" role="tab" data-tab="vocab" aria-selected="false">
+        <span class="tab-icon" aria-hidden="true">🗂️</span><span>Vocabulaire</span>
+      </button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- LEÇON -->
+    <section id="panel-lesson" class="panel" role="tabpanel">
+      <div id="home">
+        <section class="hero-card" aria-labelledby="hero-title">
+          <div class="hero-top">
+            <div class="hero-text">
+              <div class="hello" id="hello">Bonjour! 👋</div>
+              <h1 id="hero-title">Prêt pour ta leçon?</h1>
+            </div>
+            <span id="hero-mascot"></span>
+          </div>
+          <div class="stats" id="stats"></div>
+          <button type="button" class="btn yellow continue-btn" id="continue-btn" hidden>
+            <span class="continue-play" aria-hidden="true">▶</span>
+            <span class="continue-text"><span class="continue-sub" id="continue-sub"></span><span class="continue-title" id="continue-title"></span></span>
+          </button>
+        </section>
+
+        <section class="card search-card">
+          <label for="search" class="search-label"><span class="h-icon" aria-hidden="true">🔎</span>Chercher une leçon</label>
+          <input id="search" type="search" autocomplete="off" placeholder="Ex. : present perfect, prépositions, courriel…">
+          <ul id="search-results" class="search-results" aria-live="polite"></ul>
+        </section>
+
+        <h2 class="section-title">🧭 Mon parcours</h2>
+        <div class="level-pills" id="level-chips"></div>
+        <div id="path" class="path"></div>
+
+        <section class="card voice-card" id="voice-card"></section>
+      </div>
+
+      <div id="lesson-view" hidden>
+        <div class="lesson-bar">
+          <button type="button" class="btn ghost small" id="back-home">← Parcours</button>
+          <span class="crumb" id="lesson-crumb"></span>
+        </div>
+        <article id="lesson" class="lesson"></article>
+      </div>
+    </section>
+
+    <!-- CONVERSATION -->
+    <section id="panel-chat" class="panel" role="tabpanel" hidden>
+      <div id="dlg-home">
+        <section class="hero-card dlg-hero">
+          <div class="hero-top">
+            <div class="hero-text">
+              <div class="hello">Dialogues guidés 🎭</div>
+              <h1>Parle avec le chat!</h1>
+              <p class="hero-sub">Choisis une situation. Le chat te parle, tu choisis la meilleure réponse et il te corrige.</p>
+            </div>
+            <span id="dlg-mascot"></span>
+          </div>
+        </section>
+        <div class="dlg-levels" id="dlg-levels" role="group" aria-label="Niveau des situations"></div>
+        <div class="scenario-grid" id="scenario-chips"></div>
+      </div>
+      <div id="dlg-view" hidden>
+        <div class="lesson-bar">
+          <button type="button" class="btn ghost small" id="dlg-back">← Situations</button>
+          <span class="crumb" id="dlg-crumb"></span>
+        </div>
+        <div class="progress dlg-progress" aria-hidden="true"><span id="dlg-progress"></span></div>
+        <div id="chat-log" class="chat-log" aria-live="polite"></div>
+        <div id="dlg-choices" class="dlg-choices"></div>
+      </div>
+    </section>
+
+    <!-- VOCABULAIRE -->
+    <section id="panel-vocab" class="panel" role="tabpanel" hidden>
+      <div id="flash" class="flash-wrap"></div>
+      <div class="vocab-side">
+      <form id="vocab-form" class="card vocab-form">
+        <h2>➕ Ajouter un mot</h2>
+        <div class="row">
+          <input id="vocab-en" type="text" maxlength="120" placeholder="Anglais (ex. : to look forward to)" autocomplete="off" autocapitalize="none" lang="en">
+          <input id="vocab-fr" type="text" maxlength="160" placeholder="Traduction (ex. : avoir hâte de)" autocomplete="off">
+          <button type="submit" class="btn primary">Ajouter</button>
+        </div>
+      </form>
+      <div class="card">
+        <h2>📒 Mon carnet <span id="vocab-count" class="muted"></span></h2>
+        <ul id="vocab-list" class="vocab-list"></ul>
+      </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
