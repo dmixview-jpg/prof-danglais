@@ -1,16 +1,18 @@
 // Cache hors ligne de Prof d'anglais. Les appels /api/ ne sont jamais mis en cache.
-const CACHE = 'prof-danglais-v14';
+const CACHE = 'prof-danglais-v15';
+// Chemins relatifs au service worker : l'app marche à la racine d'un site
+// comme dans un sous-dossier (ex. : GitHub Pages, /prof-danglais/).
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/app.js',
-  '/manifest.webmanifest',
-  '/curriculum.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/apple-touch-icon.png',
-  '/icons/favicon-64.png',
+  './',
+  'index.html',
+  'styles.css',
+  'app.js',
+  'manifest.webmanifest',
+  'curriculum.json',
+  'icons/icon-192.png',
+  'icons/icon-512.png',
+  'icons/apple-touch-icon.png',
+  'icons/favicon-64.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -31,7 +33,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   if (url.origin === self.location.origin) {
-    if (url.pathname.startsWith('/api/')) return;
+    if (url.pathname.includes('/api/')) return;
     // Réseau d'abord (pour recevoir les mises à jour), cache si hors ligne.
     event.respondWith(
       fetch(request)
@@ -43,7 +45,7 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() =>
-          caches.match(request).then((hit) => hit || (request.mode === 'navigate' ? caches.match('/index.html') : Response.error()))
+          caches.match(request).then((hit) => hit || (request.mode === 'navigate' ? caches.match('index.html') : Response.error()))
         )
     );
     return;

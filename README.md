@@ -118,7 +118,13 @@ npm test
 
 L'app n'a besoin d'aucun serveur spécial : c'est un **site statique**. Il suffit de publier le dossier `public/`.
 
-**Option la plus simple : Netlify Drop (2 minutes, gratuit)**
+**Option intégrée : GitHub Pages (gratuit, automatique)**
+Le projet contient déjà le déploiement (`.github/workflows/pages.yml`). Il lance les tests, puis publie `public/` à chaque mise à jour de la branche `main`.
+1. Sur GitHub, dans ton dépôt : **Settings → Pages → Source : GitHub Actions** (à faire une seule fois).
+2. Fusionne tes changements dans `main`, ou lance le déploiement à la main : **Actions → Publier sur GitHub Pages → Run workflow**.
+3. L'app est en ligne à `https://<ton-compte>.github.io/prof-danglais/`. Les chemins de l'app sont relatifs : elle fonctionne aussi dans ce sous-dossier.
+
+**Autre option : Netlify Drop (2 minutes, gratuit)**
 1. Va sur <https://app.netlify.com/drop> et crée un compte gratuit.
 2. Glisse-dépose le dossier **`public`** du projet dans la page.
 3. Ton app est en ligne en **https**, à une adresse du type `https://nom-au-hasard.netlify.app`. Tu peux changer ce nom dans les réglages du site.

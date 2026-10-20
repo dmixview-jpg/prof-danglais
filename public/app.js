@@ -355,7 +355,7 @@ const getPathLevel = () => {
 
 async function loadCourse() {
   try {
-    const res = await fetch('/curriculum.json');
+    const res = await fetch('curriculum.json');
     COURSE = await res.json();
   } catch {
     $('#path').replaceChildren(h('div', { class: 'status error' }, 'Impossible de charger le parcours. Vérifie ta connexion, puis recharge la page.'));
@@ -1211,5 +1211,5 @@ loadCourse().then(() => {
 showTab(['lesson', 'chat', 'vocab'].includes(store.get(KEYS.tab)) ? store.get(KEYS.tab) : 'lesson');
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
