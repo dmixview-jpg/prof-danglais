@@ -1,5 +1,5 @@
 # Après une modification : python3 outils/programme/construire.py
-# Niveau « Premiers pas » (Pré-A1) : leçons entièrement rédigées, utilisables sans IA.
+# Niveau « Premiers pas » (Pré-A1).
 
 def ch(question, options, answer, explain):
     return {"type": "choice", "question": question, "options": options, "answer": answer, "explain": explain}
@@ -32,7 +32,7 @@ PRE = ("pre", "Pré-A1", "Premiers pas", "🌱", "A1",
       st("🔤", "L’anglais utilise les mêmes 26 lettres que le français, mais leurs noms se prononcent autrement. Touche chaque lettre du tableau pour l’entendre."),
       st("⚠️", "Le grand piège : A se dit « é-i », E se dit « i » et I se dit « aï ». C’est presque l’inverse du français!"),
       st("🔁", "G se dit « dji » et J se dit « djé-i ». On les mélange souvent : pense à « Gee! » et au prénom « Jay »."),
-      st("🍁", "Z se dit « zed » au Canada et en Angleterre, et « zi » aux États-Unis. Les deux sont corrects."),
+      st("🍁", "Z se dit « zed » au Canada et au Royaume-Uni, et « zi » aux États-Unis. Les deux sont corrects."),
     ],
     "examples": [
       ex("📺", "CBC", "La radio-télévision publique anglophone du Canada : « si-bi-si »."),
@@ -178,7 +178,7 @@ PRE = ("pre", "Pré-A1", "Premiers pas", "🌱", "A1",
     ],
     "examples": [
       ex("☀️", "Good morning! How are you?", "Bonjour! Comment allez-vous?"),
-      ex("🙂", "I’m fine, thanks. And you?", "Je vais bien, merci. Et toi?"),
+      ex("🙂", "I’m fine, thanks. And you?", "Je vais bien, merci. Et vous?"),
       ex("🙋", "Excuse me, where is the washroom?", "Excusez-moi, où sont les toilettes?"),
       ex("😅", "Sorry, I don’t understand.", "Désolé, je ne comprends pas."),
       ex("👋", "See you tomorrow!", "À demain!"),

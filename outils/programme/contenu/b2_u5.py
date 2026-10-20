@@ -28,7 +28,7 @@ L("🧷", "Les collocations",
    ch("Can you ___ the dishes?", ["make", "do", "have"], 1, "do the dishes."),
    ch("There was ___ traffic this morning.", ["strong", "heavy", "big"], 1, "heavy traffic."),
    ch("Everyone ___ mistakes.", ["does", "makes", "takes"], 1, "make mistakes."),
-   li("Let’s take a break.", ["Let’s take a break.", "Let’s make a break.", "Let’s take a brake."], 0, "take a break."),
+   li("Let’s take a break.", ["Let’s take a break.", "Let’s make a break.", "Let’s take a walk."], 0, "take a break."),
    od("I made a big mistake yesterday", "J’ai fait une grosse erreur hier", "make a mistake.")]),
 
 L("🧗", "Les verbes à particule avancés",

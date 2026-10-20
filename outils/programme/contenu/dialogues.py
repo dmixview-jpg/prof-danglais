@@ -122,14 +122,14 @@ S("interview", "💼", "Entrevue d’embauche", "B1", "Tu passes une entrevue po
   coach("Why do you want to work here?", "Pourquoi voulez-vous travailler ici?"),
   rep(["I admire your projects, and I can bring strong planning skills.", "Because I need money.", "I admire your projects and I can bring strong planification skills."], 0, "Parle de l’entreprise et de ce que tu apportes. « Planification » se dit planning."),
   coach("Great. Do you have any questions for us?", "Très bien. Avez-vous des questions pour nous?"),
-  rep(["What are the next steps in the process?", "What are the next steps of the process?", "Which are the next steps?"], 0, "the next steps in the process."),
-  coach("We’ll get back to you by Friday. Thank you!", "Nous vous reviendrons d’ici vendredi. Merci!"),
+  rep(["What are the next steps in the process?", "What are the next step in the process?", "Which are the next steps?"], 0, "the next steps in the process."),
+  coach("We’ll get back to you by Friday. Thank you!", "Nous vous donnerons des nouvelles d’ici vendredi. Merci!"),
 ]),
 
 S("support", "📞", "Service à la clientèle", "B1", "Tu appelles pour un colis jamais livré.", [
   coach("Thank you for calling. How can I help you today?", "Merci de votre appel. Comment puis-je vous aider aujourd’hui?"),
   rep(["I’m calling about an order that never arrived.", "I call for an order that never arrived.", "I’m calling for an order who never arrived."], 0, "I’m calling about… ; order = chose → that."),
-  coach("I’m sorry to hear that. Can I have your order number?", "Je suis désolé. Puis-je avoir votre numéro de commande?"),
+  coach("I’m sorry to hear that. Can I have your order number?", "Je suis désolé de l’apprendre. Puis-je avoir votre numéro de commande?"),
   rep(["Sure, it’s four eight two, seven one nine.", "Sure, it’s four hundred eighty-two, seven hundred nineteen.", "Sure, the number is of 482719."], 0, "Les numéros se disent chiffre par chiffre."),
   coach("Thank you. It says the package was delivered on Monday.", "Merci. Il est indiqué que le colis a été livré lundi."),
   rep(["That’s strange. I didn’t receive anything.", "That’s strange. I didn’t received anything.", "That’s strange. I haven’t receive nothing."], 0, "didn’t + receive (forme de base)."),

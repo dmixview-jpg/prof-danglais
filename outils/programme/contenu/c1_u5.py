@@ -85,7 +85,7 @@ L("🗺️", "Les accents anglophones",
    ch("British spelling: ___", ["color", "colour", "colur"], 1, "colour (UK, CA)."),
    ch("In Canada, the public toilets are often called the ___.", ["loo", "washroom", "lift"], 1, "washroom (Canada)."),
    ch("« Gas » in American English means ___.", ["essence", "gaz seulement", "bouteille"], 0, "gas = essence."),
-   li("Nice weather today, eh?", ["Nice weather today, eh?", "Nice weather today, hey?", "Nice whether today, eh?"], 0, "eh? = tic canadien."),
+   li("Nice weather today, eh?", ["Nice weather today, eh?", "Nice weather today, hey?", "Nice weather today, huh?"], 0, "eh? = tic canadien."),
    od("Take the elevator to the fifth floor", "Prends l’ascenseur jusqu’au cinquième étage", "elevator (US).")]),
 
 L("🗣️", "La parole rapide",

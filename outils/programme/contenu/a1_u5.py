@@ -114,7 +114,7 @@ L("🗺️", "Demander son chemin",
   [ch("___ left at the corner.", ["Turn", "Go", "Take"], 0, "Turn left = tourner à gauche."),
    ch("Go ___ for two blocks.", ["right", "straight", "corner"], 1, "Go straight = tout droit."),
    ch("Excuse me, ___ is the bank?", ["what", "where", "who"], 1, "Where = où."),
-   ch("The café is ___ the corner.", ["in", "on", "at"], 1, "on the corner = au coin."),
+   ch("Turn left ___ the lights.", ["at", "on", "in"], 0, "at the lights = aux feux."),
    li("Turn right at the lights.", ["Turn right at the lights.", "Turn left at the lights.", "Turn right at the light."], 0, "right = droite."),
    od("How do I get to the station", "Comment est-ce que je me rends à la gare?", "How do I get to + lieu?")]),
 

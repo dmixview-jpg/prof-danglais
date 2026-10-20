@@ -26,7 +26,7 @@ L("💬", "Le discours indirect",
   [ch("« I’m hungry. » → He said he ___ hungry.", ["is", "was", "were"], 1, "Présent → passé : was."),
    ch("She ___ me she was leaving.", ["said", "told", "says"], 1, "Avec une personne : told me."),
    ch("« I will help you. » → He said he ___ help me.", ["will", "would", "can"], 1, "will → would."),
-   ch("« We moved last year. » → They said they ___ the year before.", ["moved", "had moved", "have moved"], 1, "Passé → past perfect."),
+   ch("« We moved last year. » → They said they ___ the year before.", ["move", "had moved", "have moved"], 1, "Passé → past perfect."),
    li("She told me she was tired.", ["She told me she was tired.", "She said me she was tired.", "She told me she is tired."], 0, "told me + was."),
    od("He said he would call me later", "Il a dit qu’il m’appellerait plus tard", "said + would.")]),
 
