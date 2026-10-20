@@ -14,7 +14,10 @@ Ton coach d'anglais personnel, pensé pour un francophone du Québec et utilisé
 - **Leçon libre** : tu peux aussi demander une leçon sur n'importe quel sujet.
 - **Conversation** : discute en anglais avec « Coach ». Il te répond simplement et corrige ton dernier message dans un encadré jaune.
 - **Vocabulaire** : cartes mémoire (anglais / français). Un mot est maîtrisé après 3 « Je sais ».
-- **Prononciation** : un bouton 🔊 sur chaque exemple, chaque mot et chaque réponse du coach. La voix est celle de l'iPhone : gratuite et sans Internet.
+- **Prononciation avec l'accent américain** : un bouton 🔊 sur chaque exemple, chaque mot et chaque réponse du coach.
+  - L'app choisit automatiquement la meilleure voix **américaine (en-US)** de l'appareil, en priorité les voix « Améliorée » ou « Premium ».
+  - Le réglage **🔊 Voix américaine**, en bas de l'accueil, permet de changer de voix et de vitesse.
+  - La voix est celle de l'appareil : gratuite et sans Internet.
 - Niveaux **A1 à C1**, mode sombre automatique, fonctionne hors ligne pour ce qui est déjà chargé.
 - **S'adapte à chaque appareil** : testée sur tous les formats d'iPhone, du SE 1re génération à l'iPhone 17 Pro Max (encoche et Dynamic Island compris). En portrait, les onglets sont en bas et disparaissent quand le clavier s'ouvre. En paysage, ils passent dans un en-tête mince pour garder un maximum de place. Sur iPad, ils passent en haut à droite. Sur grand iPad en paysage, la leçon et le vocabulaire s'affichent sur deux colonnes. Le portrait, le paysage et le Split View / Slide Over sont aussi pris en charge.
 
@@ -194,7 +197,7 @@ L'icône 3D « EN » apparaît et l'app s'ouvre en plein écran, sans la barre d
 | Sujets suggérés, scénarios de conversation, message d'accueil | `public/app.js` : `TOPICS`, `SCENARIOS`, `WELCOME` |
 | Leçon et mots d'exemple | `public/app.js` : `SAMPLE_LESSON`, `SAMPLE_VOCAB` |
 | Nombre de « Je sais » pour maîtriser un mot | `public/app.js` : `MASTERED` |
-| Vitesse de la voix | `public/app.js` : `u.rate = 0.92` dans `speak()` |
+| Voix et vitesse | Dans l'app : carte **🔊 Voix américaine** en bas de l'accueil. Dans le code : `pickVoice()` et `RATES` dans `public/app.js` |
 | Consignes données à l'IA (style des leçons, du coach) | `server.js` : `LESSON_SYSTEM` et `CHAT_SYSTEM` |
 | Mascotte, le petit chat bleu (dessin, couleurs, animations) | `public/app.js` : fonction `mascot()`. `public/styles.css` : section « Mascotte : petit chat bleu » |
 | Fournisseurs et modèles par défaut | `server.js` : `PROVIDERS`, ou `.env` |
@@ -220,6 +223,7 @@ Tes données (niveau, leçon courante, conversation, carnet de vocabulaire) sont
 | L'iPhone n'arrive pas à ouvrir la page | Même Wi-Fi? Bonne adresse IP? Le serveur tourne-t-il? Le pare-feu de l'ordinateur bloque-t-il `node`? |
 | `EADDRINUSE` au démarrage | Le port est déjà pris : change `PORT` dans `.env` (ex. : `3001`). |
 | Le code d'accès est redemandé | Le code a changé sur le serveur ou est mal saisi. Entre le code actuel. |
+| La voix sonne robotique | Télécharge une voix américaine de qualité. Sur iPhone ou iPad : Réglages → Accessibilité → Contenu énoncé → Voix → Anglais → une voix « États-Unis » marquée « Améliorée » ou « Premium » (Ava, Evan, Zoe…). Choisis-la ensuite dans **🔊 Voix américaine**. |
 | Pas de son avec 🔊 | Vérifie que l'iPhone n'est pas en mode silencieux (bouton sur le côté) et que le volume est monté. |
 | L'app affiche une ancienne version ou l'ancienne icône | Supprime l'app de l'écran d'accueil puis ajoute-la de nouveau. Sinon, change le nom du cache dans `public/sw.js`. |
 | `node: command not found` | Node.js n'est pas installé ou le Terminal doit être rouvert après l'installation. |

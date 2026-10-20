@@ -13,6 +13,8 @@ const KEYS = {
   progress: 'pd.progress',
   pathLevel: 'pd.pathLevel',
   course: 'pd.c.', // préfixe : leçons du parcours déjà générées
+  voice: 'pd.voice',
+  rate: 'pd.rate',
 };
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 const MASTERED = 3;
@@ -202,37 +204,98 @@ function confetti() {
   setTimeout(() => box.remove(), 4000);
 }
 
-// ---------- Prononciation ----------
+// ---------- Prononciation : voix américaine (en-US) ----------
+// Les voix varient selon l'appareil : on ne garde que les voix américaines et on classe
+// les plus naturelles en premier (« Améliorée », « Premium », « Natural »…).
+const NOVELTY_VOICES = /albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|junior|ralph|kathy|fred|grandma|grandpa|eddy|flo|reed|rocko|sandy|shelley/i;
+const GREAT_VOICES = /ava|evan|samantha|allison|nathan|zoe|susan|tom|joelle|noelle|aria|jenny|guy|michelle|google us english/i;
+const isUS = (v) => /^en[-_]us$/i.test(v.lang);
+let usVoices = [];
 let voice = null;
+
+function voiceScore(v) {
+  let score = 0;
+  if (/enhanced|premium|natural|neural|amélioré|ameliore/i.test(v.name)) score += 50;
+  if (GREAT_VOICES.test(v.name)) score += 30;
+  if (NOVELTY_VOICES.test(v.name)) score -= 200;
+  if (v.localService) score += 5;
+  return score;
+}
+
 function pickVoice() {
   if (!('speechSynthesis' in window)) return;
-  const voices = speechSynthesis.getVoices();
-  voice = voices.find((v) => v.lang === 'en-US' && /samantha|ava|allison|google us/i.test(v.name))
-    || voices.find((v) => v.lang === 'en-US')
-    || voices.find((v) => /^en[-_]/i.test(v.lang))
-    || null;
+  usVoices = speechSynthesis.getVoices().filter(isUS).sort((a, b) => voiceScore(b) - voiceScore(a));
+  const saved = store.get(KEYS.voice, '');
+  voice = usVoices.find((v) => v.voiceURI === saved) || usVoices.find((v) => voiceScore(v) >= 0) || usVoices[0] || null;
+  renderVoiceCard();
 }
-if ('speechSynthesis' in window) {
-  pickVoice();
-  speechSynthesis.addEventListener?.('voiceschanged', pickVoice);
+
+const speechRate = () => store.get(KEYS.rate, 0.92);
+
+// Seconde voix américaine pour les dialogues (une autre personne).
+function otherVoice() {
+  return usVoices.find((v) => v !== voice && voiceScore(v) >= 0) || voice;
+}
+
+function utterance(text, rate, v = voice) {
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US'; // sans voix choisie, l'appareil prend sa voix américaine par défaut
+  u.rate = rate || speechRate();
+  if (v) u.voice = v;
+  return u;
 }
 
 // talker : mascotte qui « parle » (bouche animée) pendant la lecture.
-function speak(text, talker, rate = 0.92) {
+function speak(text, talker, rate) {
   if (!('speechSynthesis' in window)) {
     toast('La synthèse vocale n’est pas disponible sur cet appareil.');
     return;
   }
   speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'en-US';
-  u.rate = rate;
-  if (voice) u.voice = voice;
+  const u = utterance(text, rate);
   if (talker) {
     u.onstart = () => setMood(talker, 'talk');
     u.onend = u.onerror = () => setMood(talker, talker.dataset.base);
   }
   speechSynthesis.speak(u);
+}
+
+// Réglages de la voix : choix de la voix américaine, vitesse, essai.
+const RATES = [[0.75, '🐢 Lente'], [0.92, 'Normale'], [1.05, '🐇 Rapide']];
+function renderVoiceCard() {
+  const box = document.getElementById('voice-card');
+  if (!box) return;
+  const select = h('select', { id: 'voice-select', 'aria-label': 'Voix américaine' },
+    usVoices.length
+      ? usVoices.map((v) => {
+        const o = h('option', { value: v.voiceURI }, v.name.replace(/\s*\((English|anglais)[^)]*\)/i, ''));
+        if (voice && v.voiceURI === voice.voiceURI) o.selected = true;
+        return o;
+      })
+      : [h('option', { value: '' }, 'Voix américaine de l’appareil')]);
+  select.addEventListener('change', () => {
+    store.set(KEYS.voice, select.value);
+    voice = usVoices.find((v) => v.voiceURI === select.value) || voice;
+    speak('Hi! I’m your English coach.');
+  });
+  const rate = speechRate();
+  box.replaceChildren(
+    h('h2', null, h('span', { class: 'h-icon', 'aria-hidden': 'true' }, '🔊'), h('span', { class: 'mark' }, 'Voix américaine')),
+    h('div', { class: 'voice-row' },
+      select,
+      h('button', { type: 'button', class: 'btn primary', onclick: () => speak('Hi! I’m your English coach. Let’s practice together!') }, '▶ Essayer')),
+    h('div', { class: 'rate-row', role: 'group', 'aria-label': 'Vitesse de la voix' }, RATES.map(([r, label]) =>
+      h('button', {
+        type: 'button', class: `rate-btn${Math.abs(rate - r) < 0.01 ? ' on' : ''}`, 'aria-pressed': String(Math.abs(rate - r) < 0.01),
+        onclick: () => { store.set(KEYS.rate, r); renderVoiceCard(); speak('This is my speaking speed.'); },
+      }, label))),
+    h('details', { class: 'voice-help' },
+      h('summary', null, '📱 Une voix plus naturelle sur iPhone ou iPad'),
+      h('p', null, 'Réglages → Accessibilité → Contenu énoncé → Voix → Anglais → choisis une voix « États-Unis » marquée « Améliorée » ou « Premium » (ex. : Ava, Evan, Zoe) et télécharge-la. Reviens ensuite ici et choisis-la dans la liste.')));
+}
+if ('speechSynthesis' in window) {
+  pickVoice();
+  speechSynthesis.addEventListener?.('voiceschanged', pickVoice);
 }
 
 const speakBtn = (text, talker) =>
@@ -701,7 +764,7 @@ const ALPHABET = [
   ['A', 'é-i', 1], ['B', 'bi'], ['C', 'si'], ['D', 'di'], ['E', 'i', 1], ['F', 'èf'], ['G', 'dji', 1],
   ['H', 'éitch'], ['I', 'aï', 1], ['J', 'djé-i', 1], ['K', 'ké-i'], ['L', 'èl'], ['M', 'èm'], ['N', 'èn'],
   ['O', 'ô-ou'], ['P', 'pi'], ['Q', 'kiou'], ['R', 'ar', 1], ['S', 'èss'], ['T', 'ti'], ['U', 'iou'],
-  ['V', 'vi'], ['W', 'dobeul-iou', 1], ['X', 'èks'], ['Y', 'ouaï', 1], ['Z', 'zèd / zi'],
+  ['V', 'vi'], ['W', 'dobeul-iou', 1], ['X', 'èks'], ['Y', 'ouaï', 1], ['Z', 'zi (zèd au Canada)'],
 ];
 function alphabetCard() {
   return h('div', { class: 'card lesson-alphabet' },
@@ -745,14 +808,9 @@ function dialogueCard(lines) {
 function speakSequence(items) {
   if (!('speechSynthesis' in window)) return toast('La synthèse vocale n’est pas disponible sur cet appareil.');
   speechSynthesis.cancel();
-  const voices = speechSynthesis.getVoices().filter((v) => /^en[-_]/i.test(v.lang));
-  const other = voices.find((v) => v !== voice && v.lang === (voice && voice.lang)) || voices.find((v) => v !== voice) || voice;
-  items.forEach((it, i) => {
-    const u = new SpeechSynthesisUtterance(it.text);
-    u.lang = 'en-US';
-    u.rate = 0.92;
-    const v = it.alt ? other : voice;
-    if (v) u.voice = v;
+  const other = otherVoice();
+  items.forEach((it) => {
+    const u = utterance(it.text, null, it.alt ? other : voice);
     u.onstart = () => it.row.classList.add('playing');
     u.onend = u.onerror = () => it.row.classList.remove('playing');
     speechSynthesis.speak(u);
