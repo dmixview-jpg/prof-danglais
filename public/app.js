@@ -110,7 +110,7 @@ function renderStats() {
   if (!box) return;
   const s = streak();
   const mastered = getVocab().filter((w) => w.known >= MASTERED).length;
-  const lessons = store.get(KEYS.lessons, 0);
+  const lessons = Math.max(store.get(KEYS.lessons, 0), Object.keys(store.get(KEYS.progress, {})).length);
   const stat = (icon, value, label) => h('div', { class: 'stat' },
     h('span', { class: 'stat-icon', 'aria-hidden': 'true' }, icon),
     h('span', { class: 'stat-value' }, String(value)),
@@ -839,7 +839,7 @@ function renderLesson(lesson, courseId) {
 
   const onComplete = courseId ? (correct, total) => completeCourseLesson(courseId, correct, total) : null;
 
-  root.replaceChildren(
+  root.replaceChildren(...[
     h('div', { class: 'card lesson-main' },
       h('div', { class: 'lead-meta' },
         lesson.sample ? h('span', { class: 'badge' }, 'Exemple') : null,
@@ -854,7 +854,7 @@ function renderLesson(lesson, courseId) {
     vocab.childElementCount ? h('div', { class: 'card lesson-vocab' }, sectionTitle('🧩', 'Mots utiles'), vocab) : null,
     lesson.tip && lesson.tip.text ? tipCard(lesson.tip) : null,
     (lesson.exercises || []).length ? quizCard(lesson.exercises, onComplete) : null,
-  );
+  ].filter(Boolean));
 }
 
 // =====================================================================
