@@ -3,22 +3,18 @@
 // ---------- Stockage local ----------
 const KEYS = {
   level: 'pd.level',
-  code: 'pd.code',
   tab: 'pd.tab',
-  lesson: 'pd.lesson',
-  chat: 'pd.chat',
   vocab: 'pd.vocab',
   days: 'pd.days',
   lessons: 'pd.lessons',
   progress: 'pd.progress',
   pathLevel: 'pd.pathLevel',
-  course: 'pd.c.', // préfixe : leçons du parcours déjà générées
+  dialogues: 'pd.dialogues', // meilleures étoiles par dialogue guidé
   voice: 'pd.voice',
   rate: 'pd.rate',
 };
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 const MASTERED = 3;
-const HISTORY = 16;
 
 const store = {
   get(key, fallback) {
@@ -301,64 +297,6 @@ if ('speechSynthesis' in window) {
 const speakBtn = (text, talker) =>
   h('button', { type: 'button', class: 'speak', 'aria-label': `Écouter : ${text}`, onclick: () => speak(text, talker) }, '🔊');
 
-// ---------- Code d'accès et API ----------
-let gateResolvers = [];
-
-function showGate(message) {
-  $('#gate').hidden = false;
-  const err = $('#gate-error');
-  err.textContent = message || '';
-  err.hidden = !message;
-  if (message) setMood($('#gate-mascot .mascot'), 'oops', 1500);
-  setTimeout(() => $('#gate-code').focus(), 50);
-  return new Promise((resolve) => gateResolvers.push(resolve));
-}
-
-$('#gate-mascot').append(mascot('wave', 'gate-buddy'));
-$('#gate-form').addEventListener('submit', (e) => {
-  e.preventDefault();
-  const code = $('#gate-code').value.trim();
-  if (!code) return;
-  store.set(KEYS.code, code);
-  $('#gate').hidden = true;
-  $('#gate-code').value = '';
-  const resolvers = gateResolvers;
-  gateResolvers = [];
-  resolvers.forEach((r) => r());
-});
-
-async function api(path, body, { signal } = {}) {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    let res;
-    try {
-      res = await fetch(path, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-app-code': store.get(KEYS.code, '') },
-        body: JSON.stringify(body),
-        signal,
-      });
-    } catch (err) {
-      if (err.name === 'AbortError') throw err;
-      throw new Error(navigator.onLine === false
-        ? 'Pas de connexion Internet. Réessaie quand tu seras en ligne.'
-        : 'Impossible de joindre le serveur. Est-il bien démarré?');
-    }
-    let data = {};
-    try {
-      data = await res.json();
-    } catch {
-      // réponse non JSON
-    }
-    if (res.status === 401) {
-      await showGate(store.get(KEYS.code, '') ? 'Code incorrect. Réessaie.' : '');
-      continue;
-    }
-    if (!res.ok) throw new Error(data.error || `Erreur du serveur (${res.status}).`);
-    return data;
-  }
-  throw new Error('Code d’accès refusé.');
-}
-
 // ---------- Niveau ----------
 const levelSelect = $('#level');
 const LEVEL_NAMES = { A1: 'Débutant', A2: 'Élémentaire', B1: 'Intermédiaire', B2: 'Avancé', C1: 'Autonome', C2: 'Maîtrise' };
@@ -374,7 +312,12 @@ const getLevel = () => (LEVELS.includes(store.get(KEYS.level)) ? store.get(KEYS.
 levelSelect.value = getLevel();
 levelSelect.addEventListener('change', () => {
   store.set(KEYS.level, levelSelect.value);
-  toast(`Niveau ${levelSelect.value} enregistré`);
+  store.set(KEYS.pathLevel, levelSelect.value.toLowerCase());
+  openUnits.clear();
+  renderPath();
+  renderContinue();
+  renderScenarios();
+  toast(`Niveau ${levelSelect.value} : ton parcours est à jour`);
 });
 
 // ---------- Onglets ----------
@@ -382,7 +325,6 @@ function showTab(name) {
   document.querySelectorAll('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
   document.querySelectorAll('.panel').forEach((p) => (p.hidden = p.id !== `panel-${name}`));
   store.set(KEYS.tab, name);
-  if (name === 'chat') scrollChat();
   if (name === 'vocab') renderVocab();
   window.scrollTo({ top: 0 });
 }
@@ -391,49 +333,7 @@ document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () 
 // =====================================================================
 // LEÇON
 // =====================================================================
-const TOPICS = [
-  { emoji: '⏳', label: 'Present perfect', topic: 'Present perfect' },
-  { emoji: '👋', label: 'Se présenter', topic: 'Se présenter' },
-  { emoji: '🍽️', label: 'Au restaurant', topic: 'Commander au restaurant' },
-  { emoji: '🔀', label: 'Verbes irréguliers', topic: 'Verbes irréguliers' },
-  { emoji: '💼', label: 'Mon travail', topic: 'Parler de son travail' },
-  { emoji: '📍', label: 'In / on / at', topic: 'Prépositions in/on/at' },
-  { emoji: '📅', label: 'Rendez-vous', topic: 'Prendre un rendez-vous' },
-  { emoji: '🔮', label: 'Will / going to', topic: 'Futur : will / going to' },
-];
 const STEP_EMOJIS = ['💡', '🔍', '⚠️', '✨', '🎯'];
-
-const SAMPLE_LESSON = {
-  sample: true,
-  level: 'A2',
-  title: 'Le present perfect',
-  objective: 'Parler de tes expériences et de résultats.',
-  explanation: [
-    { emoji: '🧱', text: 'Formation : have (ou has avec he, she, it) + participe passé. Ex. : I have visited, she has eaten.' },
-    { emoji: '🌍', text: 'On l’utilise pour une expérience de vie, sans dire quand : « I have been to Toronto ».' },
-    { emoji: '⏰', text: 'Avec un moment précis et terminé (yesterday, last week, in 2019), on utilise le prétérit : « I saw him yesterday ».' },
-    { emoji: '🔑', text: 'Mots indices : ever, never, already, yet, just, for, since.' },
-  ],
-  examples: [
-    { emoji: '🍟', en: 'Have you ever eaten poutine?', fr: 'As-tu déjà mangé de la poutine?' },
-    { emoji: '🏠', en: 'I have lived in Quebec City since 2015.', fr: 'J’habite à Québec depuis 2015.' },
-    { emoji: '📄', en: 'She has just finished her report.', fr: 'Elle vient de terminer son rapport.' },
-    { emoji: '🎬', en: 'We haven’t seen that movie yet.', fr: 'Nous n’avons pas encore vu ce film.' },
-  ],
-  vocab: [
-    { emoji: '❓', word: 'ever', fr: 'déjà (question)', example: 'Have you ever been to Vancouver?' },
-    { emoji: '✅', word: 'already', fr: 'déjà', example: 'I have already paid the bill.' },
-    { emoji: '⏳', word: 'yet', fr: 'encore / déjà', example: 'Has the bus arrived yet?' },
-    { emoji: '📍', word: 'since', fr: 'depuis (un moment)', example: 'I have worked here since January.' },
-    { emoji: '⏱️', word: 'for', fr: 'depuis (une durée)', example: 'We have known each other for years.' },
-  ],
-  exercises: [
-    { question: 'I ___ to Montreal many times.', options: ['have been', 'was', 'am'], answer: 0, explain: 'Expérience répétée, sans moment précis : have been.' },
-    { question: 'She ___ her keys yesterday.', options: ['has lost', 'lost', 'have lost'], answer: 1, explain: '« Yesterday » = moment terminé : prétérit (lost).' },
-    { question: 'We have lived here ___ 2018.', options: ['for', 'during', 'since'], answer: 2, explain: '« Since » + point de départ (2018).' },
-    { question: 'Has he finished his homework ___?', options: ['yet', 'already', 'ever'], answer: 0, explain: 'En fin de question, on utilise « yet ».' },
-  ],
-};
 
 const heroMascot = mascot('wave', 'hero-buddy');
 $('#hero-mascot').append(heroMascot);
@@ -468,6 +368,8 @@ async function loadCourse() {
       }
     }
   }
+  const code = COURSE.levels.find((l) => l.id === getPathLevel()).code;
+  levelSelect.value = LEVELS.includes(code) ? code : 'A1';
   renderPath();
 }
 
@@ -522,7 +424,7 @@ function renderPath() {
         store.set(KEYS.pathLevel, lv.id);
         openUnits.clear();
         // le niveau de la conversation et des leçons libres suit le parcours
-        const lvl = LEVELS.includes(lv.ai) ? lv.ai : 'A1';
+        const lvl = LEVELS.includes(lv.code) ? lv.code : 'A1';
         levelSelect.value = lvl;
         store.set(KEYS.level, lvl);
         renderPath();
@@ -607,96 +509,40 @@ function showHome() {
 }
 $('#back-home').addEventListener('click', showHome);
 
-function showThinking(label) {
-  const status = $('#lesson-status');
-  $('#lesson').replaceChildren();
-  status.className = 'status thinking';
-  status.hidden = false;
-  status.replaceChildren(
-    mascot('think', 'status-buddy'),
-    h('div', null, h('strong', null, 'Je prépare ta leçon…'), h('div', { class: 'muted' }, label)));
-}
-
-function showLessonError(err, retry) {
-  const status = $('#lesson-status');
-  status.className = 'status error';
-  status.replaceChildren(mascot('oops', 'status-buddy'),
-    h('div', null, err.message, h('div', null, h('button', { type: 'button', class: 'btn ghost small retry', onclick: retry }, '🔁 Réessayer'))));
-}
-
-let lessonBusy = false;
-async function openCourseLesson(id, { fresh = false } = {}) {
+// Toutes les leçons sont rédigées d'avance : elles s'ouvrent instantanément, même hors ligne.
+function openCourseLesson(id) {
   const e = courseIndex.get(id);
-  if (!e || lessonBusy) return;
+  if (!e) return;
   showLessonView(`${crumbOf(id)} · ${e.lesson.review ? 'Bilan' : `Leçon ${id.split('.')[2]}`}`);
-  $('#lesson-refresh').hidden = Boolean(e.lesson.content);
-  // 1) leçon rédigée, 2) déjà générée sur cet appareil, 3) générée par l'IA à partir du programme
-  let lesson = e.lesson.content ? { ...e.lesson.content, level: e.level.ai } : (!fresh && store.get(`${KEYS.course}${id}`, null));
-  if (!lesson) {
-    lessonBusy = true;
-    showThinking(`« ${e.lesson.title} »`);
-    try {
-      lesson = await api('/api/lesson', { lessonId: id });
-      store.set(`${KEYS.course}${id}`, lesson);
-    } catch (err) {
-      showLessonError(err, () => openCourseLesson(id, { fresh }));
-      return;
-    } finally {
-      lessonBusy = false;
-    }
-  }
-  $('#lesson-status').hidden = true;
-  currentLesson = { id, lesson };
-  renderLesson(lesson, id);
+  renderLesson({ ...e.lesson.content, level: e.level.code }, id);
 }
 
-$('#lesson-refresh').addEventListener('click', () => {
-  if (currentLesson?.id && confirm('Générer une nouvelle version de cette leçon?')) openCourseLesson(currentLesson.id, { fresh: true });
-});
-
-// ---------- Leçon libre ----------
-$('#topic-chips').append(
-  ...TOPICS.map((t, i) =>
-    h('button', { type: 'button', class: `topic-tile tint-${i % 6}`, onclick: () => { $('#topic').value = t.topic; createLesson(t.topic); } },
-      h('span', { class: 'topic-emoji', 'aria-hidden': 'true' }, t.emoji),
-      h('span', { class: 'topic-label' }, t.label))),
-  h('button', {
-    type: 'button', class: 'topic-tile tint-4 sample-tile',
-    onclick: () => { showLessonView('Leçon d’exemple'); $('#lesson-refresh').hidden = true; $('#lesson-status').hidden = true; renderLesson(SAMPLE_LESSON); },
-  }, h('span', { class: 'topic-emoji', 'aria-hidden': 'true' }, '📘'), h('span', { class: 'topic-label' }, 'Exemple : present perfect')));
-
-$('#lesson-form').addEventListener('submit', (e) => {
-  e.preventDefault();
-  const topic = $('#topic').value.trim();
-  if (!topic) {
-    $('#topic').focus();
-    setMood(heroMascot, 'oops', 1200);
-    toast('Écris un sujet ou choisis une suggestion.');
-    return;
+// ---------- Recherche dans le parcours ----------
+const fold = (t) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+function searchLessons(query) {
+  const q = fold(query.trim());
+  const box = $('#search-results');
+  if (q.length < 2) return box.replaceChildren();
+  const words = q.split(/\s+/);
+  const hits = [];
+  for (const id of courseOrder) {
+    const { lesson, unit, level } = courseIndex.get(id);
+    if (lesson.review) continue;
+    const c = lesson.content;
+    const text = fold([lesson.title, c.objective, unit.title, level.code, level.name,
+      ...(c.vocab || []).map((v) => v.word)].join(' '));
+    if (words.every((w) => text.includes(w))) hits.push(id);
+    if (hits.length >= 12) break;
   }
-  createLesson(topic);
-});
-
-async function createLesson(topic) {
-  if (lessonBusy) return;
-  lessonBusy = true;
-  showLessonView('Leçon libre');
-  $('#lesson-refresh').hidden = true;
-  showThinking(`« ${topic} »`);
-  try {
-    const lesson = await api('/api/lesson', { topic, level: getLevel() });
-    store.set(KEYS.lesson, lesson);
-    store.set(KEYS.lessons, store.get(KEYS.lessons, 0) + 1);
-    markActive();
-    $('#lesson-status').hidden = true;
-    currentLesson = { lesson };
-    renderLesson(lesson);
-  } catch (err) {
-    showLessonError(err, () => { lessonBusy = false; createLesson(topic); });
-  } finally {
-    lessonBusy = false;
-  }
+  box.replaceChildren(...(hits.length ? hits.map((id) => {
+    const { lesson } = courseIndex.get(id);
+    return h('li', null, h('button', { type: 'button', class: 'search-hit', onclick: () => openCourseLesson(id) },
+      tile(lesson.emoji, '📘', courseIndex.get(id).order),
+      h('span', { class: 'txt' }, h('span', { class: 'hit-title' }, lesson.title), h('span', { class: 'muted hit-crumb' }, crumbOf(id))),
+      isDone(id) ? h('span', { class: 'hit-done', 'aria-label': 'terminée' }, '✓') : null));
+  }) : [h('li', { class: 'muted no-hit' }, 'Aucune leçon trouvée. Essaie un autre mot.')]));
 }
+$('#search').addEventListener('input', (ev) => searchLessons(ev.target.value));
 
 // Leçon du parcours terminée : étoiles selon le score.
 function completeCourseLesson(id, correct, total) {
@@ -1004,70 +850,30 @@ function renderLesson(lesson, courseId) {
 }
 
 // =====================================================================
-// CONVERSATION
+// CONVERSATION : dialogues guidés (le chat parle, tu choisis ta réponse)
 // =====================================================================
-const WELCOME = "Hi! I'm your English coach. How are you today? Tell me about your day, in English. Don't worry about mistakes: I'll help you fix them.";
-
-const SCENARIOS = [
-  { emoji: '☀️', label: 'Ma journée', text: "Let's talk about my day. Ask me questions about what I did today." },
-  { emoji: '💼', label: 'Entretien', text: "Let's role-play a job interview. You are the interviewer and I am the candidate. Please start." },
-  { emoji: '☕', label: 'Au café', text: "Let's role-play at a café. You are the barista and I am the customer. Please start." },
-  { emoji: '🩺', label: 'Médecin', text: "Let's role-play a visit to the doctor. You are the doctor and I am the patient. Please start." },
-  { emoji: '🏠', label: 'Appartement', text: "Let's role-play visiting an apartment for rent. You are the landlord and I am looking for a place. Please start." },
-  { emoji: '🎸', label: 'Loisirs', text: "Let's talk about my hobbies and free time. Ask me questions." },
-];
-
-let chat = store.get(KEYS.chat, null);
-if (!Array.isArray(chat) || !chat.length) chat = [{ role: 'assistant', content: WELCOME }];
-let chatController = null;
-
 const chatLog = $('#chat-log');
-const chatInput = $('#chat-input');
+$('#dlg-mascot').append(mascot('wave', 'hero-buddy'));
+const getDialogueStars = () => store.get(KEYS.dialogues, {});
+let dialogue = null; // { scenario, idx, correct, asked }
 
-$('#scenario-chips').append(...SCENARIOS.map((s, i) =>
-  h('button', { type: 'button', class: `scenario-card tint-${i % 6}`, onclick: () => { scenariosOpen = false; sendChat(s.text); } },
-    h('span', { class: 'scenario-emoji', 'aria-hidden': 'true' }, s.emoji),
-    h('span', null, s.label))
-));
-
-// La grille de scénarios s'affiche au début, puis se replie pour laisser la place à la discussion.
-let scenariosOpen = false;
-function updateScenarios() {
-  const fresh = chat.length <= 1;
-  $('#scenario-chips').hidden = !(fresh || scenariosOpen);
-  $('#scenario-toggle').hidden = fresh;
-  $('#scenario-toggle').setAttribute('aria-expanded', String(scenariosOpen));
-}
-$('#scenario-toggle').addEventListener('click', () => {
-  scenariosOpen = !scenariosOpen;
-  updateScenarios();
-});
-
-function msgNode(m, live = false) {
-  if (m.role === 'user') {
-    return h('div', { class: 'msg user' }, h('div', { class: 'bubble' }, m.content));
-  }
-  const avatar = mascot('idle', live ? 'avatar' : 'avatar still');
-  return h('div', { class: 'msg assistant' },
-    avatar,
-    h('div', { class: 'msg-body' },
-      h('div', { class: 'bubble-row' },
-        h('div', { class: 'bubble', lang: 'en' }, m.content),
-        speakBtn(m.content, avatar)),
-      m.fix
-        ? h('div', { class: 'fix' }, h('strong', null, '✏️ Correction'), m.fix)
-        : m.ok ? h('div', { class: 'ok-chip' }, '✅ Aucune faute, bravo!') : null));
-}
-
-function renderChat() {
-  const lastCoach = chat.map((m) => m.role).lastIndexOf('assistant');
-  const nodes = chat.map((m, i) => msgNode(m, i === lastCoach));
-  if (chat.length === 1) {
-    nodes.unshift(h('div', { class: 'chat-hero' }, mascot('wave', 'hero-buddy'), h('div', { class: 'chat-hero-text' }, 'Parle-moi en anglais!')));
-  }
-  chatLog.replaceChildren(...nodes);
-  updateScenarios();
-  scrollChat();
+const LEVEL_ORDER = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+function renderScenarios() {
+  if (!COURSE) return;
+  const best = getDialogueStars();
+  const mine = getLevel();
+  // les situations de ton niveau d'abord, puis les autres dans l'ordre des niveaux
+  const list = [...COURSE.scenarios].sort((a, b) =>
+    (a.level === mine ? -1 : 0) - (b.level === mine ? -1 : 0) || LEVEL_ORDER.indexOf(a.level) - LEVEL_ORDER.indexOf(b.level));
+  $('#scenario-chips').replaceChildren(...list.map((sc, i) => {
+    const stars = best[sc.id] || 0;
+    return h('button', { type: 'button', class: `scenario-card tint-${i % 6}`, onclick: () => startDialogue(sc.id) },
+      h('span', { class: 'scenario-emoji', 'aria-hidden': 'true' }, sc.emoji),
+      h('span', { class: 'scenario-title' }, sc.title),
+      h('span', { class: 'scenario-meta' },
+        h('span', { class: `level-chip${sc.level === mine ? ' mine' : ''}` }, sc.level),
+        stars ? h('span', { class: 'scenario-stars', 'aria-label': `${stars} étoiles sur 3` }, '★'.repeat(stars) + '☆'.repeat(3 - stars)) : null));
+  }));
 }
 
 function scrollChat() {
@@ -1076,88 +882,123 @@ function scrollChat() {
   });
 }
 
-function saveChat() {
-  store.set(KEYS.chat, chat.slice(-60));
+function coachNode(turn, live) {
+  const avatar = mascot('idle', live ? 'avatar' : 'avatar still');
+  const fr = h('div', { class: 'fr-line', hidden: true }, turn.fr);
+  const node = h('div', { class: 'msg assistant' },
+    avatar,
+    h('div', { class: 'msg-body' },
+      h('div', { class: 'bubble-row' },
+        h('div', { class: 'bubble', lang: 'en' }, turn.coach),
+        speakBtn(turn.coach, avatar)),
+      turn.fr ? h('button', {
+        type: 'button', class: 'fr-toggle', 'aria-expanded': 'false',
+        onclick: (ev) => { fr.hidden = !fr.hidden; ev.currentTarget.setAttribute('aria-expanded', String(!fr.hidden)); },
+      }, '🇫🇷 Traduction') : null,
+      fr));
+  return { node, avatar };
 }
 
-function setChatBusy(busy) {
-  $('#chat-stop').hidden = !busy;
-  $('#chat-send').disabled = busy;
+function startDialogue(id) {
+  const scenario = COURSE.scenarios.find((sc) => sc.id === id);
+  if (!scenario) return;
+  dialogue = { scenario, idx: 0, correct: 0, asked: scenario.turns.filter((t) => t.options).length };
+  $('#dlg-home').hidden = true;
+  $('#dlg-view').hidden = false;
+  $('#dlg-crumb').textContent = `${scenario.emoji} ${scenario.title} · ${scenario.level}`;
+  chatLog.replaceChildren(h('div', { class: 'dlg-intro' }, h('span', { 'aria-hidden': 'true' }, '🎬 '), scenario.intro));
+  $('#dlg-choices').replaceChildren();
+  window.scrollTo({ top: 0 });
+  nextTurn();
 }
 
-async function sendChat(text) {
-  text = (text || '').trim();
-  if (!text || chatController) return;
-  chatLog.querySelector('.chat-hero')?.remove();
-  chatLog.querySelectorAll('.mascot.avatar').forEach((a) => a.classList.add('still'));
-  chat.push({ role: 'user', content: text });
-  saveChat();
-  updateScenarios();
-  markActive();
-  chatLog.append(msgNode(chat[chat.length - 1]));
-  const typing = h('div', { class: 'msg assistant typing' },
-    mascot('think', 'avatar'),
-    h('div', { class: 'bubble' }, h('span', { class: 'dots' }, h('span', null, '●'), h('span', null, '●'), h('span', null, '●'))));
-  chatLog.append(typing);
-  scrollChat();
-
-  chatController = new AbortController();
-  setChatBusy(true);
-  try {
-    const messages = chat.slice(-HISTORY).map(({ role, content }) => ({ role, content }));
-    const reply = await api('/api/chat', { level: getLevel(), messages }, { signal: chatController.signal });
-    const m = { role: 'assistant', content: reply.content, fix: reply.fix || null, ok: !reply.fix };
-    chat.push(m);
-    saveChat();
-    const node = msgNode(m, true);
-    typing.replaceWith(node);
-    setMood(node.querySelector('.mascot'), m.fix ? 'talk' : 'happy', 1400);
-  } catch (err) {
-    typing.remove();
-    if (err.name !== 'AbortError') {
-      chatLog.append(h('div', { class: 'status error' }, mascot('oops', 'status-buddy'), h('div', null, err.message)));
-    }
-  } finally {
-    chatController = null;
-    setChatBusy(false);
-    scrollChat();
-  }
-}
-
-$('#chat-form').addEventListener('submit', (e) => {
-  e.preventDefault();
-  const text = chatInput.value;
-  if (!text.trim()) return;
-  chatInput.value = '';
-  autoGrow();
-  sendChat(text);
-});
-
-chatInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !matchMedia('(pointer: coarse)').matches) {
-    e.preventDefault();
-    $('#chat-form').requestSubmit();
-  }
-});
-
-function autoGrow() {
-  chatInput.style.height = 'auto';
-  chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + 'px';
-}
-chatInput.addEventListener('input', autoGrow);
-
-$('#chat-stop').addEventListener('click', () => {
-  chatController?.abort();
+function showDialogueHome() {
   if ('speechSynthesis' in window) speechSynthesis.cancel();
-});
+  dialogue = null;
+  $('#dlg-view').hidden = true;
+  $('#dlg-home').hidden = false;
+  renderScenarios();
+  window.scrollTo({ top: 0 });
+}
+$('#dlg-back').addEventListener('click', showDialogueHome);
 
-$('#chat-reset').addEventListener('click', () => {
-  if (chat.length > 1 && !confirm('Commencer une nouvelle conversation? L’historique actuel sera effacé.')) return;
-  chatController?.abort();
-  chat = [{ role: 'assistant', content: WELCOME }];
-  saveChat();
-  renderChat();
-});
+function updateDialogueProgress() {
+  const done = dialogue.scenario.turns.slice(0, dialogue.idx).filter((t) => t.options).length;
+  $('#dlg-progress').style.width = `${(done / dialogue.asked) * 100}%`;
+}
+
+// Affiche les répliques du chat jusqu'à la prochaine réponse à choisir.
+function nextTurn() {
+  const { scenario } = dialogue;
+  chatLog.querySelectorAll('.mascot.avatar').forEach((a) => a.classList.add('still'));
+  let lastAvatar = null;
+  const spoken = [];
+  while (dialogue.idx < scenario.turns.length && scenario.turns[dialogue.idx].coach) {
+    const turn = scenario.turns[dialogue.idx];
+    const { node, avatar } = coachNode(turn, true);
+    chatLog.append(node);
+    spoken.push(turn.coach);
+    lastAvatar = avatar;
+    dialogue.idx++;
+  }
+  if (spoken.length) speak(spoken.join(' '), lastAvatar);
+  updateDialogueProgress();
+  scrollChat();
+  if (dialogue.idx >= scenario.turns.length) return endDialogue();
+  showChoices(scenario.turns[dialogue.idx]);
+}
+
+function showChoices(turn) {
+  // ordre mélangé pour éviter que la bonne réponse soit toujours au même endroit
+  const order = [0, 1, 2].sort(() => Math.random() - 0.5);
+  const box = $('#dlg-choices');
+  box.replaceChildren(
+    h('div', { class: 'choices-label' }, '💬 Choisis ta réponse'),
+    ...order.map((k) => h('button', {
+      type: 'button', class: 'option choice-btn', lang: 'en',
+      onclick: () => answer(turn, k),
+    }, h('span', null, turn.options[k]))));
+}
+
+function answer(turn, k) {
+  const good = k === turn.answer;
+  if (good) dialogue.correct++;
+  markActive();
+  $('#dlg-choices').replaceChildren();
+  chatLog.append(h('div', { class: `msg user${good ? '' : ' wrong'}` }, h('div', { class: 'bubble', lang: 'en' }, turn.options[k])));
+  if (good) {
+    chatLog.append(h('div', { class: 'ok-chip dlg-ok' }, `✅ Bien dit! ${turn.explain}`));
+  } else {
+    chatLog.append(h('div', { class: 'fix dlg-fix' },
+      h('strong', null, '✏️ Correction'),
+      h('div', { class: 'fix-better', lang: 'en' }, `Mieux : « ${turn.options[turn.answer]} »`),
+      turn.explain));
+  }
+  const last = chatLog.querySelector('.msg.assistant:last-of-type .mascot');
+  setMood(last, good ? 'happy' : 'oops', 1400);
+  dialogue.idx++;
+  scrollChat();
+  setTimeout(() => dialogue && nextTurn(), reducedMotion() ? 0 : 900);
+}
+
+function endDialogue() {
+  const { scenario, correct, asked } = dialogue;
+  const stars = correct === asked ? 3 : correct / asked >= 0.6 ? 2 : 1;
+  const best = getDialogueStars();
+  if (!best[scenario.id] || best[scenario.id] < stars) best[scenario.id] = stars;
+  store.set(KEYS.dialogues, best);
+  $('#dlg-progress').style.width = '100%';
+  $('#dlg-choices').replaceChildren(h('div', { class: 'card score-screen dlg-end' },
+    mascot(correct / asked >= 0.5 ? 'happy' : 'wave', 'score-buddy'),
+    h('div', { class: 'stars', 'aria-label': `${stars} étoiles sur 3` },
+      [0, 1, 2].map((n) => h('span', { class: n < stars ? 'star on' : 'star', style: `animation-delay:${0.2 + n * 0.2}s` }, '★'))),
+    h('div', { class: 'score-text' }, `${correct} / ${asked} bonnes réponses`),
+    h('div', { class: 'score-actions' },
+      h('button', { type: 'button', class: 'btn ghost', onclick: () => startDialogue(scenario.id) }, '🔁 Recommencer'),
+      h('button', { type: 'button', class: 'btn primary', onclick: showDialogueHome }, '🎭 Autre situation'))));
+  if (correct === asked) confetti();
+  scrollChat();
+}
 
 // =====================================================================
 // VOCABULAIRE
@@ -1338,24 +1179,11 @@ document.addEventListener('focusout', () => {
 if (!Array.isArray(store.get(KEYS.vocab, null))) setVocab(SAMPLE_VOCAB);
 greet();
 renderStats();
-loadCourse().then(renderContinue);
-renderChat();
+loadCourse().then(() => {
+  renderContinue();
+  renderScenarios();
+});
 showTab(['lesson', 'chat', 'vocab'].includes(store.get(KEYS.tab)) ? store.get(KEYS.tab) : 'lesson');
-
-(async function checkServer() {
-  try {
-    const res = await fetch('/api/health', { cache: 'no-store' });
-    const info = await res.json();
-    if (!info.hasKey) {
-      const banner = $('#banner');
-      banner.textContent = '⚠️ Le serveur n’a pas de clé d’IA : ajoute ta clé gratuite AI_API_KEY dans le fichier .env (voir le README), puis redémarre-le.';
-      banner.hidden = false;
-    }
-    if (info.needsCode && !store.get(KEYS.code, '')) await showGate();
-  } catch {
-    // hors ligne : l'app reste utilisable avec ce qui est en cache
-  }
-})();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));

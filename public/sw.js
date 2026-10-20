@@ -1,5 +1,5 @@
 // Cache hors ligne de Prof d'anglais. Les appels /api/ ne sont jamais mis en cache.
-const CACHE = 'prof-danglais-v9';
+const CACHE = 'prof-danglais-v10';
 const ASSETS = [
   '/',
   '/index.html',

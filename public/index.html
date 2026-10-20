@@ -55,8 +55,6 @@
     </nav>
   </header>
 
-  <div id="banner" class="banner" hidden></div>
-
   <main>
     <!-- LEÇON -->
     <section id="panel-lesson" class="panel" role="tabpanel">
@@ -76,20 +74,15 @@
           </button>
         </section>
 
+        <section class="card search-card">
+          <label for="search" class="search-label"><span class="h-icon" aria-hidden="true">🔎</span>Chercher une leçon</label>
+          <input id="search" type="search" autocomplete="off" placeholder="Ex. : present perfect, prépositions, courriel…">
+          <ul id="search-results" class="search-results" aria-live="polite"></ul>
+        </section>
+
         <h2 class="section-title">🧭 Mon parcours</h2>
         <div class="level-pills" id="level-chips"></div>
         <div id="path" class="path"></div>
-
-        <section class="card free-lesson">
-          <h2><span class="h-icon" aria-hidden="true">✨</span><span class="mark">Leçon libre</span></h2>
-          <p class="muted">Un sujet précis en tête? Le prof crée une leçon sur mesure.</p>
-          <form id="lesson-form" class="hero-search free-search">
-            <label for="topic" class="sr-only">Sujet de la leçon</label>
-            <input id="topic" type="text" maxlength="120" autocomplete="off" placeholder="Ex. : le present perfect">
-            <button type="submit" class="btn yellow" id="lesson-btn">✨ Créer</button>
-          </form>
-          <div class="topic-grid" id="topic-chips"></div>
-        </section>
 
         <section class="card voice-card" id="voice-card"></section>
       </div>
@@ -98,26 +91,35 @@
         <div class="lesson-bar">
           <button type="button" class="btn ghost small" id="back-home">← Parcours</button>
           <span class="crumb" id="lesson-crumb"></span>
-          <button type="button" class="btn ghost small icon-btn" id="lesson-refresh" hidden aria-label="Générer une nouvelle version de la leçon" title="Nouvelle version">↻</button>
         </div>
-        <div id="lesson-status" class="status" hidden></div>
         <article id="lesson" class="lesson"></article>
       </div>
     </section>
 
     <!-- CONVERSATION -->
     <section id="panel-chat" class="panel" role="tabpanel" hidden>
-      <div class="chat-tools">
-        <button type="button" class="btn ghost small" id="scenario-toggle" aria-expanded="false">🎭 Scénarios</button>
-        <button type="button" class="btn ghost small" id="chat-reset">🔄 Nouvelle conversation</button>
+      <div id="dlg-home">
+        <section class="hero-card dlg-hero">
+          <div class="hero-top">
+            <div class="hero-text">
+              <div class="hello">Dialogues guidés 🎭</div>
+              <h1>Parle avec le chat!</h1>
+              <p class="hero-sub">Choisis une situation. Le chat te parle, tu choisis la meilleure réponse et il te corrige.</p>
+            </div>
+            <span id="dlg-mascot"></span>
+          </div>
+        </section>
+        <div class="scenario-grid" id="scenario-chips"></div>
       </div>
-      <div class="scenario-grid" id="scenario-chips"></div>
-      <div id="chat-log" class="chat-log" aria-live="polite"></div>
-      <form id="chat-form" class="chat-form">
-        <textarea id="chat-input" rows="1" placeholder="Écris en anglais…" enterkeyhint="send"></textarea>
-        <button type="button" class="btn danger" id="chat-stop" hidden>⏹ Stop</button>
-        <button type="submit" class="btn primary" id="chat-send" aria-label="Envoyer">Envoyer</button>
-      </form>
+      <div id="dlg-view" hidden>
+        <div class="lesson-bar">
+          <button type="button" class="btn ghost small" id="dlg-back">← Situations</button>
+          <span class="crumb" id="dlg-crumb"></span>
+        </div>
+        <div class="progress dlg-progress" aria-hidden="true"><span id="dlg-progress"></span></div>
+        <div id="chat-log" class="chat-log" aria-live="polite"></div>
+        <div id="dlg-choices" class="dlg-choices"></div>
+      </div>
     </section>
 
     <!-- VOCABULAIRE -->
@@ -139,18 +141,6 @@
       </div>
     </section>
   </main>
-
-  <!-- CODE D'ACCÈS -->
-  <div id="gate" class="gate" hidden>
-    <form id="gate-form" class="card gate-card">
-      <span id="gate-mascot"></span>
-      <h1>🔑 Code d'accès</h1>
-      <p>Entre ton code. Il sera gardé sur cet appareil.</p>
-      <p id="gate-error" class="error" hidden></p>
-      <input id="gate-code" type="password" autocomplete="current-password" placeholder="Code" required>
-      <button type="submit" class="btn primary">Continuer</button>
-    </form>
-  </div>
 
   <div id="toast" class="toast" role="status" hidden></div>
 

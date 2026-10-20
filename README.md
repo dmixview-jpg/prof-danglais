@@ -1,33 +1,38 @@
 # Prof d'anglais 🇬🇧💬
 
-Ton coach d'anglais personnel, pensé pour un francophone du Québec et utilisé sur **iPhone et iPad** comme une vraie app (PWA). L'app est **100 % gratuite** : elle utilise des modèles d'IA **open source** (Llama, Qwen, Mistral, Gemma…) chez des fournisseurs gratuits, ou directement sur ton ordinateur.
+Ton coach d'anglais personnel, pensé pour un francophone du Québec et utilisé sur **iPhone et iPad** comme une vraie app (PWA).
 
-- **Un petit chat bleu animé** te guide partout. Il remue la queue et frétille de l'oreille. Il salue, réfléchit pendant que l'IA travaille, parle quand tu touches 🔊, saute de joie quand tu réponds juste et fait « oups » quand tu te trompes. Il est dessiné en code : aucune image à télécharger.
-- **Un parcours complet, de l'alphabet à la maîtrise** : 7 niveaux (Pré-A1, A1, A2, B1, B2, C1, C2), 36 unités et 179 leçons, plus un bilan à la fin de chaque unité. Le bouton « Continuer » ouvre toujours la prochaine leçon, et chaque leçon terminée rapporte jusqu'à 3 étoiles. Voir la section [Le parcours](#le-parcours).
-- **Leçon** : chaque leçon contient :
+**100 % gratuit, sans IA, sans compte et sans clé.** Toutes les leçons et tous les dialogues sont rédigés d'avance et intégrés à l'app. Rien n'est envoyé sur Internet. Une fois chargée, l'app fonctionne **entièrement hors ligne**.
+
+- **Un parcours complet, de l'alphabet à la maîtrise** :
+  - 7 niveaux (Pré-A1, A1, A2, B1, B2, C1, C2), 36 unités et **179 leçons rédigées**, plus un bilan par unité ;
+  - le bouton « Continuer » ouvre toujours ta prochaine leçon ;
+  - chaque leçon terminée rapporte jusqu'à 3 étoiles.
+- **Chaque leçon** contient :
   - des explications en étapes illustrées ;
   - des exemples à écouter ;
   - un dialogue de la vie réelle ;
-  - des mots utiles ;
+  - des mots utiles à ajouter à ton carnet ;
   - une astuce sur les pièges des francophones ;
-  - 7 exercices de 3 types : choix de réponse, écoute (« Qu'as-tu entendu? ») et remise des mots en ordre.
-- **Leçon libre** : tu peux aussi demander une leçon sur n'importe quel sujet.
-- **Conversation** : discute en anglais avec « Coach ». Il te répond simplement et corrige ton dernier message dans un encadré jaune.
-- **Vocabulaire** : cartes mémoire (anglais / français). Un mot est maîtrisé après 3 « Je sais ».
-- **Prononciation avec l'accent américain** : un bouton 🔊 sur chaque exemple, chaque mot et chaque réponse du coach.
-  - L'app choisit automatiquement la meilleure voix **américaine (en-US)** de l'appareil, en priorité les voix « Améliorée » ou « Premium ».
-  - Le réglage **🔊 Voix américaine**, en bas de l'accueil, permet de changer de voix et de vitesse.
-  - La voix est celle de l'appareil : gratuite et sans Internet.
-- Niveaux **A1 à C1**, mode sombre automatique, fonctionne hors ligne pour ce qui est déjà chargé.
-- **S'adapte à chaque appareil** : testée sur tous les formats d'iPhone, du SE 1re génération à l'iPhone 17 Pro Max (encoche et Dynamic Island compris). En portrait, les onglets sont en bas et disparaissent quand le clavier s'ouvre. En paysage, ils passent dans un en-tête mince pour garder un maximum de place. Sur iPad, ils passent en haut à droite. Sur grand iPad en paysage, la leçon et le vocabulaire s'affichent sur deux colonnes. Le portrait, le paysage et le Split View / Slide Over sont aussi pris en charge.
-
-La clé API reste sur le serveur : elle n'est jamais envoyée au navigateur.
+  - des exercices de 3 types : choix de réponse, écoute (« Qu'as-tu entendu? ») et remise des mots en ordre.
+- **Recherche** : trouve une leçon par mot-clé (ex. : « present perfect », « courriel »).
+- **Conversation : 12 dialogues guidés**, de A1 à C1 (café, médecin, entrevue d'embauche, négociation de salaire…).
+  - Le petit chat te parle avec la voix ; tu choisis ta réponse parmi 3.
+  - Une erreur? Une correction en français apparaît dans l'encadré jaune « Correction ».
+  - La traduction de chaque réplique est disponible au besoin.
+- **Vocabulaire** : cartes mémoire (anglais au recto, français au verso). Un mot est maîtrisé après 3 « Je sais ».
+- **Prononciation avec l'accent américain** : un bouton 🔊 sur chaque exemple, chaque mot et chaque réplique.
+  - L'app choisit la meilleure voix **américaine (en-US)** de l'appareil.
+  - La carte **🔊 Voix américaine**, en bas de l'accueil, permet de changer de voix et de vitesse.
+- **Un petit chat bleu animé** te guide partout : il salue, parle quand tu touches 🔊, saute de joie quand tu réponds juste et fait « oups » quand tu te trompes.
+- Mode sombre automatique.
+- **S'adapte à tous les iPhone et iPad**, en portrait comme en paysage.
 
 ---
 
 ## Le parcours
 
-Le programme suit le **Cadre européen commun de référence (CECR)**, comme les grands cours en ligne (Cambridge English, British Council, BBC Learning English) et la progression des grammaires de référence. Il est pensé pour un francophone du Québec : chaque leçon aborde les pièges typiques (faux amis, « I have 30 years », depuis → present perfect, etc.).
+Le programme suit le **Cadre européen commun de référence (CECR)**, comme les grands cours en ligne (Cambridge English, British Council, BBC Learning English) et la progression des grammaires de référence. Chaque leçon aborde les pièges typiques des francophones du Québec : faux amis, « I have 30 years », « depuis » → present perfect, etc.
 
 | Niveau | Ce que tu sauras faire | Exemples d'unités |
 |---|---|---|
@@ -39,25 +44,35 @@ Le programme suit le **Cadre européen commun de référence (CECR)**, comme les
 | 🏔️ **C1 · Avancé** | T'exprimer avec précision dans tous les contextes | inversion, subjonctif, écriture professionnelle, idiomes, accents |
 | 🏆 **C2 · Maîtrise** | Comprendre et t'exprimer comme un natif instruit | connotations, figures de style, culture anglophone, écriture experte, art oratoire |
 
-**Comment les leçons sont créées :**
-- **Pré-A1, rédigé à la main.** Les 9 leçons des premiers pas sont écrites directement dans l'app. Elles fonctionnent sans IA et hors ligne.
-- **A1 à C2, générées par l'IA.** L'IA génère chaque leçon la première fois, à partir de l'objectif pédagogique détaillé que fixe le programme. La leçon est ensuite **gardée sur l'appareil** : elle s'ouvre instantanément la fois suivante, même hors ligne. Le bouton **↻** demande une nouvelle version si une leçon ne te plaît pas.
-- **Les bilans d'unité** révisent toutes les leçons de l'unité.
+Le niveau choisi dans l'en-tête et celui du parcours vont ensemble : changer l'un change l'autre. Les dialogues de ton niveau s'affichent en premier.
 
-Pour modifier le programme, ajouter une leçon ou changer un objectif, édite `outils/programme/programme.py` (A1 à C2) ou `outils/programme/premiers_pas.py` (Pré-A1), puis lance :
+### Modifier ou ajouter du contenu
+
+Le contenu est écrit en Python, dans un format simple, dans `outils/programme/` :
+
+| Fichier | Contenu |
+|---|---|
+| `premiers_pas.py` | Niveau Pré-A1 |
+| `contenu/a1_u1.py` … `contenu/c2_u4.py` | Une unité par fichier (5 leçons) |
+| `contenu/dialogues.py` | Les dialogues guidés |
+| `aide.py` | Les petites fonctions pour écrire une leçon : étape, exemple, mot, réplique, exercice |
+
+Après une modification, régénère le fichier lu par l'app :
 
 ```bash
 python3 outils/programme/construire.py
 ```
 
-Cette commande régénère `public/curriculum.json`.
+Le script vérifie le contenu (3 options distinctes, bonne réponse valide, phrases à remettre en ordre…). Il refuse de construire s'il trouve une erreur, puis écrit `public/curriculum.json`. Les bilans d'unité sont assemblés automatiquement à partir des leçons.
+
+---
 
 ## 1. Installer Node.js
 
 Il faut **Node.js 18 ou plus récent**. Aucun autre paquet n'est nécessaire.
 
 1. Va sur <https://nodejs.org> et télécharge la version **LTS**.
-2. Installe-la (macOS ou Windows), puis ouvre le Terminal (ou PowerShell) et vérifie :
+2. Installe-la, puis ouvre le Terminal (ou PowerShell) et vérifie :
 
    ```bash
    node -v
@@ -65,92 +80,25 @@ Il faut **Node.js 18 ou plus récent**. Aucun autre paquet n'est nécessaire.
 
    Tu dois voir `v18` ou plus.
 
-## 2. Choisir ton IA gratuite (open source)
-
-Le serveur parle le format standard « compatible OpenAI ». Il fonctionne donc avec beaucoup de services. Trois options sont préréglées :
-
-| Fournisseur | Modèle par défaut | Coût | Pour qui |
-|---|---|---|---|
-| **Groq** (conseillé) | Llama 3.3 70B (Meta, open source) | Gratuit, sans carte de crédit. Environ 1 000 requêtes par jour et 30 par minute. | Le meilleur choix pour commencer : rapide, bon en français, fonctionne même en ligne (Render). |
-| **OpenRouter** | `meta-llama/llama-3.3-70b-instruct:free` | Gratuit avec les modèles qui finissent par `:free` (limite quotidienne). | Pour essayer d'autres modèles open source gratuits (Qwen, Mistral, Gemma, DeepSeek…). |
-| **Ollama** | Qwen 2.5 7B (Alibaba, open source) | Gratuit et **illimité**, 100 % privé. | Si ton ordinateur a au moins 8 Go de RAM. L'ordinateur doit rester allumé. |
-
-> Les limites gratuites changent parfois. Consulte la page « Limits » de ton fournisseur pour les chiffres à jour.
-
-### Option A : Groq (conseillé)
-
-1. Va sur <https://console.groq.com> et crée un compte gratuit (Google ou courriel).
-2. Ouvre **API Keys** → **Create API Key**, donne-lui un nom (ex. : « prof-danglais ») et **copie la clé** (elle commence par `gsk_`).
-
-### Option B : OpenRouter
-
-1. Va sur <https://openrouter.ai> et crée un compte gratuit.
-2. Ouvre **Keys** → **Create Key** et copie la clé (elle commence par `sk-or-`).
-3. Pour choisir un autre modèle gratuit, cherche les modèles marqués **(free)** sur <https://openrouter.ai/models> et copie leur identifiant (finissant par `:free`) dans `MODEL_LESSON` et `MODEL_CHAT`.
-
-### Option C : Ollama (sur ton ordinateur, sans compte)
-
-1. Installe Ollama depuis <https://ollama.com>, puis ouvre l'application.
-2. Dans le Terminal, télécharge le modèle (environ 4,7 Go) :
-
-   ```bash
-   ollama pull qwen2.5:7b
-   ```
-
-3. Aucune clé n'est nécessaire. Laisse Ollama ouvert pendant que tu utilises l'app.
-
-Autres modèles open source qui fonctionnent bien : `llama3.1:8b`, `gemma3:12b`, `mistral-nemo` (mets le nom dans `MODEL_LESSON` et `MODEL_CHAT` après un `ollama pull`).
-
-> Ne partage jamais ta clé et ne la mets jamais dans Git.
-
-## 3. Configurer le fichier `.env`
+## 2. Démarrer
 
 Dans le dossier du projet :
-
-```bash
-cp .env.example .env
-```
-
-Puis ouvre `.env` avec un éditeur de texte et remplis-le. Exemple avec Groq :
-
-```ini
-AI_PROVIDER=groq
-AI_API_KEY=gsk_ta-cle-ici
-APP_CODE=un-code-secret-a-toi
-```
-
-Exemple avec Ollama :
-
-```ini
-AI_PROVIDER=ollama
-APP_CODE=un-code-secret-a-toi
-```
-
-| Variable | Rôle | Défaut |
-|---|---|---|
-| `AI_PROVIDER` | `groq`, `openrouter` ou `ollama` | `groq` |
-| `AI_API_KEY` | Clé gratuite du fournisseur (inutile avec Ollama) | — |
-| `APP_CODE` | Code demandé dans l'app (conseillé à la maison, **obligatoire en ligne**) | aucun |
-| `MODEL_LESSON` | Modèle qui prépare les leçons | selon le fournisseur |
-| `MODEL_CHAT` | Modèle de la conversation | selon le fournisseur |
-| `AI_BASE_URL` | Adresse d'un autre service compatible OpenAI (LM Studio, Together, Mistral…) | selon le fournisseur |
-| `PORT` | Port du serveur | `3000` |
-
-## 4. Démarrer
 
 ```bash
 npm start
 ```
 
-Le Terminal affiche le fournisseur et les modèles utilisés. Ouvre <http://localhost:3000> sur ton ordinateur. Pour arrêter le serveur : `Ctrl + C`.
+Ouvre <http://localhost:3000> sur ton ordinateur. Pour arrêter le serveur : `Ctrl + C`.
 
-Pour lancer les tests (ils simulent l'IA, aucun appel réel) :
+Pour changer de port, copie `.env.example` en `.env` et modifie `PORT` (c'est le seul réglage).
+
+Pour lancer les tests (serveur et vérification de tout le contenu) :
 
 ```bash
 npm test
 ```
 
-## 5. Utiliser l'app sur ton iPhone ou ton iPad (même Wi-Fi)
+## 3. Utiliser l'app sur ton iPhone ou ton iPad (même Wi-Fi)
 
 1. L'ordinateur et l'iPhone doivent être sur le **même réseau Wi-Fi**.
 2. Trouve l'adresse IP locale de l'ordinateur :
@@ -159,102 +107,84 @@ npm test
 3. Sur l'iPhone, ouvre Safari et va à `http://ADRESSE-IP:3000` (ex. : `http://192.168.1.42:3000`).
 4. Si macOS demande d'autoriser les connexions entrantes pour `node`, accepte.
 
-> En Wi-Fi local (http), l'app fonctionne, mais le mode hors ligne (service worker) ne s'active qu'en **https**, donc une fois hébergée en ligne.
+> En Wi-Fi local (http), l'app fonctionne, mais le **mode hors ligne** (service worker) ne s'active qu'en **https**. Pour l'avoir partout, même sans Internet, héberge l'app en ligne (étape suivante, gratuit).
 
-## 6. Héberger en ligne gratuitement sur Render (accès partout)
+## 4. Mettre l'app en ligne gratuitement (accès partout, hors ligne)
 
-Render offre un forfait gratuit pour les petits serveurs. Avec Groq ou OpenRouter, tout reste gratuit. (Ollama, lui, ne fonctionne que sur ton ordinateur.)
+L'app n'a besoin d'aucun serveur spécial : c'est un **site statique**. Il suffit de publier le dossier `public/`.
 
-1. Mets le projet sur GitHub (le fichier `.env` est exclu grâce au `.gitignore`).
-2. Sur <https://render.com>, crée un compte gratuit, puis **New → Web Service** et choisis ton dépôt.
-3. Réglages :
-   - **Runtime** : Node
-   - **Instance type** : Free
-   - **Build Command** : `npm install` (rien n'est installé, mais Render l'exige)
-   - **Start Command** : `npm start`
-4. Dans **Environment**, ajoute `AI_PROVIDER`, `AI_API_KEY` et **`APP_CODE`**. Ne crée pas `PORT` : Render le fournit lui-même.
-5. Déploie. Ton app est disponible à une adresse du type `https://prof-danglais.onrender.com`.
+**Option la plus simple : Netlify Drop (2 minutes, gratuit)**
+1. Va sur <https://app.netlify.com/drop> et crée un compte gratuit.
+2. Glisse-dépose le dossier **`public`** du projet dans la page.
+3. Ton app est en ligne en **https**, à une adresse du type `https://nom-au-hasard.netlify.app`. Tu peux changer ce nom dans les réglages du site.
 
-> ⚠️ **En ligne, le code d'accès est obligatoire.** Sans `APP_CODE`, n'importe qui trouvant l'adresse pourrait épuiser ta limite gratuite. Choisis un code long et difficile à deviner.
+**Autre option : Render (site statique gratuit, depuis GitHub)**
+1. Mets le projet sur GitHub.
+2. Sur <https://render.com> : **New → Static Site**, puis choisis ton dépôt.
+3. **Build Command** : laisse vide. **Publish Directory** : `public`.
+4. Déploie. L'adresse ressemble à `https://prof-danglais.onrender.com`. Un site statique ne se met jamais en veille.
 
-Le forfait gratuit de Render met le service en veille après une période d'inactivité. Le premier chargement peut alors prendre 30 à 60 secondes.
+Il n'y a ni clé ni donnée personnelle à protéger : ta progression reste sur ton appareil. Aucun code d'accès n'est donc nécessaire.
 
-## 7. Ajouter l'app à l'écran d'accueil
+## 5. Ajouter l'app à l'écran d'accueil
 
 **iPhone / iPad (Safari)** :
 1. Ouvre l'adresse de l'app dans **Safari**.
 2. Touche le bouton **Partager** (carré avec une flèche vers le haut).
 3. Choisis **Sur l'écran d'accueil**, puis **Ajouter**.
 
-L'icône 3D « EN » apparaît et l'app s'ouvre en plein écran, sans la barre de Safari. Le code d'accès est demandé une fois, puis gardé sur l'appareil.
+L'icône « EN » apparaît et l'app s'ouvre en plein écran, sans la barre de Safari. Ouvre-la une fois avec Internet : ensuite, elle fonctionne aussi en mode avion.
 
-## 8. Personnaliser
+## 6. Personnaliser
 
 | Quoi | Où |
 |---|---|
+| Leçons, unités, niveaux, dialogues | `outils/programme/`, puis `python3 outils/programme/construire.py` |
 | Couleurs, polices, tailles | `public/styles.css` (variables en haut du fichier, et bloc `prefers-color-scheme: dark`) |
-| Programme du parcours (niveaux, unités, leçons) | `outils/programme/`, puis `python3 outils/programme/construire.py` |
-| Sujets suggérés, scénarios de conversation, message d'accueil | `public/app.js` : `TOPICS`, `SCENARIOS`, `WELCOME` |
-| Leçon et mots d'exemple | `public/app.js` : `SAMPLE_LESSON`, `SAMPLE_VOCAB` |
+| Mots d'exemple du carnet | `public/app.js` : `SAMPLE_VOCAB` |
 | Nombre de « Je sais » pour maîtriser un mot | `public/app.js` : `MASTERED` |
-| Voix et vitesse | Dans l'app : carte **🔊 Voix américaine** en bas de l'accueil. Dans le code : `pickVoice()` et `RATES` dans `public/app.js` |
-| Consignes données à l'IA (style des leçons, du coach) | `server.js` : `LESSON_SYSTEM` et `CHAT_SYSTEM` |
-| Mascotte, le petit chat bleu (dessin, couleurs, animations) | `public/app.js` : fonction `mascot()`. `public/styles.css` : section « Mascotte : petit chat bleu » |
-| Fournisseurs et modèles par défaut | `server.js` : `PROVIDERS`, ou `.env` |
-| Icônes 3D | `outils/icones.py` (Python + Pillow), puis `python3 outils/icones.py public/icons` |
+| Voix et vitesse | Dans l'app : carte **🔊 Voix américaine**. Dans le code : `pickVoice()` et `RATES` dans `public/app.js` |
+| Mascotte, le petit chat bleu | `public/app.js` : fonction `mascot()`. `public/styles.css` : section « Mascotte : petit chat bleu » |
+| Icônes | `outils/icones.py` (Python + Pillow), puis `python3 outils/icones.py public/icons` |
 | Nom de l'app | `public/manifest.webmanifest`, `public/index.html` |
 
-Après une modification de fichiers dans `public/`, change le nom du cache dans `public/sw.js` (ex. : `prof-danglais-v3`) pour que les appareils récupèrent la nouvelle version.
+Après une modification de fichiers dans `public/`, change le nom du cache dans `public/sw.js` (ex. : `prof-danglais-v11`). Sinon, les appareils gardent l'ancienne version.
 
-Tes données (niveau, leçon courante, conversation, carnet de vocabulaire) sont enregistrées **dans le navigateur de chaque appareil** (localStorage). Elles ne sont pas synchronisées entre l'iPhone et l'iPad.
+Tes données (niveau, progression, étoiles, carnet de vocabulaire, voix choisie) sont enregistrées **dans le navigateur de chaque appareil** (localStorage). Elles ne sont pas synchronisées entre l'iPhone et l'iPad.
 
-## 9. Problèmes fréquents
+## 7. Problèmes fréquents
 
 | Problème | Solution |
 |---|---|
-| « Clé API manquante » | Le fichier `.env` n'existe pas ou `AI_API_KEY` est vide. Vérifie le fichier, puis redémarre avec `npm start`. |
-| « Clé API refusée » | La clé est mal copiée, a été supprimée, ou ne correspond pas à `AI_PROVIDER` (une clé Groq ne marche pas sur OpenRouter). |
-| « Limite gratuite atteinte » | Attends une minute, ou le lendemain si la limite quotidienne est atteinte. Tu peux aussi passer à un autre fournisseur gratuit ou à Ollama. |
-| « Modèle introuvable » | Vérifie `MODEL_LESSON` / `MODEL_CHAT` dans `.env`, ou laisse-les vides pour les valeurs par défaut. Les modèles gratuits d'OpenRouter changent parfois : choisis-en un autre marqué `:free`. |
-| « Ollama ne répond pas » | Ouvre l'application Ollama. Vérifie dans le Terminal avec `ollama list` que le modèle est téléchargé. |
-| Une leçon du parcours est décevante | Touche ↻ en haut de la leçon pour en générer une nouvelle version. |
-| « La leçon reçue était incomplète » | Le modèle a mal formé sa réponse (fréquent avec les petits modèles). Réessaie, ou choisis un modèle plus grand (ex. : Llama 3.3 70B sur Groq). |
-| Les réponses d'Ollama sont très lentes | Normal sur un ordinateur sans carte graphique. Essaie un modèle plus petit, comme `qwen2.5:3b`. |
 | L'iPhone n'arrive pas à ouvrir la page | Même Wi-Fi? Bonne adresse IP? Le serveur tourne-t-il? Le pare-feu de l'ordinateur bloque-t-il `node`? |
-| `EADDRINUSE` au démarrage | Le port est déjà pris : change `PORT` dans `.env` (ex. : `3001`). |
-| Le code d'accès est redemandé | Le code a changé sur le serveur ou est mal saisi. Entre le code actuel. |
+| L'app ne marche pas hors ligne | Le mode hors ligne exige une adresse **https** (app en ligne, étape 4). Ouvre l'app une fois avec Internet pour qu'elle se mette en cache. |
 | La voix sonne robotique | Télécharge une voix américaine de qualité. Sur iPhone ou iPad : Réglages → Accessibilité → Contenu énoncé → Voix → Anglais → une voix « États-Unis » marquée « Améliorée » ou « Premium » (Ava, Evan, Zoe…). Choisis-la ensuite dans **🔊 Voix américaine**. |
-| Pas de son avec 🔊 | Vérifie que l'iPhone n'est pas en mode silencieux (bouton sur le côté) et que le volume est monté. |
-| L'app affiche une ancienne version ou l'ancienne icône | Supprime l'app de l'écran d'accueil puis ajoute-la de nouveau. Sinon, change le nom du cache dans `public/sw.js`. |
-| `node: command not found` | Node.js n'est pas installé ou le Terminal doit être rouvert après l'installation. |
-| Le premier chargement sur Render est très lent | Normal avec le forfait gratuit : le service se réveille. |
+| Pas de son avec 🔊 | Vérifie que l'iPhone n'est pas en mode silencieux et que le volume est monté. |
+| L'app affiche une ancienne version | Ferme complètement l'app et rouvre-la. Sinon, change le nom du cache dans `public/sw.js`. |
+| `construire.py` affiche des erreurs | Il indique la leçon et le problème (ex. : options en double). Corrige le fichier indiqué et relance. |
+| `EADDRINUSE` au démarrage | Le port est déjà pris : mets `PORT=3001` dans `.env`. |
+| `node: command not found` | Node.js n'est pas installé, ou le Terminal doit être rouvert après l'installation. |
 
 ## Structure du projet
 
 ```
 prof-danglais/
-├── server.js              # Serveur Node sans dépendance + relais vers l'IA open source
+├── server.js                  # Petit serveur de fichiers sans dépendance (Node 18+)
 ├── package.json
-├── .env.example           # Modèle de configuration
-├── test/server.test.js    # Tests avec une fausse IA
-├── outils/icones.py       # Générateur des icônes 3D
-├── outils/programme/      # Programme du parcours (Pré-A1 → C2) et son générateur
-└── public/
+├── .env.example               # Seul réglage : PORT
+├── test/server.test.js        # Tests du serveur et de tout le contenu
+├── outils/icones.py           # Générateur des icônes
+├── outils/programme/          # Tout le contenu pédagogique (Python) et son générateur
+│   ├── construire.py
+│   ├── aide.py
+│   ├── premiers_pas.py
+│   └── contenu/               # a1_u1.py … c2_u4.py, dialogues.py
+└── public/                    # L'app (à publier telle quelle)
     ├── index.html
     ├── styles.css
     ├── app.js
+    ├── curriculum.json        # Généré : leçons, bilans et dialogues
     ├── manifest.webmanifest
-    ├── sw.js              # Cache hors ligne (jamais pour /api/)
-    ├── curriculum.json    # Parcours généré par outils/programme/construire.py
+    ├── sw.js                  # Cache hors ligne
     └── icons/
 ```
-
-### API du serveur
-
-| Route | Corps | Réponse |
-|---|---|---|
-| `GET /api/health` | — | `{ ok, needsCode, hasKey }` |
-| `POST /api/lesson` | `{ topic, level }` ou `{ lessonId }` (leçon du parcours) | La leçon en JSON |
-| `POST /api/chat` | `{ level, messages }` | `{ content, fix }` |
-
-Si `APP_CODE` est défini, les routes `POST` exigent l'en-tête `x-app-code`. Sinon, elles répondent `401`.

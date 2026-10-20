@@ -1,242 +1,121 @@
 'use strict';
 
-// Tests du serveur avec un faux fournisseur d'IA (aucun appel réseau réel).
+// Tests du serveur de fichiers et du contenu du parcours (aucune IA, aucun réseau).
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { createServer, configFromEnv, extractJson, splitReply, normalizeExercise, CURRICULUM } = require('../server.js');
+const fs = require('fs');
+const path = require('path');
+const zlib = require('zlib');
+const { createServer } = require('../server.js');
 
-const LESSON = {
-  title: 'Le present perfect',
-  objective: 'Parler d’expériences.',
-  explanation: [{ emoji: '🕰️', text: 'Étape 1.' }, 'Paragraphe simple.', { emoji: 'pas un emoji', text: 'Étape 3.' }],
-  examples: [{ emoji: '🗼', en: 'I have been to Paris.', fr: 'Je suis allé à Paris.' }, { en: 'She has eaten.', fr: 'Elle a mangé.' }, { en: 'We have met.', fr: 'Nous nous sommes rencontrés.' }],
-  vocab: [{ word: 'ever', fr: 'déjà', example: 'Have you ever...?' }, { word: 'yet', fr: 'encore', example: 'Not yet.' }, { word: 'since', fr: 'depuis', example: 'Since 2010.' }, { word: 'for', fr: 'pendant', example: 'For years.' }],
-  exercises: [0, 1, 2, 0].map((answer, i) => ({ question: `Question ${i} ___ here.`, options: ['a', 'b', 'c'], answer, explain: 'Parce que.' })),
-};
-
-const calls = [];
-let nextText = '';
-async function fakeFetch(url, init) {
-  calls.push({ url, init, body: JSON.parse(init.body) });
-  return {
-    ok: true,
-    status: 200,
-    json: async () => ({ choices: [{ message: { role: 'assistant', content: nextText } }] }),
-  };
-}
+const COURSE = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'public', 'curriculum.json'), 'utf8'));
 
 let server;
 let base;
-const realFetch = globalThis.fetch;
-
 test.before(async () => {
-  server = createServer({
-    provider: 'groq', providerName: 'Groq', baseUrl: 'https://api.groq.com/openai/v1', needsKey: true, jsonMode: true,
-    apiKey: 'gsk-test', appCode: 'secret', modelLesson: 'lesson-model', modelChat: 'chat-model', fetch: fakeFetch,
-  });
+  server = createServer();
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   base = `http://127.0.0.1:${server.address().port}`;
 });
 test.after(() => server.close());
 
-const post = (path, body, code = 'secret') => realFetch(base + path, {
-  method: 'POST',
-  headers: { 'content-type': 'application/json', ...(code ? { 'x-app-code': code } : {}) },
-  body: JSON.stringify(body),
-});
-
 test('santé', async () => {
-  const res = await realFetch(base + '/api/health');
+  const res = await fetch(base + '/api/health');
   assert.equal(res.status, 200);
-  assert.deepEqual(await res.json(), { ok: true, needsCode: true, hasKey: true });
+  assert.deepEqual(await res.json(), { ok: true });
 });
 
 test('fichiers statiques', async () => {
-  const index = await realFetch(base + '/');
+  const index = await fetch(base + '/');
   assert.equal(index.status, 200);
   assert.match(index.headers.get('content-type'), /text\/html/);
   assert.match(await index.text(), /Prof d'anglais/);
-  for (const [path, type] of [['/app.js', /javascript/], ['/styles.css', /css/], ['/sw.js', /javascript/], ['/manifest.webmanifest', /manifest/], ['/icons/icon-512.png', /png/], ['/icons/apple-touch-icon.png', /png/]]) {
-    const res = await realFetch(base + path);
-    assert.equal(res.status, 200, path);
-    assert.match(res.headers.get('content-type'), type, path);
+  for (const [p, type] of [['/app.js', /javascript/], ['/styles.css', /css/], ['/sw.js', /javascript/], ['/manifest.webmanifest', /manifest/], ['/curriculum.json', /json/], ['/icons/icon-512.png', /png/], ['/icons/apple-touch-icon.png', /png/]]) {
+    const res = await fetch(base + p);
+    assert.equal(res.status, 200, p);
+    assert.match(res.headers.get('content-type'), type, p);
   }
-  assert.equal((await realFetch(base + '/inexistant.txt')).status, 404);
+  assert.equal((await fetch(base + '/inexistant.txt')).status, 404);
+});
+
+test('compression gzip du parcours', async () => {
+  const raw = await new Promise((resolve, reject) => {
+    require('http').get(base + '/curriculum.json', { headers: { 'accept-encoding': 'gzip' } }, (res) => {
+      assert.equal(res.headers['content-encoding'], 'gzip');
+      const chunks = [];
+      res.on('data', (c) => chunks.push(c));
+      res.on('end', () => resolve(Buffer.concat(chunks)));
+    }).on('error', reject);
+  });
+  assert.equal(JSON.parse(zlib.gunzipSync(raw)).levels.length, 7);
 });
 
 test('traversée de chemin bloquée', async () => {
   for (const p of ['/..%2fserver.js', '/%2e%2e/%2e%2e/etc/passwd', '/icons/..%2f..%2fpackage.json']) {
-    const res = await realFetch(base + p);
+    const res = await fetch(base + p);
     assert.notEqual(res.status, 200, p);
     assert.doesNotMatch(await res.text(), /createServer|"name"|root:/, p);
   }
 });
 
-test('401 sans code ou avec un mauvais code', async () => {
-  const before = calls.length;
-  let res = await post('/api/lesson', { topic: 'x', level: 'A1' }, null);
-  assert.equal(res.status, 401);
-  assert.match((await res.json()).error, /Code/);
-  res = await post('/api/chat', { messages: [{ role: 'user', content: 'hi' }] }, 'mauvais');
-  assert.equal(res.status, 401);
-  assert.equal(calls.length, before, 'aucun appel à Anthropic');
+test('aucune route d’IA : seules les requêtes GET sont acceptées', async () => {
+  const res = await fetch(base + '/api/lesson', { method: 'POST', body: '{}' });
+  assert.equal(res.status, 405);
 });
 
-test('leçon (JSON dans un bloc ```json)', async () => {
-  nextText = 'Voici la leçon :\n```json\n' + JSON.stringify(LESSON) + '\n```';
-  const res = await post('/api/lesson', { topic: 'present perfect', level: 'b1' });
-  assert.equal(res.status, 200);
-  const lesson = await res.json();
-  assert.equal(lesson.title, LESSON.title);
-  assert.equal(lesson.level, 'B1');
-  assert.equal(lesson.exercises.length, 4);
-  assert.equal(lesson.vocab.length, 4);
-  assert.deepEqual(lesson.explanation, [{ emoji: '🕰️', text: 'Étape 1.' }, { emoji: '', text: 'Paragraphe simple.' }, { emoji: '', text: 'Étape 3.' }]);
-  assert.equal(lesson.examples[0].emoji, '🗼');
-  assert.equal(lesson.examples[1].emoji, '');
-  const call = calls.at(-1);
-  assert.equal(call.url, 'https://api.groq.com/openai/v1/chat/completions');
-  assert.equal(call.init.headers.authorization, 'Bearer gsk-test');
-  assert.equal(call.body.model, 'lesson-model');
-  assert.deepEqual(call.body.response_format, { type: 'json_object' });
-  assert.equal(call.body.messages[0].role, 'system');
-  assert.match(call.body.messages[0].content, /B1/);
+test('parcours complet : 7 niveaux, de Pré-A1 à C2, toutes les leçons rédigées', () => {
+  assert.deepEqual(COURSE.levels.map((l) => l.code), ['Pré-A1', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
+  const lessons = COURSE.levels.flatMap((l) => l.units.flatMap((u) => u.lessons));
+  assert.equal(lessons.filter((l) => !l.review).length, 179);
+  assert.equal(lessons.filter((l) => l.review).length, 36);
+  for (const l of lessons) {
+    assert.ok(l.content, `${l.id} : contenu manquant`);
+    assert.ok(!('brief' in l), `${l.id} : reste un objectif destiné à l’IA`);
+  }
+  const ids = lessons.map((l) => l.id);
+  assert.equal(new Set(ids).size, ids.length, 'identifiants uniques');
 });
 
-test('leçon : sujet manquant et JSON illisible', async () => {
-  let res = await post('/api/lesson', { topic: '  ' });
-  assert.equal(res.status, 400);
-  nextText = 'désolé, pas de JSON';
-  const before = calls.length;
-  res = await post('/api/lesson', { topic: 'x' });
-  assert.equal(res.status, 502);
-  assert.equal(calls.length - before, 2, 'un nouvel essai avant d’abandonner');
-  assert.match((await res.json()).error, /Réessayez/);
+test('chaque leçon est complète et ses exercices sont valides', () => {
+  for (const level of COURSE.levels) {
+    for (const unit of level.units) {
+      for (const { id, content: c } of unit.lessons) {
+        assert.ok(c.title && c.objective, `${id} : titre ou objectif`);
+        assert.ok(c.explanation.length >= 2 && c.explanation.every((s) => s.text), `${id} : explications`);
+        assert.ok(c.examples.length >= 2 && c.examples.every((x) => x.en && x.fr), `${id} : exemples`);
+        assert.ok(c.exercises.length >= 4, `${id} : au moins 4 exercices`);
+        for (const x of c.exercises) {
+          assert.ok(['choice', 'listen', 'order'].includes(x.type), `${id} : type ${x.type}`);
+          assert.ok(x.explain, `${id} : explication d’exercice`);
+          if (x.type === 'order') {
+            const n = x.sentence.replace(/[.,!?;:]/g, '').split(/\s+/).filter(Boolean).length;
+            assert.ok(n >= 2 && n <= 14 && x.fr, `${id} : phrase à ordonner « ${x.sentence} »`);
+          } else {
+            assert.equal(x.options.length, 3, `${id} : 3 options`);
+            assert.equal(new Set(x.options).size, 3, `${id} : options distinctes ${x.options}`);
+            assert.ok(Number.isInteger(x.answer) && x.answer >= 0 && x.answer <= 2, `${id} : index de réponse`);
+            if (x.type === 'listen') assert.ok(x.audio, `${id} : audio`);
+            else assert.ok(x.question, `${id} : question`);
+          }
+        }
+      }
+    }
+  }
 });
 
-test('conversation : réponse et correction séparées', async () => {
-  nextText = "Great! What did you eat?\n---CORRECTION---\n« I goed » → « I went » : go est irrégulier.";
-  const history = [{ role: 'assistant', content: 'Hi! How are you?' }];
-  for (let i = 0; i < 20; i++) history.push({ role: i % 2 ? 'assistant' : 'user', content: `m${i}` });
-  history.push({ role: 'user', content: 'I goed to the restaurant.' });
-  const res = await post('/api/chat', { level: 'A2', messages: history });
-  assert.equal(res.status, 200);
-  const data = await res.json();
-  assert.equal(data.content, 'Great! What did you eat?');
-  assert.match(data.fix, /went/);
-  const sent = calls.at(-1).body;
-  assert.equal(sent.model, 'chat-model');
-  assert.equal(sent.messages[0].role, 'system');
-  assert.ok(sent.messages.length <= 17);
-  assert.equal(sent.messages[1].role, 'user');
-  assert.equal(sent.messages.at(-1).content, 'I goed to the restaurant.');
-
-  nextText = 'Nice! And you?\n---CORRECTION---\nnone';
-  const ok = await (await post('/api/chat', { messages: [{ role: 'user', content: 'I am fine.' }] })).json();
-  assert.deepEqual(ok, { content: 'Nice! And you?', fix: null });
-});
-
-test('corps limité à 64 Ko', async () => {
-  const res = await post('/api/chat', { messages: [{ role: 'user', content: 'x'.repeat(70 * 1024) }] });
-  assert.equal(res.status, 413);
-});
-
-test('erreur du fournisseur traduite en français', async () => {
-  const s = createServer({ provider: 'groq', providerName: 'Groq', baseUrl: 'x', needsKey: true, apiKey: 'k', appCode: '', modelChat: 'm', fetch: async () => ({ ok: false, status: 401, json: async () => ({ error: { message: 'Invalid API Key' } }) }) });
-  await new Promise((r) => s.listen(0, '127.0.0.1', r));
-  const res = await realFetch(`http://127.0.0.1:${s.address().port}/api/chat`, {
-    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }] }),
-  });
-  assert.equal(res.status, 502);
-  assert.match((await res.json()).error, /Clé API refusée/);
-  s.close();
-});
-
-test('extractJson et splitReply', () => {
-  assert.deepEqual(extractJson('{"a":1}'), { a: 1 });
-  assert.deepEqual(extractJson('```json\n{"a":2}\n```'), { a: 2 });
-  assert.deepEqual(extractJson('Voici : {"a":3} merci'), { a: 3 });
-  assert.equal(extractJson('rien'), null);
-  assert.deepEqual(splitReply('Hello?'), { content: 'Hello?', fix: null });
-  assert.deepEqual(splitReply('Hi!\n--- Correction ---\n« I has » → « I have »'), { content: 'Hi!', fix: '« I has » → « I have »' });
-  assert.deepEqual(splitReply('Hi!\n**Correction:** none'), { content: 'Hi!', fix: null });
-  assert.deepEqual(splitReply('<think>hmm</think>Hello!\n---CORRECTION---\nnone'), { content: 'Hello!', fix: null });
-  assert.deepEqual(extractJson('<think>{"no":1}</think>{"a":4}'), { a: 4 });
-});
-
-test('Ollama : sans clé, sans en-tête Authorization', async () => {
-  const saved = { ...process.env };
-  process.env.AI_PROVIDER = 'ollama';
-  delete process.env.AI_API_KEY;
-  delete process.env.MODEL_CHAT;
-  delete process.env.AI_BASE_URL;
-  const config = configFromEnv();
-  process.env = saved;
-  assert.equal(config.baseUrl, 'http://localhost:11434/v1');
-  assert.equal(config.modelChat, 'qwen2.5:7b');
-  let seen;
-  const s = createServer({ ...config, fetch: async (url, init) => {
-    seen = { url, init };
-    return { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: 'Hello!\n---CORRECTION---\nnone' } }] }) };
-  } });
-  await new Promise((r) => s.listen(0, '127.0.0.1', r));
-  const port = s.address().port;
-  const health = await (await realFetch(`http://127.0.0.1:${port}/api/health`)).json();
-  assert.equal(health.hasKey, true);
-  const res = await realFetch(`http://127.0.0.1:${port}/api/chat`, {
-    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }] }),
-  });
-  assert.deepEqual(await res.json(), { content: 'Hello!', fix: null });
-  assert.equal(seen.url, 'http://localhost:11434/v1/chat/completions');
-  assert.equal(seen.init.headers.authorization, undefined);
-  s.close();
-});
-
-test('parcours : programme chargé, du Pré-A1 au C2', () => {
-  const levels = new Set([...CURRICULUM.values()].map((l) => l.level.code));
-  assert.deepEqual([...levels], ['Pré-A1', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
-  assert.ok(CURRICULUM.size > 150);
-  assert.equal(CURRICULUM.get('pre.1.1').content.special, 'alphabet');
-});
-
-test('parcours : leçon rédigée servie sans appel à l’IA', async () => {
-  const before = calls.length;
-  const res = await post('/api/lesson', { lessonId: 'pre.2.2' });
-  assert.equal(res.status, 200);
-  const lesson = await res.json();
-  assert.equal(lesson.id, 'pre.2.2');
-  assert.ok(lesson.exercises.some((x) => x.type === 'listen'));
-  assert.equal(calls.length, before);
-});
-
-test('parcours : leçon générée à partir du programme', async () => {
-  nextText = JSON.stringify({ ...LESSON, dialogue: [{ who: 'Sam', en: 'Hi!', fr: 'Salut!' }], tip: { emoji: '💡', text: 'Astuce' } });
-  const res = await post('/api/lesson', { lessonId: 'b1.2.2', level: 'A1' });
-  assert.equal(res.status, 200);
-  const lesson = await res.json();
-  assert.equal(lesson.id, 'b1.2.2');
-  assert.equal(lesson.level, 'B1', 'le niveau vient du parcours, pas du client');
-  assert.equal(lesson.dialogue[0].en, 'Hi!');
-  assert.equal(lesson.tip.text, 'Astuce');
-  const prompt = calls.at(-1).body.messages[1].content;
-  assert.match(prompt, /Second conditional/i);
-  assert.match(calls.at(-1).body.messages[0].content, /B1/);
-});
-
-test('parcours : bilan d’unité couvrant toutes les leçons', async () => {
-  nextText = JSON.stringify(LESSON);
-  const res = await post('/api/lesson', { lessonId: 'a2.4.review' });
-  assert.equal(res.status, 200);
-  const prompt = calls.at(-1).body.messages[1].content;
-  assert.match(prompt, /REVIEW/);
-  for (const t of ['For et since', 'Just, already et yet', 'Been ou gone']) assert.ok(prompt.includes(t), t);
-  assert.equal((await post('/api/lesson', { lessonId: 'zz.9.9' })).status, 404);
-});
-
-test('exercices : choix, écoute et remise en ordre', () => {
-  assert.deepEqual(normalizeExercise({ question: 'I ___ here.', options: ['am', 'is', 'are'], answer: 0 }).type, 'choice');
-  assert.equal(normalizeExercise({ type: 'listen', audio: 'ship', options: ['ship', 'sheep', 'shop'], answer: 0 }).audio, 'ship');
-  assert.equal(normalizeExercise({ type: 'listen', options: ['a', 'b', 'c'], answer: 0 }), null, 'écoute sans audio');
-  assert.equal(normalizeExercise({ type: 'order', sentence: 'Hello.' }), null, 'phrase trop courte');
-  assert.equal(normalizeExercise({ type: 'choice', question: 'x', options: ['a', 'b'], answer: 0 }), null, 'il faut 3 options');
+test('dialogues guidés : 12 situations, de A1 à C1, réponses valides', () => {
+  const sc = COURSE.scenarios;
+  assert.equal(sc.length, 12);
+  assert.ok(new Set(sc.map((s) => s.level)).size >= 5);
+  for (const s of sc) {
+    assert.ok(s.title && s.intro && s.emoji, `${s.id} : en-tête`);
+    assert.ok(s.turns[0].coach, `${s.id} : le chat parle en premier`);
+    const asks = s.turns.filter((t) => t.options);
+    assert.ok(asks.length >= 4, `${s.id} : au moins 4 réponses à choisir`);
+    for (const t of asks) {
+      assert.equal(new Set(t.options).size, 3, `${s.id} : 3 options distinctes`);
+      assert.ok(t.answer >= 0 && t.answer <= 2 && t.explain, `${s.id} : réponse et correction`);
+    }
+    for (const t of s.turns.filter((x) => x.coach)) assert.ok(t.fr, `${s.id} : traduction de « ${t.coach} »`);
+  }
 });
