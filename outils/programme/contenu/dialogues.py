@@ -1,0 +1,166 @@
+# Dialogues guidés de l'onglet Conversation : le chat parle, l'apprenant choisit sa réponse.
+from aide import coach, rep
+
+def S(sid, emoji, title, level, intro, turns):
+    return {"id": sid, "emoji": emoji, "title": title, "level": level, "intro": intro, "turns": turns}
+
+SCENARIOS = [
+
+S("intro", "👋", "Se présenter", "A1", "Tu rencontres quelqu’un à une fête.", [
+  coach("Hi! I’m Kevin. What’s your name?", "Salut! Je suis Kevin. Comment t’appelles-tu?"),
+  rep(["My name is Julie.", "I call me Julie.", "My name Julie."], 0, "« Je m’appelle » = My name is… ou I’m… « I call me » est un calque du français."),
+  coach("Nice to meet you, Julie! Where are you from?", "Enchanté, Julie! D’où viens-tu?"),
+  rep(["I’m come from Quebec.", "I’m from Quebec.", "I from Quebec."], 1, "I’m from + lieu. Pas de « come » après « I’m »."),
+  coach("Cool! How old are you, if I may ask?", "Cool! Quel âge as-tu, si je peux me permettre?"),
+  rep(["I have thirty years.", "I’m thirty.", "I’m thirty years."], 1, "L’âge se dit avec be : I’m thirty (ou thirty years old)."),
+  coach("And what do you do?", "Et que fais-tu dans la vie?"),
+  rep(["I’m nurse.", "I’m a nurse.", "I work nurse."], 1, "Le métier prend a ou an : I’m a nurse."),
+  coach("That’s great! Do you speak other languages?", "Super! Parles-tu d’autres langues?"),
+  rep(["Yes, I speak french and a little english.", "Yes, I speak French and a little English.", "Yes, I speak French and little English."], 1, "Majuscules aux langues, et « a little » = un peu."),
+  coach("Awesome. It was really nice to meet you, Julie!", "Génial. C’était vraiment un plaisir de te rencontrer, Julie!"),
+]),
+
+S("cafe", "☕", "Au café", "A1", "Tu commandes ton café du matin.", [
+  coach("Good morning! What can I get you?", "Bonjour! Qu’est-ce que je vous sers?"),
+  rep(["I want a coffee.", "I’d like a medium coffee, please.", "Give me coffee."], 1, "« I’d like… please » est poli. « I want » ou « Give me » sonnent brusques."),
+  coach("Sure. For here or to go?", "Bien sûr. Pour ici ou pour emporter?"),
+  rep(["For go, please.", "To go, please.", "At go, please."], 1, "Pour emporter = to go."),
+  coach("Would you like anything to eat?", "Voulez-vous quelque chose à manger?"),
+  rep(["Yes, a blueberry muffin, please.", "Yes, an blueberry muffin, please.", "Yes, a muffin of blueberry, please."], 0, "a blueberry muffin : l’ingrédient se place avant le nom."),
+  coach("That’ll be six fifty.", "Ce sera 6,50 $."),
+  rep(["Can I pay by card?", "Can I pay with the card?", "I can pay by card?"], 0, "Can I pay by card? = Puis-je payer par carte?"),
+  coach("Of course. Here’s your coffee. Have a great day!", "Bien sûr. Voici votre café. Bonne journée!"),
+  rep(["Thanks, you too!", "Thanks, same for you!", "Thanks, also you!"], 0, "« You too! » = Toi aussi! / Vous aussi!"),
+  coach("See you tomorrow!", "À demain!"),
+]),
+
+S("directions", "🗺️", "Demander son chemin", "A1", "Tu es perdu au centre-ville de Toronto.", [
+  coach("Hi there! You look lost. Can I help?", "Bonjour! Vous avez l’air perdu. Puis-je vous aider?"),
+  rep(["Yes, where is the train station?", "Yes, where the train station is?", "Yes, where is train station?"], 0, "Where is + the + lieu?"),
+  coach("Union Station? Go straight for two blocks and turn left.", "Union Station? Allez tout droit sur deux coins de rue et tournez à gauche."),
+  rep(["Turn left after two blocks?", "Turn at left after two blocks?", "Turn to the left after two block?"], 0, "Turn left (sans « at » ni « to the »), et blocks au pluriel."),
+  coach("Exactly. It’s across from the hotel.", "Exactement. C’est en face de l’hôtel."),
+  rep(["Is it far from here?", "Is it far of here?", "It’s far from here?"], 0, "far from = loin de."),
+  coach("No, it’s about five minutes on foot.", "Non, c’est à environ cinq minutes à pied."),
+  rep(["Great, thank you so much!", "Great, thank you very much for all!", "Great, I thank you so much!"], 0, "Thank you so much! est naturel. « For all » est un calque."),
+  coach("You’re welcome! Have a good trip!", "De rien! Bon voyage!"),
+]),
+
+S("day", "☀️", "Ma journée", "A1", "Le chat te demande comment s’est passée ta journée.", [
+  coach("Hi! How was your day?", "Salut! Comment s’est passée ta journée?"),
+  rep(["It was good, thanks!", "It was good, thank!", "It were good, thanks!"], 0, "It was good, thanks!"),
+  coach("What did you do this morning?", "Qu’as-tu fait ce matin?"),
+  rep(["I goed to work.", "I went to work.", "I go to work."], 1, "go → went au passé."),
+  coach("And what did you eat for lunch?", "Et qu’as-tu mangé pour dîner?"),
+  rep(["I eated a sandwich.", "I ate a sandwich.", "I have eat a sandwich."], 1, "eat → ate au passé."),
+  coach("Did you do anything fun after work?", "As-tu fait quelque chose d’amusant après le travail?"),
+  rep(["Yes, I played hockey with friends.", "Yes, I did hockey with friends.", "Yes, I played at hockey with friends."], 0, "play + sport, sans « at »."),
+  coach("Sounds fun! Are you tired now?", "Ça a l’air amusant! Es-tu fatigué maintenant?"),
+  rep(["Yes, a little.", "Yes, a few.", "Yes, little."], 0, "a little = un peu."),
+  coach("Get some rest! Talk to you tomorrow.", "Repose-toi! On se reparle demain."),
+]),
+
+S("hobbies", "🎸", "Mes loisirs", "A2", "Tu parles de tes passe-temps avec un nouveau collègue.", [
+  coach("So, what do you like doing in your free time?", "Alors, qu’aimes-tu faire dans tes temps libres?"),
+  rep(["I love to skiing.", "I love skiing.", "I love ski."], 1, "love + -ing : I love skiing."),
+  coach("Nice! How often do you go?", "Bien! À quelle fréquence y vas-tu?"),
+  rep(["Every weekends in winter.", "Every weekend in winter.", "All the weekend in winter."], 1, "every + singulier : every weekend."),
+  coach("Have you ever skied in the Rockies?", "As-tu déjà skié dans les Rocheuses?"),
+  rep(["Yes, I went there two years ago.", "Yes, I have gone there two years ago.", "Yes, I go there since two years."], 0, "Moment précis (ago) → passé simple."),
+  coach("Lucky you! What else do you enjoy?", "Chanceux! Qu’aimes-tu d’autre?"),
+  rep(["I enjoy to read.", "I enjoy reading.", "I enjoy read."], 1, "enjoy + -ing."),
+  coach("Me too! What are you reading these days?", "Moi aussi! Que lis-tu ces temps-ci?"),
+  rep(["I’m reading a thriller.", "I read a thriller since one week.", "I’m read a thriller."], 0, "En ce moment : présent continu, I’m reading."),
+  coach("Cool, you’ll have to tell me about it!", "Cool, tu devras m’en parler!"),
+]),
+
+S("doctor", "🩺", "Chez le médecin", "A2", "Tu consultes une médecin à la clinique.", [
+  coach("Hello. What brings you in today?", "Bonjour. Qu’est-ce qui vous amène aujourd’hui?"),
+  rep(["I have a fever and a sore throat.", "I have fever and sore throat.", "I am fever and sore throat."], 0, "I have a fever, a sore throat (avec a)."),
+  coach("I see. How long have you had these symptoms?", "Je vois. Depuis combien de temps avez-vous ces symptômes?"),
+  rep(["Since three days.", "For three days.", "During three days ago."], 1, "Durée : for three days."),
+  coach("Do you have any allergies?", "Avez-vous des allergies?"),
+  rep(["Yes, I’m allergic to penicillin.", "Yes, I’m allergic of penicillin.", "Yes, I have allergic to penicillin."], 0, "allergic to."),
+  coach("Okay. Does it hurt when you swallow?", "D’accord. Avez-vous mal quand vous avalez?"),
+  rep(["Yes, it hurts a lot.", "Yes, it’s hurt a lot.", "Yes, I hurt it a lot."], 0, "it hurts = ça fait mal."),
+  coach("You probably have strep throat. I’ll give you a prescription.", "Vous avez probablement une pharyngite. Je vais vous faire une ordonnance."),
+  rep(["How many times a day should I take it?", "How much times a day I should take it?", "How many time by day I take it?"], 0, "How many times a day + inversion should I…"),
+  coach("Three times a day for ten days. Get some rest!", "Trois fois par jour pendant dix jours. Reposez-vous!"),
+]),
+
+S("hotel", "🏨", "À l’hôtel", "A2", "Tu arrives à l’hôtel à Boston.", [
+  coach("Good evening! Welcome to the Harbor Hotel. Checking in?", "Bonsoir! Bienvenue au Harbor Hotel. Vous vous enregistrez?"),
+  rep(["Yes, I have a reservation under the name Gagnon.", "Yes, I have a reservation at the name Gagnon.", "Yes, I reserved on the name Gagnon."], 0, "a reservation under the name…"),
+  coach("Perfect. Two nights, a double room. Is that correct?", "Parfait. Deux nuits, une chambre double. C’est exact?"),
+  rep(["Yes, that’s right.", "Yes, it’s just.", "Yes, that’s correct me."], 0, "That’s right = c’est exact."),
+  coach("Here’s your key card. Room 714.", "Voici votre carte-clé. Chambre 714."),
+  rep(["What time is breakfast?", "At what hour is the breakfast?", "Which hour is breakfast?"], 0, "What time is breakfast? (pas « at what hour »)."),
+  coach("From 6:30 to 10 a.m., in the lobby.", "De 6 h 30 à 10 h, dans le hall."),
+  rep(["Is the Wi-Fi included?", "Is the Wi-Fi include?", "The Wi-Fi is it included?"], 0, "included (participe passé)."),
+  coach("Yes, it’s free. Enjoy your stay!", "Oui, c’est gratuit. Bon séjour!"),
+]),
+
+S("apartment", "🏠", "Visiter un appartement", "B1", "Tu visites un logement à louer à Ottawa.", [
+  coach("Hi! Come on in. This is the living room.", "Bonjour! Entrez. Voici le salon."),
+  rep(["It’s very bright! How much is the rent?", "It’s very bright! How many is the rent?", "It’s very clear! How much costs the rent?"], 0, "bright = éclairé. How much is the rent?"),
+  coach("It’s $1,800 a month, heating included.", "C’est 1 800 $ par mois, chauffage inclus."),
+  rep(["Are pets allowed?", "Are pets allow?", "Is it allowed the pets?"], 0, "be allowed : Are pets allowed?"),
+  coach("Small dogs and cats are fine.", "Les petits chiens et les chats sont acceptés."),
+  rep(["Great. Is there a washer and dryer?", "Great. There is a washer and dryer?", "Great. Is there a washing and drying?"], 0, "Is there a washer and dryer?"),
+  coach("Yes, in the basement. When would you like to move in?", "Oui, au sous-sol. Quand aimeriez-vous emménager?"),
+  rep(["I’d like to move in on July 1st.", "I’d like to move on July 1st.", "I’d like to emménage July 1st."], 0, "move in = emménager. On + date."),
+  coach("Perfect timing. I’ll send you the application form.", "Parfait. Je vous envoie le formulaire de demande."),
+]),
+
+S("interview", "💼", "Entrevue d’embauche", "B1", "Tu passes une entrevue pour un poste de coordonnateur.", [
+  coach("Thanks for coming in. Tell me about yourself.", "Merci d’être venu. Parlez-moi de vous."),
+  rep(["I’ve been working in logistics for six years.", "I work in logistics since six years.", "I am working in logistics for six years."], 0, "Durée jusqu’à maintenant : I’ve been working… for."),
+  coach("What would you say is your main strength?", "Quelle serait votre principale force?"),
+  rep(["I’m very organized and I work well under pressure.", "I’m very organize and I work good under pressure.", "I’m very organized and I work well under the stress."], 0, "organized (adjectif), work well (adverbe), under pressure."),
+  coach("And a weakness?", "Et une faiblesse?"),
+  rep(["I sometimes take on too much, but I’m learning to delegate.", "I have no weakness.", "My weakness is that I’m too perfect."], 0, "Une faiblesse réelle + ce que tu fais pour t’améliorer."),
+  coach("Why do you want to work here?", "Pourquoi voulez-vous travailler ici?"),
+  rep(["I admire your projects, and I can bring strong planning skills.", "Because I need money.", "I admire your projects and I can bring strong planification skills."], 0, "Parle de l’entreprise et de ce que tu apportes. « Planification » se dit planning."),
+  coach("Great. Do you have any questions for us?", "Très bien. Avez-vous des questions pour nous?"),
+  rep(["What are the next steps in the process?", "What are the next steps of the process?", "Which are the next steps?"], 0, "the next steps in the process."),
+  coach("We’ll get back to you by Friday. Thank you!", "Nous vous reviendrons d’ici vendredi. Merci!"),
+]),
+
+S("support", "📞", "Service à la clientèle", "B1", "Tu appelles pour un colis jamais livré.", [
+  coach("Thank you for calling. How can I help you today?", "Merci de votre appel. Comment puis-je vous aider aujourd’hui?"),
+  rep(["I’m calling about an order that never arrived.", "I call for an order that never arrived.", "I’m calling for an order who never arrived."], 0, "I’m calling about… ; order = chose → that."),
+  coach("I’m sorry to hear that. Can I have your order number?", "Je suis désolé. Puis-je avoir votre numéro de commande?"),
+  rep(["Sure, it’s four eight two, seven one nine.", "Sure, it’s four hundred eighty-two, seven hundred nineteen.", "Sure, the number is of 482719."], 0, "Les numéros se disent chiffre par chiffre."),
+  coach("Thank you. It says the package was delivered on Monday.", "Merci. Il est indiqué que le colis a été livré lundi."),
+  rep(["That’s strange. I didn’t receive anything.", "That’s strange. I didn’t received anything.", "That’s strange. I haven’t receive nothing."], 0, "didn’t + receive (forme de base)."),
+  coach("I can send a replacement or issue a refund.", "Je peux envoyer un remplacement ou effectuer un remboursement."),
+  rep(["I’d prefer a refund, please.", "I’d prefer to be reimbursed back, please.", "I prefer a refund, please me."], 0, "a refund = un remboursement."),
+  coach("Done. You’ll see it in three to five business days.", "C’est fait. Vous le verrez dans trois à cinq jours ouvrables."),
+  rep(["Thank you for your help.", "Thank you for your helps.", "Thanks for helping me out with your help."], 0, "help est indénombrable ici."),
+  coach("My pleasure. Have a great day!", "Avec plaisir. Bonne journée!"),
+]),
+
+S("networking", "🤝", "Réseautage", "B2", "Tu rencontres une professionnelle lors d’un événement.", [
+  coach("Hi, I don’t think we’ve met. I’m Priya.", "Bonjour, je ne crois pas qu’on se soit rencontrés. Je suis Priya."),
+  rep(["Nice to meet you, Priya. I’m Alex. What brings you here?", "Enchanted, Priya. I’m Alex.", "Nice to meet you, Priya. What makes you here?"], 0, "« Enchanted » ne s’utilise pas ainsi. What brings you here? = qu’est-ce qui t’amène?"),
+  coach("I work in renewable energy. How about you?", "Je travaille dans les énergies renouvelables. Et toi?"),
+  rep(["I’m in charge of marketing for a tech startup.", "I’m responsible of marketing for a tech startup.", "I make marketing in a tech startup."], 0, "in charge of ou responsible for."),
+  coach("Interesting! How did you get into marketing?", "Intéressant! Comment t’es-tu retrouvé en marketing?"),
+  rep(["Actually, I studied engineering, but I’ve always loved communication.", "Actually, I’m studying engineering since 2010.", "Currently, I studied engineering before."], 0, "Actually = en fait. Passé simple pour les études terminées."),
+  coach("That’s a great combination. We should keep in touch.", "C’est une belle combinaison. Restons en contact."),
+  rep(["Absolutely. Here’s my business card.", "Absolutely. Here’s my visit card.", "Absolutely. Take my card of business."], 0, "carte professionnelle = business card."),
+  coach("Thanks! It was great talking to you.", "Merci! Ce fut un plaisir de discuter."),
+]),
+
+S("salary", "💰", "Négocier un salaire", "C1", "On t’offre un poste. Tu négocies le salaire.", [
+  coach("We’d like to offer you the position at $70,000 a year.", "Nous aimerions vous offrir le poste à 70 000 $ par année."),
+  rep(["Thank you, I’m thrilled. I was hoping for something closer to $80,000.", "Thank you. I want $80,000 or nothing.", "Thank you, but it’s too few money."], 0, "Remercier, puis proposer un chiffre avec tact."),
+  coach("That’s above our budget for this role.", "C’est au-dessus de notre budget pour ce poste."),
+  rep(["I understand. Given my experience in project management, would you consider $76,000?", "I understand. Would you consider to give $76,000?", "OK, then $70,000 is fine."], 0, "Justifier, puis Would you consider + nom (pas « to give »)."),
+  coach("We could go up to $74,000, plus a $3,000 signing bonus.", "Nous pourrions aller jusqu’à 74 000 $, plus une prime d’embauche de 3 000 $."),
+  rep(["That’s a fair offer. Would there be flexibility on remote work?", "That’s a fair offer. Is there flexibility for to work from home?", "It’s a correct offer. Can I work at home sometimes maybe?"], 0, "flexibility on remote work. « Correct » sonne froid en anglais."),
+  coach("Yes, two days a week from home.", "Oui, deux jours par semaine de la maison."),
+  rep(["In that case, I’m happy to accept. Could you send the offer in writing?", "In that case, I accept happy. Send me the paper.", "So, I accept. Could you send me it in writing?"], 0, "I’m happy to accept + demande polie de confirmation écrite."),
+  coach("Of course. Welcome aboard!", "Bien sûr. Bienvenue dans l’équipe!"),
+]),
+]
