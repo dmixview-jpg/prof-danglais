@@ -205,19 +205,26 @@ function stripThinking(text) {
 }
 
 const str = (v, max = 600) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+// Un emoji (ou une courte suite d'emojis) sert d'illustration ; on refuse le texte.
+const emo = (v) => {
+  const e = str(v, 16);
+  return e && !/[A-Za-z0-9<>&"']/.test(e) ? e : '';
+};
 
 function normalizeLesson(data) {
   if (!data || typeof data !== 'object') return null;
   const lesson = {
     title: str(data.title, 160),
     objective: str(data.objective, 400),
+    // Étapes illustrées ; on accepte aussi de simples paragraphes.
     explanation: (Array.isArray(data.explanation) ? data.explanation : [data.explanation])
-      .map((p) => str(p, 1500)).filter(Boolean).slice(0, 4),
+      .map((p) => (typeof p === 'string' ? { emoji: '', text: str(p, 1500) } : { emoji: emo(p && p.emoji), text: str(p && p.text, 1500) }))
+      .filter((p) => p.text).slice(0, 5),
     examples: (Array.isArray(data.examples) ? data.examples : [])
-      .map((e) => ({ en: str(e && e.en), fr: str(e && e.fr) }))
+      .map((e) => ({ emoji: emo(e && e.emoji), en: str(e && e.en), fr: str(e && e.fr) }))
       .filter((e) => e.en).slice(0, 5),
     vocab: (Array.isArray(data.vocab) ? data.vocab : [])
-      .map((v) => ({ word: str(v && v.word, 120), fr: str(v && v.fr, 200), example: str(v && v.example) }))
+      .map((v) => ({ emoji: emo(v && v.emoji), word: str(v && v.word, 120), fr: str(v && v.fr, 200), example: str(v && v.example) }))
       .filter((v) => v.word).slice(0, 6),
     exercises: (Array.isArray(data.exercises) ? data.exercises : [])
       .map((x) => {
@@ -298,16 +305,17 @@ async function callAI(config, { model, system, messages, maxTokens, json = false
 const LESSON_SYSTEM = (level) => `You are an expert English teacher for a French-speaking adult from Quebec (Canada).
 Create one short, practical English lesson for a learner at level ${level}: ${LEVEL_HINTS[level]}.
 Explanations and translations are in Quebec-friendly standard French. English examples use natural North American English.
+The learner prefers pictures to long text: keep EVERY text short and simple, and illustrate each item with one fitting emoji.
 Reply with ONE JSON object only, no text before or after, with exactly this shape:
 {
-  "title": "titre de la leçon en français",
-  "objective": "objectif de la leçon en une phrase, en français",
-  "explanation": ["2 à 4 paragraphes courts en français"],
-  "examples": [{"en": "English sentence", "fr": "traduction française"}],
-  "vocab": [{"word": "English word or expression", "fr": "traduction", "example": "English example sentence"}],
-  "exercises": [{"question": "English sentence with ___ for the blank", "options": ["a", "b", "c"], "answer": 0, "explain": "explication en français"}]
+  "title": "titre court en français (max 8 mots)",
+  "objective": "objectif en français (max 12 mots)",
+  "explanation": [{"emoji": "🕰️", "text": "une idée par étape, 1 ou 2 phrases courtes en français"}],
+  "examples": [{"emoji": "🍁", "en": "English sentence", "fr": "traduction française"}],
+  "vocab": [{"emoji": "📅", "word": "English word or expression", "fr": "traduction", "example": "short English example sentence"}],
+  "exercises": [{"question": "English sentence with ___ for the blank", "options": ["a", "b", "c"], "answer": 0, "explain": "explication en français, 1 phrase"}]
 }
-Rules: 3 to 5 examples, 4 to 6 vocab items, exactly 4 exercises with exactly 3 options each; "answer" is the index (0, 1 or 2) of the correct option; vary the position of the correct answer. Adapt difficulty to ${level}.`;
+Rules: 3 or 4 explanation steps, 3 to 5 examples, 4 to 6 vocab items, exactly 4 exercises with exactly 3 options each; "answer" is the index (0, 1 or 2) of the correct option; vary the position of the correct answer. Each "emoji" field contains only one emoji. Adapt difficulty to ${level}.`;
 
 const CHAT_SYSTEM = (level) => `You are "Coach", a warm, encouraging English conversation tutor for a French-speaking adult from Quebec.
 The learner's level is ${level}: ${LEVEL_HINTS[level]}.

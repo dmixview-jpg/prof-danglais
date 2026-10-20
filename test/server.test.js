@@ -8,8 +8,8 @@ const { createServer, configFromEnv, extractJson, splitReply } = require('../ser
 const LESSON = {
   title: 'Le present perfect',
   objective: 'Parler d’expériences.',
-  explanation: ['Paragraphe 1.', 'Paragraphe 2.'],
-  examples: [{ en: 'I have been to Paris.', fr: 'Je suis allé à Paris.' }, { en: 'She has eaten.', fr: 'Elle a mangé.' }, { en: 'We have met.', fr: 'Nous nous sommes rencontrés.' }],
+  explanation: [{ emoji: '🕰️', text: 'Étape 1.' }, 'Paragraphe simple.', { emoji: 'pas un emoji', text: 'Étape 3.' }],
+  examples: [{ emoji: '🗼', en: 'I have been to Paris.', fr: 'Je suis allé à Paris.' }, { en: 'She has eaten.', fr: 'Elle a mangé.' }, { en: 'We have met.', fr: 'Nous nous sommes rencontrés.' }],
   vocab: [{ word: 'ever', fr: 'déjà', example: 'Have you ever...?' }, { word: 'yet', fr: 'encore', example: 'Not yet.' }, { word: 'since', fr: 'depuis', example: 'Since 2010.' }, { word: 'for', fr: 'pendant', example: 'For years.' }],
   exercises: [0, 1, 2, 0].map((answer, i) => ({ question: `Question ${i} ___ here.`, options: ['a', 'b', 'c'], answer, explain: 'Parce que.' })),
 };
@@ -91,6 +91,9 @@ test('leçon (JSON dans un bloc ```json)', async () => {
   assert.equal(lesson.level, 'B1');
   assert.equal(lesson.exercises.length, 4);
   assert.equal(lesson.vocab.length, 4);
+  assert.deepEqual(lesson.explanation, [{ emoji: '🕰️', text: 'Étape 1.' }, { emoji: '', text: 'Paragraphe simple.' }, { emoji: '', text: 'Étape 3.' }]);
+  assert.equal(lesson.examples[0].emoji, '🗼');
+  assert.equal(lesson.examples[1].emoji, '');
   const call = calls.at(-1);
   assert.equal(call.url, 'https://api.groq.com/openai/v1/chat/completions');
   assert.equal(call.init.headers.authorization, 'Bearer gsk-test');

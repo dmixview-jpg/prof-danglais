@@ -2,7 +2,8 @@
 
 Ton coach d'anglais personnel, pensé pour un francophone du Québec et utilisé sur **iPhone et iPad** comme une vraie app (PWA). L'app est **100 % gratuite** : elle utilise des modèles d'IA **open source** (Llama, Qwen, Mistral, Gemma…) chez des fournisseurs gratuits, ou directement sur ton ordinateur.
 
-- **Leçon** : choisis un sujet. L'IA prépare une leçon adaptée à ton niveau, avec des explications en français, des exemples à écouter, du vocabulaire et un petit quiz.
+- **Une mascotte animée** te guide partout. Elle salue, réfléchit pendant que l'IA travaille, parle quand tu touches 🔊, saute de joie quand tu réponds juste et fait « oups » quand tu te trompes. Elle est dessinée en code : aucune image à télécharger.
+- **Leçon** : choisis un sujet. L'IA prépare une leçon courte et illustrée, adaptée à ton niveau. Les explications défilent en étapes, chacune avec un dessin. Il y a aussi des exemples à écouter, des cartes de mots utiles et un quiz, une question à la fois, avec des étoiles et des confettis.
 - **Conversation** : discute en anglais avec « Coach ». Il te répond simplement et corrige ton dernier message dans un encadré jaune.
 - **Vocabulaire** : cartes mémoire (anglais / français). Un mot est maîtrisé après 3 « Je sais ».
 - **Prononciation** : un bouton 🔊 sur chaque exemple, chaque mot et chaque réponse du coach. La voix est celle de l'iPhone : gratuite et sans Internet.
@@ -159,6 +160,7 @@ L'icône 3D « EN » apparaît et l'app s'ouvre en plein écran, sans la barre d
 | Nombre de « Je sais » pour maîtriser un mot | `public/app.js` : `MASTERED` |
 | Vitesse de la voix | `public/app.js` : `u.rate = 0.92` dans `speak()` |
 | Consignes données à l'IA (style des leçons, du coach) | `server.js` : `LESSON_SYSTEM` et `CHAT_SYSTEM` |
+| Mascotte (dessin, couleurs, animations) | `public/app.js` : fonction `mascot()`. `public/styles.css` : section « Mascotte animée » |
 | Fournisseurs et modèles par défaut | `server.js` : `PROVIDERS`, ou `.env` |
 | Icônes 3D | `outils/icones.py` (Python + Pillow), puis `python3 outils/icones.py public/icons` |
 | Nom de l'app | `public/manifest.webmanifest`, `public/index.html` |

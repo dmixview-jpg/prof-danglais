@@ -59,10 +59,13 @@
     <!-- LEÇON -->
     <section id="panel-lesson" class="panel" role="tabpanel">
       <form id="lesson-form" class="card lesson-form">
-        <label for="topic" class="label">Qu'aimerais-tu apprendre?</label>
+        <div class="hero-row">
+          <span id="hero-mascot"></span>
+          <label for="topic" class="hero-bubble">Qu'aimerais-tu apprendre?</label>
+        </div>
         <div class="row">
           <input id="topic" type="text" maxlength="120" autocomplete="off" placeholder="Ex. : le present perfect">
-          <button type="submit" class="btn primary" id="lesson-btn">Créer la leçon</button>
+          <button type="submit" class="btn primary" id="lesson-btn">✨ Créer la leçon</button>
         </div>
         <div class="chips" id="topic-chips"></div>
       </form>
@@ -74,12 +77,12 @@
     <section id="panel-chat" class="panel" role="tabpanel" hidden>
       <div class="chat-tools">
         <div class="chips" id="scenario-chips"></div>
-        <button type="button" class="btn ghost small" id="chat-reset">Nouvelle conversation</button>
+        <button type="button" class="btn ghost small" id="chat-reset">🔄 Nouvelle conversation</button>
       </div>
       <div id="chat-log" class="chat-log" aria-live="polite"></div>
       <form id="chat-form" class="chat-form">
         <textarea id="chat-input" rows="1" placeholder="Écris en anglais…" enterkeyhint="send"></textarea>
-        <button type="button" class="btn danger" id="chat-stop" hidden>Stop</button>
+        <button type="button" class="btn danger" id="chat-stop" hidden>⏹ Stop</button>
         <button type="submit" class="btn primary" id="chat-send" aria-label="Envoyer">Envoyer</button>
       </form>
     </section>
@@ -89,7 +92,7 @@
       <div id="flash" class="flash-wrap"></div>
       <div class="vocab-side">
       <form id="vocab-form" class="card vocab-form">
-        <h2>Ajouter un mot</h2>
+        <h2>➕ Ajouter un mot</h2>
         <div class="row">
           <input id="vocab-en" type="text" maxlength="120" placeholder="Anglais (ex. : to look forward to)" autocomplete="off" autocapitalize="none" lang="en">
           <input id="vocab-fr" type="text" maxlength="160" placeholder="Traduction (ex. : avoir hâte de)" autocomplete="off">
@@ -97,7 +100,7 @@
         </div>
       </form>
       <div class="card">
-        <h2>Mon carnet <span id="vocab-count" class="muted"></span></h2>
+        <h2>📒 Mon carnet <span id="vocab-count" class="muted"></span></h2>
         <ul id="vocab-list" class="vocab-list"></ul>
       </div>
       </div>
@@ -107,9 +110,9 @@
   <!-- CODE D'ACCÈS -->
   <div id="gate" class="gate" hidden>
     <form id="gate-form" class="card gate-card">
-      <img src="/icons/icon-192.png" alt="" width="72" height="72">
-      <h1>Code d'accès</h1>
-      <p>Entre le code fourni avec l'app. Il sera gardé sur cet appareil.</p>
+      <span id="gate-mascot"></span>
+      <h1>🔑 Code d'accès</h1>
+      <p>Entre ton code. Il sera gardé sur cet appareil.</p>
       <p id="gate-error" class="error" hidden></p>
       <input id="gate-code" type="password" autocomplete="current-password" placeholder="Code" required>
       <button type="submit" class="btn primary">Continuer</button>

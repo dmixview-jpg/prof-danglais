@@ -59,6 +59,94 @@ function toast(text) {
 }
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Glisser à gauche / à droite (iPhone, iPad).
+function onSwipe(el, onLeft, onRight) {
+  let x0 = null;
+  let y0 = null;
+  el.addEventListener('touchstart', (e) => {
+    x0 = e.touches[0].clientX;
+    y0 = e.touches[0].clientY;
+  }, { passive: true });
+  el.addEventListener('touchend', (e) => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    const dy = e.changedTouches[0].clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.3) (dx < 0 ? onLeft : onRight)();
+  });
+}
+
+// ---------- Mascotte animée (dessin SVG, aucune image à télécharger) ----------
+// Humeurs : idle, wave, think, talk, happy, oops.
+let mascotCount = 0;
+function mascot(mood = 'idle', cls = '') {
+  const id = `mg${++mascotCount}`;
+  const el = h('span', { class: `mascot ${cls}`, 'aria-hidden': 'true', 'data-mood': mood, 'data-base': mood });
+  el.innerHTML = `
+<svg viewBox="-10 -4 140 136" focusable="false">
+  <defs>
+    <linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6d97ff"/><stop offset="1" stop-color="#2b59c3"/>
+    </linearGradient>
+  </defs>
+  <ellipse class="m-shadow" cx="60" cy="126" rx="34" ry="5"/>
+  <g class="m-all">
+    <path fill="url(#${id})" d="M36 30 H84 A28 28 0 0 1 112 58 V80 A28 28 0 0 1 84 108 H50 L30 122 L34 107 A28 28 0 0 1 8 80 V58 A28 28 0 0 1 36 30 Z"/>
+    <ellipse class="m-gloss" cx="38" cy="45" rx="15" ry="6" transform="rotate(-20 38 45)"/>
+    <path class="m-arm m-arm-l" d="M11 80 q-14 2 -14 16"/>
+    <path class="m-arm m-arm-r" d="M109 80 q14 2 14 16"/>
+    <g class="m-cap">
+      <path d="M38 24 v11 q22 9 44 0 v-11 z" fill="#18203a"/>
+      <polygon points="60,4 103,18 60,32 17,18" fill="#26315a"/>
+      <g class="m-tassel">
+        <path d="M60 18 L95 22 V38" stroke="#ffe166" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <circle cx="95" cy="41" r="4.5" fill="#ffe166"/>
+      </g>
+    </g>
+    <g class="m-eyes">
+      <g class="m-eye"><ellipse cx="45" cy="64" rx="10" ry="11" fill="#fff"/><circle class="m-pupil" cx="47" cy="66" r="5.5"/><circle cx="49.5" cy="63" r="2" fill="#fff"/></g>
+      <g class="m-eye"><ellipse cx="75" cy="64" rx="10" ry="11" fill="#fff"/><circle class="m-pupil" cx="77" cy="66" r="5.5"/><circle cx="79.5" cy="63" r="2" fill="#fff"/></g>
+    </g>
+    <path class="m-eyes-happy" d="M36 67 q9 -12 18 0 M66 67 q9 -12 18 0"/>
+    <ellipse class="m-cheek" cx="31" cy="83" rx="6.5" ry="3.5"/>
+    <ellipse class="m-cheek" cx="89" cy="83" rx="6.5" ry="3.5"/>
+    <path class="m-mouth m-smile" d="M50 84 q10 9 20 0"/>
+    <g class="m-mouth m-open"><ellipse cx="60" cy="88" rx="8.5" ry="6.5"/><ellipse cx="60" cy="92" rx="5" ry="2.5" fill="#ff8fa3"/></g>
+    <circle class="m-mouth m-o" cx="60" cy="89" r="4.5"/>
+  </g>
+  <g class="m-dots"><circle cx="112" cy="26" r="4"/><circle cx="121" cy="13" r="5"/><circle cx="131" cy="-1" r="6"/></g>
+  <g class="m-stars"><path d="M2 20 l3 7 7 1 -5 5 1 7 -6 -4 -6 4 1 -7 -5 -5 7 -1z"/><path d="M118 36 l2 5 5 1 -4 3 1 5 -4 -3 -4 3 1 -5 -4 -3 5 -1z"/></g>
+</svg>`;
+  return el;
+}
+
+function setMood(el, mood, ms) {
+  if (!el) return;
+  clearTimeout(el._moodTimer);
+  el.dataset.mood = mood;
+  if (ms) el._moodTimer = setTimeout(() => (el.dataset.mood = el.dataset.base), ms);
+}
+
+// Pluie de confettis pour fêter une réussite.
+function confetti() {
+  if (reducedMotion()) return;
+  const colors = ['#2b59c3', '#ffe166', '#ff8fa3', '#5fd08f', '#7d9cf0', '#ffb347'];
+  const box = h('div', { class: 'confetti', 'aria-hidden': 'true' });
+  for (let i = 0; i < 70; i++) {
+    const piece = h('i');
+    piece.style.left = `${Math.random() * 100}%`;
+    piece.style.background = colors[i % colors.length];
+    piece.style.setProperty('--x', `${(Math.random() - 0.5) * 220}px`);
+    piece.style.setProperty('--r', `${Math.random() * 900 - 450}deg`);
+    piece.style.setProperty('--d', `${1.8 + Math.random() * 1.4}s`);
+    piece.style.setProperty('--delay', `${Math.random() * 0.5}s`);
+    box.append(piece);
+  }
+  document.body.append(box);
+  setTimeout(() => box.remove(), 4000);
+}
 
 // ---------- Prononciation ----------
 let voice = null;
@@ -75,7 +163,8 @@ if ('speechSynthesis' in window) {
   speechSynthesis.addEventListener?.('voiceschanged', pickVoice);
 }
 
-function speak(text) {
+// talker : mascotte qui « parle » (bouche animée) pendant la lecture.
+function speak(text, talker) {
   if (!('speechSynthesis' in window)) {
     toast('La synthèse vocale n’est pas disponible sur cet appareil.');
     return;
@@ -85,11 +174,15 @@ function speak(text) {
   u.lang = 'en-US';
   u.rate = 0.92;
   if (voice) u.voice = voice;
+  if (talker) {
+    u.onstart = () => setMood(talker, 'talk');
+    u.onend = u.onerror = () => setMood(talker, talker.dataset.base);
+  }
   speechSynthesis.speak(u);
 }
 
-const speakBtn = (text) =>
-  h('button', { type: 'button', class: 'speak', 'aria-label': `Écouter : ${text}`, onclick: () => speak(text) }, '🔊');
+const speakBtn = (text, talker) =>
+  h('button', { type: 'button', class: 'speak', 'aria-label': `Écouter : ${text}`, onclick: () => speak(text, talker) }, '🔊');
 
 // ---------- Code d'accès et API ----------
 let gateResolvers = [];
@@ -99,10 +192,12 @@ function showGate(message) {
   const err = $('#gate-error');
   err.textContent = message || '';
   err.hidden = !message;
+  if (message) setMood($('#gate-mascot .mascot'), 'oops', 1500);
   setTimeout(() => $('#gate-code').focus(), 50);
   return new Promise((resolve) => gateResolvers.push(resolve));
 }
 
+$('#gate-mascot').append(mascot('wave', 'gate-buddy'));
 $('#gate-form').addEventListener('submit', (e) => {
   e.preventDefault();
   const code = $('#gate-code').value.trim();
@@ -180,51 +275,56 @@ document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () 
 // LEÇON
 // =====================================================================
 const TOPICS = [
-  'Present perfect',
-  'Se présenter',
-  'Commander au restaurant',
-  'Verbes irréguliers',
-  'Parler de son travail',
-  'Prépositions in/on/at',
-  'Prendre un rendez-vous',
-  'Futur : will / going to',
+  { emoji: '⏳', label: 'Present perfect', topic: 'Present perfect' },
+  { emoji: '👋', label: 'Se présenter', topic: 'Se présenter' },
+  { emoji: '🍽️', label: 'Au restaurant', topic: 'Commander au restaurant' },
+  { emoji: '🔀', label: 'Verbes irréguliers', topic: 'Verbes irréguliers' },
+  { emoji: '💼', label: 'Mon travail', topic: 'Parler de son travail' },
+  { emoji: '📍', label: 'In / on / at', topic: 'Prépositions in/on/at' },
+  { emoji: '📅', label: 'Rendez-vous', topic: 'Prendre un rendez-vous' },
+  { emoji: '🔮', label: 'Will / going to', topic: 'Futur : will / going to' },
 ];
+const STEP_EMOJIS = ['💡', '🔍', '⚠️', '✨', '🎯'];
 
 const SAMPLE_LESSON = {
   sample: true,
   level: 'A2',
-  title: 'Le present perfect : parler d’expériences et de résultats',
-  objective: 'Savoir quand et comment utiliser le present perfect (have/has + participe passé).',
+  title: 'Le present perfect',
+  objective: 'Parler de tes expériences et de résultats.',
   explanation: [
-    'Le present perfect se forme avec have (ou has à la 3e personne du singulier) suivi du participe passé : I have visited, she has eaten. À l’oral, on contracte souvent : I’ve, she’s, we’ve.',
-    'On l’utilise pour une expérience de vie sans moment précis (« I have been to Toronto »), pour une action passée qui a un résultat maintenant (« I have lost my keys ») ou pour une situation qui dure encore, avec for et since (« I have lived here for ten years »).',
-    'Piège classique pour un francophone : dès qu’on donne un moment précis et terminé (yesterday, last week, in 2019), on passe au prétérit. On dit « I saw him yesterday », jamais « I have seen him yesterday ».',
-    'Avec ever (déjà, dans les questions), never (jamais), already (déjà), yet (encore / déjà, dans les négations et questions) et just (venir de), le present perfect est presque toujours le bon choix.',
+    { emoji: '🧱', text: 'Formation : have (ou has avec he, she, it) + participe passé. Ex. : I have visited, she has eaten.' },
+    { emoji: '🌍', text: 'On l’utilise pour une expérience de vie, sans dire quand : « I have been to Toronto ».' },
+    { emoji: '⏰', text: 'Avec un moment précis et terminé (yesterday, last week, in 2019), on utilise le prétérit : « I saw him yesterday ».' },
+    { emoji: '🔑', text: 'Mots indices : ever, never, already, yet, just, for, since.' },
   ],
   examples: [
-    { en: 'Have you ever eaten poutine?', fr: 'As-tu déjà mangé de la poutine?' },
-    { en: 'I have lived in Quebec City since 2015.', fr: 'J’habite à Québec depuis 2015.' },
-    { en: 'She has just finished her report.', fr: 'Elle vient de terminer son rapport.' },
-    { en: 'We haven’t seen that movie yet.', fr: 'Nous n’avons pas encore vu ce film.' },
-    { en: 'I lost my phone yesterday, but I have found it now.', fr: 'J’ai perdu mon téléphone hier, mais je l’ai retrouvé.' },
+    { emoji: '🍟', en: 'Have you ever eaten poutine?', fr: 'As-tu déjà mangé de la poutine?' },
+    { emoji: '🏠', en: 'I have lived in Quebec City since 2015.', fr: 'J’habite à Québec depuis 2015.' },
+    { emoji: '📄', en: 'She has just finished her report.', fr: 'Elle vient de terminer son rapport.' },
+    { emoji: '🎬', en: 'We haven’t seen that movie yet.', fr: 'Nous n’avons pas encore vu ce film.' },
   ],
   vocab: [
-    { word: 'ever', fr: 'déjà (dans une question)', example: 'Have you ever been to Vancouver?' },
-    { word: 'already', fr: 'déjà', example: 'I have already paid the bill.' },
-    { word: 'yet', fr: 'encore / déjà (négation, question)', example: 'Has the bus arrived yet?' },
-    { word: 'since', fr: 'depuis (un moment précis)', example: 'I have worked here since January.' },
-    { word: 'for', fr: 'depuis / pendant (une durée)', example: 'We have known each other for years.' },
+    { emoji: '❓', word: 'ever', fr: 'déjà (question)', example: 'Have you ever been to Vancouver?' },
+    { emoji: '✅', word: 'already', fr: 'déjà', example: 'I have already paid the bill.' },
+    { emoji: '⏳', word: 'yet', fr: 'encore / déjà', example: 'Has the bus arrived yet?' },
+    { emoji: '📍', word: 'since', fr: 'depuis (un moment)', example: 'I have worked here since January.' },
+    { emoji: '⏱️', word: 'for', fr: 'depuis (une durée)', example: 'We have known each other for years.' },
   ],
   exercises: [
-    { question: 'I ___ to Montreal many times.', options: ['have been', 'was', 'am'], answer: 0, explain: 'Expérience répétée sans moment précis : present perfect (have been).' },
-    { question: 'She ___ her keys yesterday.', options: ['has lost', 'lost', 'have lost'], answer: 1, explain: '« Yesterday » est un moment passé et terminé : on utilise le prétérit (lost).' },
-    { question: 'We have lived here ___ 2018.', options: ['for', 'during', 'since'], answer: 2, explain: '« Since » + point de départ précis (2018). « For » s’emploie avec une durée (for six years).' },
-    { question: 'Has he finished his homework ___?', options: ['yet', 'already', 'ever'], answer: 0, explain: 'En fin de question, « yet » veut dire « déjà / à présent ».' },
+    { question: 'I ___ to Montreal many times.', options: ['have been', 'was', 'am'], answer: 0, explain: 'Expérience répétée, sans moment précis : have been.' },
+    { question: 'She ___ her keys yesterday.', options: ['has lost', 'lost', 'have lost'], answer: 1, explain: '« Yesterday » = moment terminé : prétérit (lost).' },
+    { question: 'We have lived here ___ 2018.', options: ['for', 'during', 'since'], answer: 2, explain: '« Since » + point de départ (2018).' },
+    { question: 'Has he finished his homework ___?', options: ['yet', 'already', 'ever'], answer: 0, explain: 'En fin de question, on utilise « yet ».' },
   ],
 };
 
+const heroMascot = mascot('wave', 'hero-buddy');
+$('#hero-mascot').append(heroMascot);
+setTimeout(() => (heroMascot.dataset.base = 'idle', setMood(heroMascot, 'idle')), 2600);
+
 $('#topic-chips').append(...TOPICS.map((t) =>
-  h('button', { type: 'button', class: 'chip', onclick: () => { $('#topic').value = t; createLesson(t); } }, t)
+  h('button', { type: 'button', class: 'chip', onclick: () => { $('#topic').value = t.topic; createLesson(t.topic); } },
+    h('span', { class: 'chip-emoji', 'aria-hidden': 'true' }, t.emoji), t.label)
 ));
 
 $('#lesson-form').addEventListener('submit', (e) => {
@@ -232,6 +332,7 @@ $('#lesson-form').addEventListener('submit', (e) => {
   const topic = $('#topic').value.trim();
   if (!topic) {
     $('#topic').focus();
+    setMood(heroMascot, 'oops', 1200);
     toast('Écris un sujet ou choisis une suggestion.');
     return;
   }
@@ -245,9 +346,12 @@ async function createLesson(topic) {
   const btn = $('#lesson-btn');
   const status = $('#lesson-status');
   btn.disabled = true;
-  status.className = 'status';
+  status.className = 'status thinking';
   status.hidden = false;
-  status.replaceChildren(h('span', { class: 'spinner' }), `Ton prof prépare la leçon « ${topic} »… (environ 15 secondes)`);
+  status.replaceChildren(
+    mascot('think', 'status-buddy'),
+    h('div', null, h('strong', null, 'Je prépare ta leçon…'), h('div', { class: 'muted' }, `« ${topic} »`)));
+  status.scrollIntoView({ behavior: 'smooth', block: 'center' });
   try {
     const lesson = await api('/api/lesson', { topic, level: getLevel() });
     store.set(KEYS.lesson, lesson);
@@ -256,7 +360,7 @@ async function createLesson(topic) {
     $('#lesson').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (err) {
     status.className = 'status error';
-    status.textContent = err.message;
+    status.replaceChildren(mascot('oops', 'status-buddy'), h('div', null, err.message));
   } finally {
     lessonBusy = false;
     btn.disabled = false;
@@ -264,51 +368,66 @@ async function createLesson(topic) {
 }
 
 function withBlank(question) {
-  const parts = question.split(/_{2,}/);
   const out = [];
-  parts.forEach((p, i) => {
+  question.split(/_{2,}/).forEach((p, i) => {
     if (i) out.push(h('span', { class: 'blank', 'aria-label': 'blanc' }));
     out.push(p);
   });
   return out;
 }
 
-function renderLesson(lesson) {
-  const root = $('#lesson');
-  const vocabWords = new Set(getVocab().map((v) => v.en.toLowerCase()));
+const tile = (emoji, fallback) => h('span', { class: 'emoji-tile', 'aria-hidden': 'true' }, emoji || fallback);
 
-  const examples = h('ul', { class: 'list' }, (lesson.examples || []).map((ex) =>
-    h('li', { class: 'example' },
-      h('div', { class: 'txt' }, h('div', { class: 'en', lang: 'en' }, ex.en), h('div', { class: 'fr' }, ex.fr)),
-      speakBtn(ex.en))
-  ));
+// Explication en étapes illustrées, à faire défiler (glisser ou boutons).
+function stepsCard(steps) {
+  let i = 0;
+  const last = steps.length - 1;
+  const track = h('div', { class: 'step-track' }, steps.map((s, k) =>
+    h('div', { class: 'step', 'aria-roledescription': 'étape' },
+      h('div', { class: 'step-emoji', 'aria-hidden': 'true' }, s.emoji || STEP_EMOJIS[k % STEP_EMOJIS.length]),
+      h('p', null, s.text))));
+  const viewport = h('div', { class: 'step-viewport' }, track);
+  const dots = h('div', { class: 'step-dots' }, steps.map((_, k) =>
+    h('button', { type: 'button', class: 'step-dot', 'aria-label': `Étape ${k + 1}`, onclick: () => go(k) })));
+  const prev = h('button', { type: 'button', class: 'btn ghost round', 'aria-label': 'Étape précédente', onclick: () => go(i - 1) }, '←');
+  const next = h('button', {
+    type: 'button', class: 'btn primary',
+    onclick: () => (i === last ? $('.lesson-examples, .lesson-quiz')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) : go(i + 1)),
+  });
+  function go(k) {
+    i = Math.max(0, Math.min(last, k));
+    track.style.transform = `translateX(${-100 * i}%)`;
+    [...track.children].forEach((c, n) => {
+      c.classList.toggle('active', n === i);
+      c.setAttribute('aria-hidden', String(n !== i));
+    });
+    [...dots.children].forEach((d, n) => d.setAttribute('aria-current', String(n === i)));
+    prev.disabled = i === 0;
+    next.textContent = i === last ? 'Exemples ↓' : 'Suivant →';
+  }
+  onSwipe(viewport, () => go(i + 1), () => go(i - 1));
+  go(0);
+  return h('div', { class: 'card lesson-steps' },
+    h('h2', null, h('span', { class: 'mark' }, 'Comprendre')),
+    viewport,
+    steps.length > 1 ? h('div', { class: 'steps-nav' }, prev, dots, next) : null);
+}
 
-  const vocab = h('ul', { class: 'list' }, (lesson.vocab || []).map((v) => {
-    const inBook = vocabWords.has(v.word.toLowerCase());
-    const add = h('button', {
-      type: 'button', class: 'btn ghost small', disabled: inBook,
-      onclick: () => {
-        addWord(v.word, v.fr, v.example);
-        add.disabled = true;
-        add.textContent = '✓ Au carnet';
-        toast(`« ${v.word} » ajouté au carnet`);
-      },
-    }, inBook ? '✓ Au carnet' : '+ Carnet');
-    return h('li', { class: 'vocab-item' },
-      speakBtn(v.word),
-      h('div', { class: 'txt' },
-        h('div', null, h('span', { class: 'en', lang: 'en' }, v.word), ' — ', h('span', { class: 'fr' }, v.fr)),
-        v.example ? h('div', { class: 'ex', lang: 'en' }, v.example) : null),
-      add);
-  }));
-
-  const exercises = lesson.exercises || [];
-  let answered = 0;
+// Quiz : une question à la fois, la mascotte réagit.
+function quizCard(exercises) {
+  const card = h('div', { class: 'card lesson-quiz' });
+  const buddy = mascot('idle', 'quiz-buddy');
+  let idx = 0;
   let correct = 0;
-  const score = h('div', { class: 'score', hidden: true });
 
-  const quiz = exercises.map((ex, i) => {
+  function renderQuestion() {
+    if (idx >= exercises.length) return renderScore();
+    const ex = exercises[idx];
     const explain = h('div', { class: 'explain', hidden: true });
+    const next = h('button', {
+      type: 'button', class: 'btn primary next-q', hidden: true,
+      onclick: () => { idx++; renderQuestion(); },
+    }, idx === exercises.length - 1 ? 'Mon score 🏆' : 'Suivant →');
     const buttons = ex.options.map((opt, j) =>
       h('button', {
         type: 'button', class: 'option', lang: 'en',
@@ -316,36 +435,85 @@ function renderLesson(lesson) {
           buttons.forEach((b) => (b.disabled = true));
           buttons[ex.answer].classList.add('correct');
           const good = j === ex.answer;
-          if (!good) buttons[j].classList.add('wrong');
-          explain.replaceChildren(h('strong', null, good ? '✅ Bravo! ' : '❌ Pas tout à fait. '), ex.explain || '');
-          explain.hidden = false;
-          answered++;
           if (good) correct++;
-          if (answered === exercises.length) {
-            const msg = correct === exercises.length ? 'Parfait! 🎉' : correct >= exercises.length / 2 ? 'Bien joué!' : 'Continue, tu progresses!';
-            score.textContent = `Score : ${correct} / ${exercises.length} — ${msg}`;
-            score.hidden = false;
-          }
+          else buttons[j].classList.add('wrong');
+          setMood(buddy, good ? 'happy' : 'oops', 1600);
+          explain.replaceChildren(h('span', { class: 'explain-icon', 'aria-hidden': 'true' }, good ? '🎉' : '💡'), h('span', null, ex.explain || (good ? 'Bravo!' : '')));
+          explain.hidden = false;
+          next.hidden = false;
         },
-      }, `${String.fromCharCode(65 + j)}. ${opt}`)
-    );
-    return h('div', { class: 'exercise' },
-      h('div', { class: 'q', lang: 'en' }, `${i + 1}. `, withBlank(ex.question)),
+      }, opt));
+    card.replaceChildren(
+      h('div', { class: 'quiz-head' },
+        h('h2', null, h('span', { class: 'mark' }, 'Quiz')),
+        h('span', { class: 'quiz-count' }, `${idx + 1} / ${exercises.length}`)),
+      h('div', { class: 'progress', 'aria-hidden': 'true' }, h('span', { style: `width:${(idx / exercises.length) * 100}%` })),
+      h('div', { class: 'quiz-q' }, buddy, h('div', { class: 'q-bubble', lang: 'en' }, withBlank(ex.question))),
       h('div', { class: 'options' }, buttons),
-      explain);
-  });
+      explain,
+      next);
+  }
+
+  function renderScore() {
+    const n = exercises.length;
+    const great = correct >= n / 2;
+    const big = mascot(great ? 'happy' : 'wave', 'score-buddy');
+    const msg = correct === n ? 'Parfait!' : great ? 'Bien joué!' : 'Continue, tu progresses!';
+    card.replaceChildren(
+      h('div', { class: 'score-screen' },
+        big,
+        h('div', { class: 'stars', 'aria-label': `${correct} sur ${n}` },
+          Array.from({ length: n }, (_, k) => h('span', { class: k < correct ? 'star on' : 'star', style: `animation-delay:${0.2 + k * 0.18}s` }, '★'))),
+        h('div', { class: 'score-text' }, `${correct} / ${n} · ${msg}`),
+        h('button', { type: 'button', class: 'btn ghost', onclick: () => { idx = 0; correct = 0; renderQuestion(); } }, '🔁 Recommencer')));
+    if (correct === n) confetti();
+  }
+
+  renderQuestion();
+  return card;
+}
+
+function renderLesson(lesson) {
+  const root = $('#lesson');
+  const vocabWords = new Set(getVocab().map((v) => v.en.toLowerCase()));
+  const steps = (lesson.explanation || []).map((s) => (typeof s === 'string' ? { emoji: '', text: s } : s)).filter((s) => s && s.text);
+
+  const examples = h('ul', { class: 'list' }, (lesson.examples || []).map((ex) =>
+    h('li', { class: 'example' },
+      tile(ex.emoji, '💬'),
+      h('div', { class: 'txt' }, h('div', { class: 'en', lang: 'en' }, ex.en), h('div', { class: 'fr' }, ex.fr)),
+      speakBtn(ex.en))
+  ));
+
+  const vocab = h('div', { class: 'vocab-grid' }, (lesson.vocab || []).map((v) => {
+    const inBook = vocabWords.has(v.word.toLowerCase());
+    const add = h('button', {
+      type: 'button', class: 'btn ghost small add-word', disabled: inBook, 'aria-label': `Ajouter « ${v.word} » au carnet`,
+      onclick: () => {
+        addWord(v.word, v.fr, v.example, v.emoji);
+        add.disabled = true;
+        add.textContent = '✓';
+        toast(`« ${v.word} » ajouté au carnet`);
+      },
+    }, inBook ? '✓' : '+ Carnet');
+    return h('div', { class: 'word-card' },
+      h('div', { class: 'word-emoji', 'aria-hidden': 'true' }, v.emoji || '📝'),
+      h('div', { class: 'en', lang: 'en' }, v.word),
+      h('div', { class: 'fr' }, v.fr),
+      h('div', { class: 'word-actions' }, speakBtn(v.word), add));
+  }));
 
   root.replaceChildren(
     h('div', { class: 'card lesson-main' },
       h('div', { class: 'lead-meta' },
         lesson.sample ? h('span', { class: 'badge' }, 'Exemple') : null,
-        lesson.level ? h('span', null, `Niveau ${lesson.level}`) : null),
+        lesson.level ? h('span', { class: 'level-chip' }, lesson.level) : null),
       h('h1', null, lesson.title),
-      lesson.objective ? h('p', { class: 'objective' }, h('strong', null, 'Objectif : '), lesson.objective) : null,
-      (lesson.explanation || []).map((p) => h('p', null, p))),
+      lesson.objective ? h('p', { class: 'objective' }, h('span', { 'aria-hidden': 'true' }, '🎯 '), lesson.objective) : null),
+    steps.length ? stepsCard(steps) : null,
     examples.childElementCount ? h('div', { class: 'card lesson-examples' }, h('h2', null, h('span', { class: 'mark' }, 'Exemples')), examples) : null,
-    vocab.childElementCount ? h('div', { class: 'card lesson-vocab' }, h('h2', null, h('span', { class: 'mark' }, 'Vocabulaire')), vocab) : null,
-    quiz.length ? h('div', { class: 'card lesson-quiz' }, h('h2', null, h('span', { class: 'mark' }, 'À toi de jouer')), quiz, score) : null,
+    vocab.childElementCount ? h('div', { class: 'card lesson-vocab' }, h('h2', null, h('span', { class: 'mark' }, 'Mots utiles')), vocab) : null,
+    (lesson.exercises || []).length ? quizCard(lesson.exercises) : null,
   );
 }
 
@@ -355,12 +523,12 @@ function renderLesson(lesson) {
 const WELCOME = "Hi! I'm your English coach. How are you today? Tell me about your day, in English. Don't worry about mistakes: I'll help you fix them.";
 
 const SCENARIOS = [
-  { label: 'Parler de ma journée', text: "Let's talk about my day. Ask me questions about what I did today." },
-  { label: 'Entretien d’embauche', text: "Let's role-play a job interview. You are the interviewer and I am the candidate. Please start." },
-  { label: 'Au café', text: "Let's role-play at a café. You are the barista and I am the customer. Please start." },
-  { label: 'Chez le médecin', text: "Let's role-play a visit to the doctor. You are the doctor and I am the patient. Please start." },
-  { label: 'Visiter un appartement', text: "Let's role-play visiting an apartment for rent. You are the landlord and I am looking for a place. Please start." },
-  { label: 'Parler de mes loisirs', text: "Let's talk about my hobbies and free time. Ask me questions." },
+  { emoji: '☀️', label: 'Ma journée', text: "Let's talk about my day. Ask me questions about what I did today." },
+  { emoji: '💼', label: 'Entretien d’embauche', text: "Let's role-play a job interview. You are the interviewer and I am the candidate. Please start." },
+  { emoji: '☕', label: 'Au café', text: "Let's role-play at a café. You are the barista and I am the customer. Please start." },
+  { emoji: '🩺', label: 'Chez le médecin', text: "Let's role-play a visit to the doctor. You are the doctor and I am the patient. Please start." },
+  { emoji: '🏠', label: 'Visiter un appart', text: "Let's role-play visiting an apartment for rent. You are the landlord and I am looking for a place. Please start." },
+  { emoji: '🎸', label: 'Mes loisirs', text: "Let's talk about my hobbies and free time. Ask me questions." },
 ];
 
 let chat = store.get(KEYS.chat, null);
@@ -371,26 +539,40 @@ const chatLog = $('#chat-log');
 const chatInput = $('#chat-input');
 
 $('#scenario-chips').append(...SCENARIOS.map((s) =>
-  h('button', { type: 'button', class: 'chip', onclick: () => sendChat(s.text) }, s.label)
+  h('button', { type: 'button', class: 'chip', onclick: () => sendChat(s.text) },
+    h('span', { class: 'chip-emoji', 'aria-hidden': 'true' }, s.emoji), s.label)
 ));
 
-function msgNode(m) {
-  const isCoach = m.role === 'assistant';
-  return h('div', { class: `msg ${m.role}` },
-    h('div', { class: 'who' }, isCoach ? 'Coach' : 'Moi'),
-    h('div', { class: 'bubble-row' },
-      h('div', { class: 'bubble', lang: isCoach ? 'en' : null }, m.content),
-      isCoach ? speakBtn(m.content) : null),
-    m.fix ? h('div', { class: 'fix' }, h('strong', null, 'Correction'), m.fix) : null);
+function msgNode(m, live = false) {
+  if (m.role === 'user') {
+    return h('div', { class: 'msg user' }, h('div', { class: 'bubble' }, m.content));
+  }
+  const avatar = mascot('idle', live ? 'avatar' : 'avatar still');
+  return h('div', { class: 'msg assistant' },
+    avatar,
+    h('div', { class: 'msg-body' },
+      h('div', { class: 'bubble-row' },
+        h('div', { class: 'bubble', lang: 'en' }, m.content),
+        speakBtn(m.content, avatar)),
+      m.fix
+        ? h('div', { class: 'fix' }, h('strong', null, '✏️ Correction'), m.fix)
+        : m.ok ? h('div', { class: 'ok-chip' }, '✅ Aucune faute, bravo!') : null));
 }
 
 function renderChat() {
-  chatLog.replaceChildren(...chat.map(msgNode));
+  const lastCoach = chat.map((m) => m.role).lastIndexOf('assistant');
+  const nodes = chat.map((m, i) => msgNode(m, i === lastCoach));
+  if (chat.length === 1) {
+    nodes.unshift(h('div', { class: 'chat-hero' }, mascot('wave', 'hero-buddy'), h('div', { class: 'chat-hero-text' }, 'Parle-moi en anglais!')));
+  }
+  chatLog.replaceChildren(...nodes);
   scrollChat();
 }
 
 function scrollChat() {
-  requestAnimationFrame(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }));
+  requestAnimationFrame(() => {
+    if (!$('#panel-chat').hidden) window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  });
 }
 
 function saveChat() {
@@ -405,11 +587,13 @@ function setChatBusy(busy) {
 async function sendChat(text) {
   text = (text || '').trim();
   if (!text || chatController) return;
+  chatLog.querySelector('.chat-hero')?.remove();
+  chatLog.querySelectorAll('.mascot.avatar').forEach((a) => a.classList.add('still'));
   chat.push({ role: 'user', content: text });
   saveChat();
   chatLog.append(msgNode(chat[chat.length - 1]));
   const typing = h('div', { class: 'msg assistant typing' },
-    h('div', { class: 'who' }, 'Coach'),
+    mascot('think', 'avatar'),
     h('div', { class: 'bubble' }, h('span', { class: 'dots' }, h('span', null, '●'), h('span', null, '●'), h('span', null, '●'))));
   chatLog.append(typing);
   scrollChat();
@@ -419,14 +603,16 @@ async function sendChat(text) {
   try {
     const messages = chat.slice(-HISTORY).map(({ role, content }) => ({ role, content }));
     const reply = await api('/api/chat', { level: getLevel(), messages }, { signal: chatController.signal });
-    const m = { role: 'assistant', content: reply.content, fix: reply.fix || null };
+    const m = { role: 'assistant', content: reply.content, fix: reply.fix || null, ok: !reply.fix };
     chat.push(m);
     saveChat();
-    typing.replaceWith(msgNode(m));
+    const node = msgNode(m, true);
+    typing.replaceWith(node);
+    setMood(node.querySelector('.mascot'), m.fix ? 'talk' : 'happy', 1400);
   } catch (err) {
     typing.remove();
     if (err.name !== 'AbortError') {
-      chatLog.append(h('div', { class: 'status error' }, err.message));
+      chatLog.append(h('div', { class: 'status error' }, mascot('oops', 'status-buddy'), h('div', null, err.message)));
     }
   } finally {
     chatController = null;
@@ -474,11 +660,11 @@ $('#chat-reset').addEventListener('click', () => {
 // VOCABULAIRE
 // =====================================================================
 const SAMPLE_VOCAB = [
-  { en: 'to look forward to', fr: 'avoir hâte de', example: 'I look forward to seeing you.' },
-  { en: 'actually', fr: 'en fait (faux ami : pas « actuellement »)', example: 'Actually, I prefer tea.' },
-  { en: 'appointment', fr: 'rendez-vous', example: 'I have a doctor’s appointment at 3.' },
-  { en: 'to figure out', fr: 'comprendre, trouver la solution', example: 'I can’t figure out this problem.' },
-  { en: 'to get along with', fr: 's’entendre avec', example: 'I get along with my coworkers.' },
+  { emoji: '🤩', en: 'to look forward to', fr: 'avoir hâte de', example: 'I look forward to seeing you.' },
+  { emoji: '💡', en: 'actually', fr: 'en fait (pas « actuellement »)', example: 'Actually, I prefer tea.' },
+  { emoji: '📅', en: 'appointment', fr: 'rendez-vous', example: 'I have a doctor’s appointment at 3.' },
+  { emoji: '🧩', en: 'to figure out', fr: 'trouver, comprendre', example: 'I can’t figure out this problem.' },
+  { emoji: '🤝', en: 'to get along with', fr: 's’entendre avec', example: 'I get along with my coworkers.' },
 ].map((w) => ({ ...w, id: uid(), known: 0, sample: true }));
 
 function getVocab() {
@@ -489,11 +675,10 @@ function setVocab(list) {
   store.set(KEYS.vocab, list);
 }
 
-function addWord(en, fr, example) {
+function addWord(en, fr, example, emoji) {
   const list = getVocab();
-  const existing = list.find((w) => w.en.toLowerCase() === en.toLowerCase());
-  if (existing) return false;
-  list.unshift({ id: uid(), en, fr, example: example || '', known: 0 });
+  if (list.some((w) => w.en.toLowerCase() === en.toLowerCase())) return false;
+  list.unshift({ id: uid(), emoji: emoji || '', en, fr, example: example || '', known: 0 });
   setVocab(list);
   deck = null;
   if (!$('#panel-vocab').hidden) renderVocab();
@@ -505,7 +690,8 @@ let flipped = false;
 
 function progressDots(known) {
   const n = Math.min(known, MASTERED);
-  return '●'.repeat(n) + '○'.repeat(MASTERED - n);
+  return h('span', { class: 'dots-progress', 'aria-label': `${n} sur ${MASTERED}` },
+    Array.from({ length: MASTERED }, (_, k) => h('i', { class: k < n ? 'on' : '' })));
 }
 
 function renderFlash() {
@@ -517,16 +703,15 @@ function renderFlash() {
 
   if (!deck.length) {
     wrap.replaceChildren(h('div', { class: 'card flash-empty' },
-      h('h2', null, list.length ? 'Bravo, tout est maîtrisé! 🎉' : 'Ton carnet est vide'),
-      h('p', { class: 'muted' }, list.length
-        ? 'Ajoute de nouveaux mots ci-dessous ou depuis une leçon (bouton « + Carnet »).'
-        : 'Ajoute des mots ci-dessous ou depuis une leçon (bouton « + Carnet »).')));
+      mascot(list.length ? 'happy' : 'wave', 'empty-buddy'),
+      h('h2', null, list.length ? 'Tout est maîtrisé! 🎉' : 'Ton carnet est vide'),
+      h('p', { class: 'muted' }, 'Ajoute des mots ici ou avec « + Carnet » dans une leçon.')));
     return;
   }
 
   const word = byId.get(deck[0]);
   const card = h('button', {
-    type: 'button', class: `flashcard${flipped ? ' flipped' : ''}`, 'aria-label': 'Retourner la carte',
+    type: 'button', class: `flashcard enter${flipped ? ' flipped' : ''}`, 'aria-label': 'Retourner la carte',
     onclick: () => {
       flipped = !flipped;
       card.classList.toggle('flipped', flipped);
@@ -535,64 +720,75 @@ function renderFlash() {
   h('div', { class: 'inner' },
     h('div', { class: 'face front', lang: 'en' },
       word.sample ? h('span', { class: 'badge' }, 'Exemple') : null,
+      h('div', { class: 'face-emoji', 'aria-hidden': 'true' }, word.emoji || '📝'),
       h('div', { class: 'word' }, word.en),
-      h('div', { class: 'hint' }, 'Touche pour voir la traduction')),
+      h('div', { class: 'hint', 'aria-hidden': 'true' }, '👆')),
     h('div', { class: 'face back' },
+      h('div', { class: 'face-emoji small', 'aria-hidden': 'true' }, word.emoji || '📝'),
       h('div', { class: 'word' }, word.fr || '—'),
       word.example ? h('div', { class: 'muted', lang: 'en' }, word.example) : null)));
+  onSwipe(card, () => review(), () => know());
 
-  const review = () => {
+  // La carte s'envole (à gauche : à revoir, à droite : je sais) avant la suivante.
+  const leave = (dir, then) => {
+    card.classList.add(dir);
+    setTimeout(then, reducedMotion() ? 0 : 280);
+  };
+  const review = () => leave('fly-left', () => {
     deck.push(deck.shift());
     flipped = false;
     renderFlash();
-  };
-  const know = () => {
+  });
+  const know = () => leave('fly-right', () => {
     const all = getVocab();
     const w = all.find((x) => x.id === word.id);
     if (w) {
       w.known = (w.known || 0) + 1;
       setVocab(all);
-      if (w.known >= MASTERED) toast(`« ${w.en} » est maîtrisé! 🎉`);
+      if (w.known >= MASTERED) {
+        toast(`« ${w.en} » est maîtrisé! 🎉`);
+        confetti();
+      }
     }
     deck.shift();
     if (w && w.known < MASTERED) deck.push(w.id);
     flipped = false;
     renderVocab();
-  };
+  });
 
   wrap.replaceChildren(
     h('div', { class: 'flash-head' },
       h('h2', null, h('span', { class: 'mark' }, 'Cartes mémoire')),
-      h('span', { class: 'muted' }, `${deck.length} à réviser`)),
+      h('span', { class: 'count-chip' }, `🃏 ${deck.length}`)),
     card,
     h('div', { class: 'flash-actions' },
-      h('button', { type: 'button', class: 'btn ghost', onclick: () => speak(word.en) }, '🔊 Écouter'),
-      h('span', { class: 'dots-progress', style: 'align-self:center;justify-self:center', title: 'Progression' }, progressDots(word.known || 0)),
-      h('button', { type: 'button', class: 'btn danger', onclick: review }, 'À revoir'),
-      h('button', { type: 'button', class: 'btn good', onclick: know }, 'Je sais')));
+      h('button', { type: 'button', class: 'btn ghost', 'aria-label': 'Écouter', onclick: () => speak(word.en) }, '🔊'),
+      progressDots(word.known || 0),
+      h('button', { type: 'button', class: 'btn danger', onclick: review }, '🔁 À revoir'),
+      h('button', { type: 'button', class: 'btn good', onclick: know }, '✅ Je sais')));
 }
 
 function renderList() {
   const list = getVocab();
   const mastered = list.filter((w) => w.known >= MASTERED).length;
-  $('#vocab-count').textContent = list.length ? `· ${list.length} mot${list.length > 1 ? 's' : ''}, ${mastered} maîtrisé${mastered > 1 ? 's' : ''}` : '';
+  $('#vocab-count').textContent = list.length ? `· ${list.length} · ⭐ ${mastered}` : '';
   $('#vocab-list').replaceChildren(...list.map((w) =>
     h('li', null,
-      speakBtn(w.en),
+      tile(w.emoji, '📝'),
       h('div', { class: 'txt' },
         h('div', null,
-          h('span', { class: 'en', lang: 'en' }, w.en), ' — ', h('span', { class: 'fr' }, w.fr), ' ',
+          h('span', { class: 'en', lang: 'en' }, w.en), ' ',
           w.sample ? h('span', { class: 'badge' }, 'Exemple') : null),
-        w.known >= MASTERED
-          ? h('span', { class: 'mastered' }, '✓ Maîtrisé')
-          : h('span', { class: 'dots-progress', 'aria-label': `${w.known || 0} sur ${MASTERED}` }, progressDots(w.known || 0))),
+        h('div', { class: 'fr' }, w.fr),
+        w.known >= MASTERED ? h('span', { class: 'mastered' }, '⭐ Maîtrisé') : progressDots(w.known || 0)),
+      speakBtn(w.en),
       h('button', {
-        type: 'button', class: 'btn ghost small',
+        type: 'button', class: 'btn ghost small icon-btn', 'aria-label': `Retirer « ${w.en} »`, title: 'Retirer',
         onclick: () => {
           setVocab(getVocab().filter((x) => x.id !== w.id));
           renderVocab();
         },
-      }, 'Retirer'))
+      }, '🗑️'))
   ));
 }
 
