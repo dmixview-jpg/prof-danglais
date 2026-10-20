@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Prof d'anglais</title>
+  <meta name="description" content="Ton coach d'anglais personnel : leçons, conversation et vocabulaire.">
+  <meta name="theme-color" content="#2b59c3" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121833" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+
+  <!-- Installation sur l'écran d'accueil (iPhone / iPad) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Prof d'anglais">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/icons/favicon-64.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="/icons/favicon-64.png" alt="" width="32" height="32">
+      <span>Prof d'anglais</span>
+    </div>
+    <label class="level">
+      <span class="sr-only">Niveau</span>
+      <select id="level" aria-label="Niveau">
+        <option value="A1">A1 · Débutant</option>
+        <option value="A2">A2 · Élémentaire</option>
+        <option value="B1">B1 · Intermédiaire</option>
+        <option value="B2">B2 · Avancé</option>
+        <option value="C1">C1 · Autonome</option>
+      </select>
+    </label>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" data-tab="lesson" aria-selected="true">
+        <span class="tab-icon" aria-hidden="true">📘</span><span>Leçon</span>
+      </button>
+      <button class="tab" role="tab" data-tab="chat" aria-selected="false">
+        <span class="tab-icon" aria-hidden="true">💬</span><span>Conversation</span>
+      </button>
+      <button class="tab" role="tab" data-tab="vocab" aria-selected="false">
+        <span class="tab-icon" aria-hidden="true">🗂️</span><span>Vocabulaire</span>
+      </button>
+    </nav>
+  </header>
+
+  <div id="banner" class="banner" hidden></div>
+
+  <main>
+    <!-- LEÇON -->
+    <section id="panel-lesson" class="panel" role="tabpanel">
+      <form id="lesson-form" class="card lesson-form">
+        <label for="topic" class="label">Qu'aimerais-tu apprendre?</label>
+        <div class="row">
+          <input id="topic" type="text" maxlength="120" autocomplete="off" placeholder="Ex. : le present perfect">
+          <button type="submit" class="btn primary" id="lesson-btn">Créer la leçon</button>
+        </div>
+        <div class="chips" id="topic-chips"></div>
+      </form>
+      <div id="lesson-status" class="status" hidden></div>
+      <article id="lesson" class="lesson"></article>
+    </section>
+
+    <!-- CONVERSATION -->
+    <section id="panel-chat" class="panel" role="tabpanel" hidden>
+      <div class="chat-tools">
+        <div class="chips" id="scenario-chips"></div>
+        <button type="button" class="btn ghost small" id="chat-reset">Nouvelle conversation</button>
+      </div>
+      <div id="chat-log" class="chat-log" aria-live="polite"></div>
+      <form id="chat-form" class="chat-form">
+        <textarea id="chat-input" rows="1" placeholder="Écris en anglais… (ou en français si tu bloques)" enterkeyhint="send"></textarea>
+        <button type="button" class="btn danger" id="chat-stop" hidden>Stop</button>
+        <button type="submit" class="btn primary" id="chat-send" aria-label="Envoyer">Envoyer</button>
+      </form>
+    </section>
+
+    <!-- VOCABULAIRE -->
+    <section id="panel-vocab" class="panel" role="tabpanel" hidden>
+      <div id="flash" class="flash-wrap"></div>
+      <form id="vocab-form" class="card vocab-form">
+        <h2>Ajouter un mot</h2>
+        <div class="row">
+          <input id="vocab-en" type="text" maxlength="120" placeholder="Anglais (ex. : to look forward to)" autocomplete="off" autocapitalize="none" lang="en">
+          <input id="vocab-fr" type="text" maxlength="160" placeholder="Traduction (ex. : avoir hâte de)" autocomplete="off">
+          <button type="submit" class="btn primary">Ajouter</button>
+        </div>
+      </form>
+      <div class="card">
+        <h2>Mon carnet <span id="vocab-count" class="muted"></span></h2>
+        <ul id="vocab-list" class="vocab-list"></ul>
+      </div>
+    </section>
+  </main>
+
+  <!-- CODE D'ACCÈS -->
+  <div id="gate" class="gate" hidden>
+    <form id="gate-form" class="card gate-card">
+      <img src="/icons/icon-192.png" alt="" width="72" height="72">
+      <h1>Code d'accès</h1>
+      <p>Entre le code fourni avec l'app. Il sera gardé sur cet appareil.</p>
+      <p id="gate-error" class="error" hidden></p>
+      <input id="gate-code" type="password" autocomplete="current-password" placeholder="Code" required>
+      <button type="submit" class="btn primary">Continuer</button>
+    </form>
+  </div>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
