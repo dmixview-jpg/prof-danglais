@@ -39,6 +39,7 @@
         <option value="B1">B1 · Intermédiaire</option>
         <option value="B2">B2 · Avancé</option>
         <option value="C1">C1 · Autonome</option>
+        <option value="C2">C2 · Maîtrise</option>
       </select>
     </label>
     <nav class="tabs" role="tablist" aria-label="Sections">
@@ -59,25 +60,47 @@
   <main>
     <!-- LEÇON -->
     <section id="panel-lesson" class="panel" role="tabpanel">
-      <section class="hero-card" aria-labelledby="hero-title">
-        <div class="hero-top">
-          <div class="hero-text">
-            <div class="hello" id="hello">Bonjour! 👋</div>
-            <h1 id="hero-title">On apprend quoi aujourd'hui?</h1>
+      <div id="home">
+        <section class="hero-card" aria-labelledby="hero-title">
+          <div class="hero-top">
+            <div class="hero-text">
+              <div class="hello" id="hello">Bonjour! 👋</div>
+              <h1 id="hero-title">Prêt pour ta leçon?</h1>
+            </div>
+            <span id="hero-mascot"></span>
           </div>
-          <span id="hero-mascot"></span>
+          <div class="stats" id="stats"></div>
+          <button type="button" class="btn yellow continue-btn" id="continue-btn" hidden>
+            <span class="continue-play" aria-hidden="true">▶</span>
+            <span class="continue-text"><span class="continue-sub" id="continue-sub"></span><span class="continue-title" id="continue-title"></span></span>
+          </button>
+        </section>
+
+        <h2 class="section-title">🧭 Mon parcours</h2>
+        <div class="level-pills" id="level-chips"></div>
+        <div id="path" class="path"></div>
+
+        <section class="card free-lesson">
+          <h2><span class="h-icon" aria-hidden="true">✨</span><span class="mark">Leçon libre</span></h2>
+          <p class="muted">Un sujet précis en tête? Le prof crée une leçon sur mesure.</p>
+          <form id="lesson-form" class="hero-search free-search">
+            <label for="topic" class="sr-only">Sujet de la leçon</label>
+            <input id="topic" type="text" maxlength="120" autocomplete="off" placeholder="Ex. : le present perfect">
+            <button type="submit" class="btn yellow" id="lesson-btn">✨ Créer</button>
+          </form>
+          <div class="topic-grid" id="topic-chips"></div>
+        </section>
+      </div>
+
+      <div id="lesson-view" hidden>
+        <div class="lesson-bar">
+          <button type="button" class="btn ghost small" id="back-home">← Parcours</button>
+          <span class="crumb" id="lesson-crumb"></span>
+          <button type="button" class="btn ghost small icon-btn" id="lesson-refresh" hidden aria-label="Générer une nouvelle version de la leçon" title="Nouvelle version">↻</button>
         </div>
-        <div class="stats" id="stats"></div>
-        <form id="lesson-form" class="hero-search">
-          <label for="topic" class="sr-only">Sujet de la leçon</label>
-          <input id="topic" type="text" maxlength="120" autocomplete="off" placeholder="Ex. : le present perfect">
-          <button type="submit" class="btn yellow" id="lesson-btn">✨ Créer</button>
-        </form>
-      </section>
-      <h2 class="section-title">💡 Idées de leçons</h2>
-      <div class="topic-grid" id="topic-chips"></div>
-      <div id="lesson-status" class="status" hidden></div>
-      <article id="lesson" class="lesson"></article>
+        <div id="lesson-status" class="status" hidden></div>
+        <article id="lesson" class="lesson"></article>
+      </div>
     </section>
 
     <!-- CONVERSATION -->

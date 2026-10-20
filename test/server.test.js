@@ -3,7 +3,7 @@
 // Tests du serveur avec un faux fournisseur d'IA (aucun appel réseau réel).
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { createServer, configFromEnv, extractJson, splitReply } = require('../server.js');
+const { createServer, configFromEnv, extractJson, splitReply, normalizeExercise, CURRICULUM } = require('../server.js');
 
 const LESSON = {
   title: 'Le present perfect',
@@ -190,4 +190,53 @@ test('Ollama : sans clé, sans en-tête Authorization', async () => {
   assert.equal(seen.url, 'http://localhost:11434/v1/chat/completions');
   assert.equal(seen.init.headers.authorization, undefined);
   s.close();
+});
+
+test('parcours : programme chargé, du Pré-A1 au C2', () => {
+  const levels = new Set([...CURRICULUM.values()].map((l) => l.level.code));
+  assert.deepEqual([...levels], ['Pré-A1', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
+  assert.ok(CURRICULUM.size > 150);
+  assert.equal(CURRICULUM.get('pre.1.1').content.special, 'alphabet');
+});
+
+test('parcours : leçon rédigée servie sans appel à l’IA', async () => {
+  const before = calls.length;
+  const res = await post('/api/lesson', { lessonId: 'pre.2.2' });
+  assert.equal(res.status, 200);
+  const lesson = await res.json();
+  assert.equal(lesson.id, 'pre.2.2');
+  assert.ok(lesson.exercises.some((x) => x.type === 'listen'));
+  assert.equal(calls.length, before);
+});
+
+test('parcours : leçon générée à partir du programme', async () => {
+  nextText = JSON.stringify({ ...LESSON, dialogue: [{ who: 'Sam', en: 'Hi!', fr: 'Salut!' }], tip: { emoji: '💡', text: 'Astuce' } });
+  const res = await post('/api/lesson', { lessonId: 'b1.2.2', level: 'A1' });
+  assert.equal(res.status, 200);
+  const lesson = await res.json();
+  assert.equal(lesson.id, 'b1.2.2');
+  assert.equal(lesson.level, 'B1', 'le niveau vient du parcours, pas du client');
+  assert.equal(lesson.dialogue[0].en, 'Hi!');
+  assert.equal(lesson.tip.text, 'Astuce');
+  const prompt = calls.at(-1).body.messages[1].content;
+  assert.match(prompt, /Second conditional/i);
+  assert.match(calls.at(-1).body.messages[0].content, /B1/);
+});
+
+test('parcours : bilan d’unité couvrant toutes les leçons', async () => {
+  nextText = JSON.stringify(LESSON);
+  const res = await post('/api/lesson', { lessonId: 'a2.4.review' });
+  assert.equal(res.status, 200);
+  const prompt = calls.at(-1).body.messages[1].content;
+  assert.match(prompt, /REVIEW/);
+  for (const t of ['For et since', 'Just, already et yet', 'Been ou gone']) assert.ok(prompt.includes(t), t);
+  assert.equal((await post('/api/lesson', { lessonId: 'zz.9.9' })).status, 404);
+});
+
+test('exercices : choix, écoute et remise en ordre', () => {
+  assert.deepEqual(normalizeExercise({ question: 'I ___ here.', options: ['am', 'is', 'are'], answer: 0 }).type, 'choice');
+  assert.equal(normalizeExercise({ type: 'listen', audio: 'ship', options: ['ship', 'sheep', 'shop'], answer: 0 }).audio, 'ship');
+  assert.equal(normalizeExercise({ type: 'listen', options: ['a', 'b', 'c'], answer: 0 }), null, 'écoute sans audio');
+  assert.equal(normalizeExercise({ type: 'order', sentence: 'Hello.' }), null, 'phrase trop courte');
+  assert.equal(normalizeExercise({ type: 'choice', question: 'x', options: ['a', 'b'], answer: 0 }), null, 'il faut 3 options');
 });

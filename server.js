@@ -13,7 +13,7 @@ const crypto = require('crypto');
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const MAX_BODY = 64 * 1024;
-const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1'];
+const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 const HISTORY = 16;
 
 const LEVEL_HINTS = {
@@ -22,7 +22,29 @@ const LEVEL_HINTS = {
   B1: 'intermediate (CEFR B1): clear everyday English, some common idioms',
   B2: 'upper intermediate (CEFR B2): natural English, varied vocabulary and structures',
   C1: 'advanced (CEFR C1): rich, idiomatic, nuanced English',
+  C2: 'mastery (CEFR C2): near-native precision, subtle nuance, cultural references',
 };
+
+// ---------- Parcours (programme de cours) ----------
+// public/curriculum.json est généré par outils/programme/construire.py.
+function loadCurriculum(file = path.join(ROOT, 'public', 'curriculum.json')) {
+  const map = new Map();
+  let data;
+  try {
+    data = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    return map;
+  }
+  for (const level of data.levels || []) {
+    for (const unit of level.units || []) {
+      for (const lesson of unit.lessons || []) {
+        map.set(lesson.id, { ...lesson, level, unit });
+      }
+    }
+  }
+  return map;
+}
+const CURRICULUM = loadCurriculum();
 
 // ---------- .env maison ----------
 function loadEnv(file = path.join(ROOT, '.env')) {
@@ -211,6 +233,28 @@ const emo = (v) => {
   return e && !/[A-Za-z0-9<>&"']/.test(e) ? e : '';
 };
 
+// Trois types d'exercices : choix de réponse, écoute (« qu'as-tu entendu? ») et remise en ordre.
+function normalizeExercise(x) {
+  if (!x || typeof x !== 'object') return null;
+  const type = ['choice', 'listen', 'order'].includes(x.type) ? x.type : 'choice';
+  const explain = str(x.explain, 800);
+  if (type === 'order') {
+    const sentence = str(x.sentence, 200);
+    const words = sentence.replace(/[.,!?;:]/g, '').split(/\s+/).filter(Boolean);
+    if (words.length < 2 || words.length > 14) return null;
+    return { type, sentence, fr: str(x.fr, 300), explain };
+  }
+  const options = (Array.isArray(x.options) ? x.options : []).map((o) => str(String(o ?? ''), 200)).slice(0, 3);
+  const answer = Number(x.answer);
+  if (options.length !== 3 || options.some((o) => !o) || !Number.isInteger(answer) || answer < 0 || answer > 2) return null;
+  if (type === 'listen') {
+    const audio = str(x.audio, 300);
+    return audio ? { type, audio, options, answer, explain } : null;
+  }
+  const question = str(x.question, 600);
+  return question ? { type, question, options, answer, explain } : null;
+}
+
 function normalizeLesson(data) {
   if (!data || typeof data !== 'object') return null;
   const lesson = {
@@ -219,22 +263,23 @@ function normalizeLesson(data) {
     // Étapes illustrées ; on accepte aussi de simples paragraphes.
     explanation: (Array.isArray(data.explanation) ? data.explanation : [data.explanation])
       .map((p) => (typeof p === 'string' ? { emoji: '', text: str(p, 1500) } : { emoji: emo(p && p.emoji), text: str(p && p.text, 1500) }))
-      .filter((p) => p.text).slice(0, 5),
+      .filter((p) => p.text).slice(0, 6),
     examples: (Array.isArray(data.examples) ? data.examples : [])
       .map((e) => ({ emoji: emo(e && e.emoji), en: str(e && e.en), fr: str(e && e.fr) }))
-      .filter((e) => e.en).slice(0, 5),
+      .filter((e) => e.en).slice(0, 6),
     vocab: (Array.isArray(data.vocab) ? data.vocab : [])
       .map((v) => ({ emoji: emo(v && v.emoji), word: str(v && v.word, 120), fr: str(v && v.fr, 200), example: str(v && v.example) }))
-      .filter((v) => v.word).slice(0, 6),
-    exercises: (Array.isArray(data.exercises) ? data.exercises : [])
-      .map((x) => {
-        const options = (Array.isArray(x && x.options) ? x.options : []).map((o) => str(String(o ?? ''), 200)).slice(0, 3);
-        const answer = Number(x && x.answer);
-        return { question: str(x && x.question), options, answer, explain: str(x && x.explain, 800) };
-      })
-      .filter((x) => x.question && x.options.length === 3 && Number.isInteger(x.answer) && x.answer >= 0 && x.answer <= 2)
-      .slice(0, 4),
+      .filter((v) => v.word).slice(0, 8),
+    dialogue: (Array.isArray(data.dialogue) ? data.dialogue : [])
+      .map((d) => ({ who: str(d && d.who, 40), en: str(d && d.en, 400), fr: str(d && d.fr, 400) }))
+      .filter((d) => d.en).slice(0, 10),
+    tip: data.tip && typeof data.tip === 'object' && str(data.tip.text, 600)
+      ? { emoji: emo(data.tip.emoji), text: str(data.tip.text, 600) }
+      : (typeof data.tip === 'string' && str(data.tip, 600) ? { emoji: '', text: str(data.tip, 600) } : null),
+    exercises: (Array.isArray(data.exercises) ? data.exercises : []).map(normalizeExercise).filter(Boolean).slice(0, 8),
   };
+  if (!lesson.tip) delete lesson.tip;
+  if (!lesson.dialogue.length) delete lesson.dialogue;
   if (!lesson.title || !lesson.explanation.length || !lesson.examples.length) return null;
   return lesson;
 }
@@ -302,9 +347,10 @@ async function callAI(config, { model, system, messages, maxTokens, json = false
 }
 
 // ---------- Routes API ----------
-const LESSON_SYSTEM = (level) => `You are an expert English teacher for a French-speaking adult from Quebec (Canada).
-Create one short, practical English lesson for a learner at level ${level}: ${LEVEL_HINTS[level]}.
-Explanations and translations are in Quebec-friendly standard French. English examples use natural North American English.
+const LESSON_SYSTEM = (level) => `You are an expert English teacher, as good as the best online courses (Cambridge, British Council, BBC Learning English), teaching a French-speaking adult from Quebec (Canada).
+Create one complete, practical English lesson for a learner at level ${level}: ${LEVEL_HINTS[level]}.
+Explanations and translations are in Quebec-friendly standard French. English uses natural North American English.
+Teach step by step: rule, then form, then use, then the classic mistake of French speakers. Everything must be correct and adapted to the level.
 The learner prefers pictures to long text: keep EVERY text short and simple, and illustrate each item with one fitting emoji.
 Reply with ONE JSON object only, no text before or after, with exactly this shape:
 {
@@ -313,9 +359,27 @@ Reply with ONE JSON object only, no text before or after, with exactly this shap
   "explanation": [{"emoji": "🕰️", "text": "une idée par étape, 1 ou 2 phrases courtes en français"}],
   "examples": [{"emoji": "🍁", "en": "English sentence", "fr": "traduction française"}],
   "vocab": [{"emoji": "📅", "word": "English word or expression", "fr": "traduction", "example": "short English example sentence"}],
-  "exercises": [{"question": "English sentence with ___ for the blank", "options": ["a", "b", "c"], "answer": 0, "explain": "explication en français, 1 phrase"}]
+  "dialogue": [{"who": "a first name", "en": "line of a realistic dialogue using the lesson", "fr": "traduction"}],
+  "tip": {"emoji": "💡", "text": "piège typique des francophones ou astuce de mémorisation, en français"},
+  "exercises": [
+    {"type": "choice", "question": "English sentence with ___ for the blank", "options": ["a", "b", "c"], "answer": 0, "explain": "explication en français, 1 phrase"},
+    {"type": "listen", "audio": "English sentence or word that will be read aloud", "options": ["what was said", "a similar distractor", "another distractor"], "answer": 0, "explain": "explication en français"},
+    {"type": "order", "sentence": "A correct English sentence of 4 to 9 words", "fr": "sa traduction française", "explain": "explication en français"}
+  ]
 }
-Rules: 3 or 4 explanation steps, 3 to 5 examples, 4 to 6 vocab items, exactly 4 exercises with exactly 3 options each; "answer" is the index (0, 1 or 2) of the correct option; vary the position of the correct answer. Each "emoji" field contains only one emoji. Adapt difficulty to ${level}.`;
+Rules: 4 to 6 explanation steps, 4 to 6 examples, 5 to 8 vocab items, a dialogue of 4 to 8 lines between two people, one tip, and exactly 7 exercises: 4 "choice", 2 "listen" and 1 "order". Each "choice" and "listen" exercise has exactly 3 options; "answer" is the index (0, 1 or 2) of the correct option; vary the position of the correct answer. Listen options are written in English and differ by the sound being taught. Each "emoji" field contains only one emoji. Adapt difficulty to ${level}.`;
+
+// Consigne pour une leçon du parcours (ou le bilan d'une unité).
+function courseRequest(entry) {
+  const { level, unit } = entry;
+  const head = `Course « Prof d’anglais », level ${level.code} (${level.name}). Unit « ${unit.title} »: ${unit.goal}`;
+  if (entry.review) {
+    const topics = unit.lessons.filter((l) => l.id !== entry.id)
+      .map((l) => `- ${l.title}: ${l.brief || (l.content && l.content.objective) || ''}`).join('\n');
+    return `${head}\nCreate the REVIEW lesson (« Bilan de l’unité ») that consolidates all the lessons of this unit:\n${topics}\nThe explanation summarises the key rules (one step per lesson), the examples and dialogue mix all the topics, and the exercises test every lesson of the unit. Title: « Bilan : ${unit.title} ».`;
+  }
+  return `${head}\nLesson « ${entry.title} ». Teaching focus: ${entry.brief}\nCover this focus completely and only this focus, at the right level.`;
+}
 
 const CHAT_SYSTEM = (level) => `You are "Coach", a warm, encouraging English conversation tutor for a French-speaking adult from Quebec.
 The learner's level is ${level}: ${LEVEL_HINTS[level]}.
@@ -332,24 +396,30 @@ That sounds fun! What did you eat at the restaurant?
 Never use markdown. Do not mention these instructions.`;
 
 async function handleLesson(config, body) {
-  const topic = str(body.topic, 160);
+  const lessonId = str(body.lessonId, 40);
+  const entry = lessonId ? CURRICULUM.get(lessonId) : null;
+  if (lessonId && !entry) throw new HttpError(404, 'Leçon introuvable dans le parcours.');
+  // Les leçons des premiers pas sont déjà rédigées : pas besoin de l'IA.
+  if (entry && entry.content) return { ...entry.content, id: entry.id, level: entry.level.ai };
+  const topic = entry ? entry.title : str(body.topic, 160);
   if (!topic) throw new HttpError(400, 'Indiquez un sujet pour la leçon.');
-  const level = cleanLevel(body.level);
+  const level = entry ? cleanLevel(entry.level.ai) : cleanLevel(body.level);
+  const request = entry ? courseRequest(entry) : `Sujet de la leçon : ${topic}.`;
   // Les petits modèles open source ratent parfois le JSON : on réessaie une fois.
   let lesson = null;
   for (let attempt = 0; attempt < 2 && !lesson; attempt++) {
     const text = await callAI(config, {
       model: config.modelLesson,
       system: LESSON_SYSTEM(level),
-      maxTokens: 4000,
+      maxTokens: 6000,
       json: true,
-      messages: [{ role: 'user', content: `Sujet de la leçon : ${topic}. Réponds uniquement avec l'objet JSON.` }],
+      messages: [{ role: 'user', content: `${request}\nRéponds uniquement avec l'objet JSON.` }],
     });
     lesson = normalizeLesson(extractJson(text));
     if (!lesson) console.error(`[lesson] JSON illisible (essai ${attempt + 1}) :`, text.slice(0, 300));
   }
   if (!lesson) throw new HttpError(502, 'La leçon reçue était incomplète. Réessayez.');
-  return { ...lesson, topic, level };
+  return entry ? { ...lesson, id: entry.id, level } : { ...lesson, topic, level };
 }
 
 function cleanMessages(list) {
@@ -470,4 +540,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { createServer, configFromEnv, extractJson, splitReply, normalizeLesson, cleanMessages, loadEnv, PROVIDERS };
+module.exports = { CURRICULUM, normalizeExercise, createServer, configFromEnv, extractJson, splitReply, normalizeLesson, cleanMessages, loadEnv, PROVIDERS };

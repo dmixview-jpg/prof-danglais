@@ -10,8 +10,11 @@ const KEYS = {
   vocab: 'pd.vocab',
   days: 'pd.days',
   lessons: 'pd.lessons',
+  progress: 'pd.progress',
+  pathLevel: 'pd.pathLevel',
+  course: 'pd.c.', // préfixe : leçons du parcours déjà générées
 };
-const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1'];
+const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 const MASTERED = 3;
 const HISTORY = 16;
 
@@ -215,7 +218,7 @@ if ('speechSynthesis' in window) {
 }
 
 // talker : mascotte qui « parle » (bouche animée) pendant la lecture.
-function speak(text, talker) {
+function speak(text, talker, rate = 0.92) {
   if (!('speechSynthesis' in window)) {
     toast('La synthèse vocale n’est pas disponible sur cet appareil.');
     return;
@@ -223,7 +226,7 @@ function speak(text, talker) {
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'en-US';
-  u.rate = 0.92;
+  u.rate = rate;
   if (voice) u.voice = voice;
   if (talker) {
     u.onstart = () => setMood(talker, 'talk');
@@ -295,7 +298,7 @@ async function api(path, body, { signal } = {}) {
 
 // ---------- Niveau ----------
 const levelSelect = $('#level');
-const LEVEL_NAMES = { A1: 'Débutant', A2: 'Élémentaire', B1: 'Intermédiaire', B2: 'Avancé', C1: 'Autonome' };
+const LEVEL_NAMES = { A1: 'Débutant', A2: 'Élémentaire', B1: 'Intermédiaire', B2: 'Avancé', C1: 'Autonome', C2: 'Maîtrise' };
 const compactHeader = matchMedia('(max-width: 419px), (min-width: 700px) and (max-width: 939px), (orientation: landscape) and (max-height: 500px)');
 function labelLevels() {
   for (const opt of levelSelect.options) {
@@ -304,7 +307,7 @@ function labelLevels() {
 }
 labelLevels();
 compactHeader.addEventListener?.('change', labelLevels);
-const getLevel = () => (LEVELS.includes(store.get(KEYS.level)) ? store.get(KEYS.level) : 'A2');
+const getLevel = () => (LEVELS.includes(store.get(KEYS.level)) ? store.get(KEYS.level) : 'A1');
 levelSelect.value = getLevel();
 levelSelect.addEventListener('change', () => {
   store.set(KEYS.level, levelSelect.value);
@@ -373,11 +376,231 @@ const heroMascot = mascot('wave', 'hero-buddy');
 $('#hero-mascot').append(heroMascot);
 setTimeout(() => (heroMascot.dataset.base = 'idle', setMood(heroMascot, 'idle')), 2600);
 
-$('#topic-chips').append(...TOPICS.map((t, i) =>
-  h('button', { type: 'button', class: `topic-tile tint-${i % 6}`, onclick: () => { $('#topic').value = t.topic; createLesson(t.topic); } },
-    h('span', { class: 'topic-emoji', 'aria-hidden': 'true' }, t.emoji),
-    h('span', { class: 'topic-label' }, t.label))
-));
+// ---------- Parcours : de l'alphabet à la maîtrise ----------
+let COURSE = null; // contenu de /curriculum.json
+const courseIndex = new Map(); // id → { lesson, unit, level, order }
+const courseOrder = []; // ids dans l'ordre du parcours
+const openUnits = new Set();
+
+const getProgress = () => store.get(KEYS.progress, {});
+const isDone = (id) => Boolean(getProgress()[id]);
+const getPathLevel = () => {
+  const id = store.get(KEYS.pathLevel, 'pre');
+  return COURSE?.levels.some((l) => l.id === id) ? id : 'pre';
+};
+
+async function loadCourse() {
+  try {
+    const res = await fetch('/curriculum.json');
+    COURSE = await res.json();
+  } catch {
+    $('#path').replaceChildren(h('div', { class: 'status error' }, 'Impossible de charger le parcours. Vérifie ta connexion, puis recharge la page.'));
+    return;
+  }
+  for (const level of COURSE.levels) {
+    for (const unit of level.units) {
+      for (const lesson of unit.lessons) {
+        courseIndex.set(lesson.id, { lesson, unit, level, order: courseOrder.length });
+        courseOrder.push(lesson.id);
+      }
+    }
+  }
+  renderPath();
+}
+
+// Prochaine leçon à faire : la première non terminée du niveau choisi.
+function nextLessonId(levelId = getPathLevel()) {
+  const level = COURSE?.levels.find((l) => l.id === levelId);
+  if (!level) return null;
+  const ids = level.units.flatMap((u) => u.lessons.map((l) => l.id));
+  return ids.find((id) => !isDone(id)) || null;
+}
+
+function crumbOf(id) {
+  const e = courseIndex.get(id);
+  if (!e) return '';
+  return `${e.level.code} · Unité ${e.unit.id.split('.')[1]}`;
+}
+
+function renderContinue() {
+  const btn = $('#continue-btn');
+  const id = nextLessonId();
+  const e = id && courseIndex.get(id);
+  btn.hidden = !COURSE;
+  if (!e) {
+    $('#continue-title').textContent = 'Niveau terminé! 🎉';
+    $('#continue-sub').textContent = 'Choisis le niveau suivant dans ton parcours.';
+    btn.onclick = () => $('#level-chips').scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
+  $('#continue-title').textContent = `${e.lesson.emoji} ${e.lesson.title}`;
+  $('#continue-sub').textContent = `Continuer · ${crumbOf(id)}`;
+  btn.onclick = () => openCourseLesson(id);
+}
+
+function levelProgress(level) {
+  const ids = level.units.flatMap((u) => u.lessons.map((l) => l.id));
+  return { done: ids.filter(isDone).length, total: ids.length };
+}
+
+function renderPath() {
+  if (!COURSE) return;
+  const current = getPathLevel();
+  const level = COURSE.levels.find((l) => l.id === current);
+  const next = nextLessonId(current);
+  const nextUnit = next ? courseIndex.get(next).unit.id : null;
+  if (!openUnits.size && nextUnit) openUnits.add(nextUnit);
+
+  $('#level-chips').replaceChildren(...COURSE.levels.map((lv) => {
+    const p = levelProgress(lv);
+    return h('button', {
+      type: 'button', class: `level-pill${lv.id === current ? ' on' : ''}`, 'aria-pressed': String(lv.id === current),
+      onclick: () => {
+        store.set(KEYS.pathLevel, lv.id);
+        openUnits.clear();
+        // le niveau de la conversation et des leçons libres suit le parcours
+        const lvl = LEVELS.includes(lv.ai) ? lv.ai : 'A1';
+        levelSelect.value = lvl;
+        store.set(KEYS.level, lvl);
+        renderPath();
+        renderContinue();
+      },
+    },
+    h('span', { class: 'pill-emoji', 'aria-hidden': 'true' }, lv.emoji),
+    h('span', { class: 'pill-code' }, lv.code),
+    h('span', { class: 'pill-count' }, p.done ? `${p.done}/${p.total}` : ''));
+  }));
+
+  const p = levelProgress(level);
+  const header = h('div', { class: 'level-card' },
+    h('div', { class: 'level-card-top' },
+      h('span', { class: 'level-big-emoji', 'aria-hidden': 'true' }, level.emoji),
+      h('div', null, h('div', { class: 'level-code' }, level.code), h('h3', null, level.name))),
+    h('p', null, level.desc),
+    h('div', { class: 'progress' }, h('span', { style: `width:${(p.done / p.total) * 100}%` })),
+    h('div', { class: 'level-count' }, `${p.done} / ${p.total} leçons terminées`));
+
+  const OFFSETS = [0, 46, 66, 46, 0, -46, -66, -46];
+  const units = level.units.map((unit, u) => {
+    const done = unit.lessons.filter((l) => isDone(l.id)).length;
+    const open = openUnits.has(unit.id);
+    const banner = h('button', {
+      type: 'button', class: `unit-banner tint-${u % 6}`, 'aria-expanded': String(open),
+      onclick: () => {
+        if (openUnits.has(unit.id)) openUnits.delete(unit.id);
+        else openUnits.add(unit.id);
+        renderPath();
+      },
+    },
+    h('span', { class: 'unit-emoji', 'aria-hidden': 'true' }, unit.emoji),
+    h('span', { class: 'unit-text' },
+      h('span', { class: 'unit-num' }, `Unité ${u + 1}`),
+      h('span', { class: 'unit-title' }, unit.title),
+      h('span', { class: 'unit-goal' }, unit.goal)),
+    h('span', { class: `unit-count${done === unit.lessons.length ? ' full' : ''}` }, done === unit.lessons.length ? '⭐' : `${done}/${unit.lessons.length}`),
+    h('span', { class: 'unit-chevron', 'aria-hidden': 'true' }, open ? '▴' : '▾'));
+    if (!open) return h('section', { class: 'unit' }, banner);
+
+    const nodes = unit.lessons.map((lesson, i) => {
+      const prog = getProgress()[lesson.id];
+      const isNext = lesson.id === next;
+      const state = prog ? 'done' : isNext ? 'next' : 'todo';
+      const off = OFFSETS[i % OFFSETS.length];
+      return h('div', { class: `node-row ${state}${off > 0 ? ' buddy-left' : ''}`, style: `--off:${off}px` },
+        h('button', {
+          type: 'button', class: `node ${state}${lesson.review ? ' review' : ''}`,
+          'aria-label': `${lesson.title}${prog ? ', terminée' : ''}`,
+          onclick: () => openCourseLesson(lesson.id),
+        }, h('span', { 'aria-hidden': 'true' }, lesson.emoji)),
+        isNext ? mascot('wave', 'node-buddy') : null,
+        h('div', { class: 'node-label' },
+          lesson.title,
+          prog ? h('span', { class: 'node-stars', 'aria-hidden': 'true' }, '★'.repeat(prog.stars) + '☆'.repeat(3 - prog.stars)) : null));
+    });
+    return h('section', { class: 'unit' }, banner, h('div', { class: 'node-path' }, nodes));
+  });
+
+  $('#path').replaceChildren(header, ...units);
+}
+
+// ---------- Vue « leçon » ----------
+let currentLesson = null; // { id?, lesson }
+
+function showLessonView(crumb) {
+  $('#home').hidden = true;
+  $('#lesson-view').hidden = false;
+  $('#lesson-crumb').textContent = crumb;
+  window.scrollTo({ top: 0 });
+}
+
+function showHome() {
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+  $('#lesson-view').hidden = true;
+  $('#home').hidden = false;
+  renderPath();
+  renderContinue();
+  renderStats();
+  window.scrollTo({ top: 0 });
+}
+$('#back-home').addEventListener('click', showHome);
+
+function showThinking(label) {
+  const status = $('#lesson-status');
+  $('#lesson').replaceChildren();
+  status.className = 'status thinking';
+  status.hidden = false;
+  status.replaceChildren(
+    mascot('think', 'status-buddy'),
+    h('div', null, h('strong', null, 'Je prépare ta leçon…'), h('div', { class: 'muted' }, label)));
+}
+
+function showLessonError(err, retry) {
+  const status = $('#lesson-status');
+  status.className = 'status error';
+  status.replaceChildren(mascot('oops', 'status-buddy'),
+    h('div', null, err.message, h('div', null, h('button', { type: 'button', class: 'btn ghost small retry', onclick: retry }, '🔁 Réessayer'))));
+}
+
+let lessonBusy = false;
+async function openCourseLesson(id, { fresh = false } = {}) {
+  const e = courseIndex.get(id);
+  if (!e || lessonBusy) return;
+  showLessonView(`${crumbOf(id)} · ${e.lesson.review ? 'Bilan' : `Leçon ${id.split('.')[2]}`}`);
+  $('#lesson-refresh').hidden = Boolean(e.lesson.content);
+  // 1) leçon rédigée, 2) déjà générée sur cet appareil, 3) générée par l'IA à partir du programme
+  let lesson = e.lesson.content ? { ...e.lesson.content, level: e.level.ai } : (!fresh && store.get(`${KEYS.course}${id}`, null));
+  if (!lesson) {
+    lessonBusy = true;
+    showThinking(`« ${e.lesson.title} »`);
+    try {
+      lesson = await api('/api/lesson', { lessonId: id });
+      store.set(`${KEYS.course}${id}`, lesson);
+    } catch (err) {
+      showLessonError(err, () => openCourseLesson(id, { fresh }));
+      return;
+    } finally {
+      lessonBusy = false;
+    }
+  }
+  $('#lesson-status').hidden = true;
+  currentLesson = { id, lesson };
+  renderLesson(lesson, id);
+}
+
+$('#lesson-refresh').addEventListener('click', () => {
+  if (currentLesson?.id && confirm('Générer une nouvelle version de cette leçon?')) openCourseLesson(currentLesson.id, { fresh: true });
+});
+
+// ---------- Leçon libre ----------
+$('#topic-chips').append(
+  ...TOPICS.map((t, i) =>
+    h('button', { type: 'button', class: `topic-tile tint-${i % 6}`, onclick: () => { $('#topic').value = t.topic; createLesson(t.topic); } },
+      h('span', { class: 'topic-emoji', 'aria-hidden': 'true' }, t.emoji),
+      h('span', { class: 'topic-label' }, t.label))),
+  h('button', {
+    type: 'button', class: 'topic-tile tint-4 sample-tile',
+    onclick: () => { showLessonView('Leçon d’exemple'); $('#lesson-refresh').hidden = true; $('#lesson-status').hidden = true; renderLesson(SAMPLE_LESSON); },
+  }, h('span', { class: 'topic-emoji', 'aria-hidden': 'true' }, '📘'), h('span', { class: 'topic-label' }, 'Exemple : present perfect')));
 
 $('#lesson-form').addEventListener('submit', (e) => {
   e.preventDefault();
@@ -391,35 +614,39 @@ $('#lesson-form').addEventListener('submit', (e) => {
   createLesson(topic);
 });
 
-let lessonBusy = false;
 async function createLesson(topic) {
   if (lessonBusy) return;
   lessonBusy = true;
-  const btn = $('#lesson-btn');
-  const status = $('#lesson-status');
-  btn.disabled = true;
-  status.className = 'status thinking';
-  status.hidden = false;
-  status.replaceChildren(
-    mascot('think', 'status-buddy'),
-    h('div', null, h('strong', null, 'Je prépare ta leçon…'), h('div', { class: 'muted' }, `« ${topic} »`)));
-  status.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  showLessonView('Leçon libre');
+  $('#lesson-refresh').hidden = true;
+  showThinking(`« ${topic} »`);
   try {
     const lesson = await api('/api/lesson', { topic, level: getLevel() });
     store.set(KEYS.lesson, lesson);
     store.set(KEYS.lessons, store.get(KEYS.lessons, 0) + 1);
     markActive();
-    renderStats();
-    status.hidden = true;
+    $('#lesson-status').hidden = true;
+    currentLesson = { lesson };
     renderLesson(lesson);
-    $('#lesson').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (err) {
-    status.className = 'status error';
-    status.replaceChildren(mascot('oops', 'status-buddy'), h('div', null, err.message));
+    showLessonError(err, () => { lessonBusy = false; createLesson(topic); });
   } finally {
     lessonBusy = false;
-    btn.disabled = false;
   }
+}
+
+// Leçon du parcours terminée : étoiles selon le score.
+function completeCourseLesson(id, correct, total) {
+  const stars = correct === total ? 3 : correct / total >= 0.6 ? 2 : 1;
+  const progress = getProgress();
+  const first = !progress[id];
+  if (!progress[id] || progress[id].stars < stars) progress[id] = { stars, at: dayKey() };
+  store.set(KEYS.progress, progress);
+  if (first) store.set(KEYS.lessons, store.get(KEYS.lessons, 0) + 1);
+  markActive();
+  renderStats();
+  const nextId = courseOrder[courseIndex.get(id).order + 1];
+  return { stars: progress[id].stars, nextId };
 }
 
 function withBlank(question) {
@@ -432,6 +659,7 @@ function withBlank(question) {
 }
 
 const tile = (emoji, fallback, i = 0) => h('span', { class: `emoji-tile tint-${i % 6}`, 'aria-hidden': 'true' }, emoji || fallback);
+const sectionTitle = (icon, text) => h('h2', null, h('span', { class: 'h-icon', 'aria-hidden': 'true' }, icon), h('span', { class: 'mark' }, text));
 
 // Explication en étapes illustrées, à faire défiler (glisser ou boutons).
 function stepsCard(steps) {
@@ -447,7 +675,7 @@ function stepsCard(steps) {
   const prev = h('button', { type: 'button', class: 'btn ghost round', 'aria-label': 'Étape précédente', onclick: () => go(i - 1) }, '←');
   const next = h('button', {
     type: 'button', class: 'btn primary',
-    onclick: () => (i === last ? $('.lesson-examples, .lesson-quiz')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) : go(i + 1)),
+    onclick: () => (i === last ? $('.lesson-alphabet, .lesson-examples, .lesson-quiz')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) : go(i + 1)),
   });
   function go(k) {
     i = Math.max(0, Math.min(last, k));
@@ -458,54 +686,186 @@ function stepsCard(steps) {
     });
     [...dots.children].forEach((d, n) => d.setAttribute('aria-current', String(n === i)));
     prev.disabled = i === 0;
-    next.textContent = i === last ? 'Exemples ↓' : 'Suivant →';
+    next.textContent = i === last ? 'La suite ↓' : 'Suivant →';
   }
   onSwipe(viewport, () => go(i + 1), () => go(i - 1));
   go(0);
   return h('div', { class: 'card lesson-steps' },
-    h('h2', null, h('span', { class: 'h-icon', 'aria-hidden': 'true' }, '🧠'), h('span', { class: 'mark' }, 'Comprendre')),
+    sectionTitle('🧠', 'Comprendre'),
     viewport,
     steps.length > 1 ? h('div', { class: 'steps-nav' }, prev, dots, next) : null);
 }
 
-// Quiz : une question à la fois, la mascotte réagit.
-function quizCard(exercises) {
+// Alphabet interactif : toucher une lettre pour l'entendre.
+const ALPHABET = [
+  ['A', 'é-i', 1], ['B', 'bi'], ['C', 'si'], ['D', 'di'], ['E', 'i', 1], ['F', 'èf'], ['G', 'dji', 1],
+  ['H', 'éitch'], ['I', 'aï', 1], ['J', 'djé-i', 1], ['K', 'ké-i'], ['L', 'èl'], ['M', 'èm'], ['N', 'èn'],
+  ['O', 'ô-ou'], ['P', 'pi'], ['Q', 'kiou'], ['R', 'ar', 1], ['S', 'èss'], ['T', 'ti'], ['U', 'iou'],
+  ['V', 'vi'], ['W', 'dobeul-iou', 1], ['X', 'èks'], ['Y', 'ouaï', 1], ['Z', 'zèd / zi'],
+];
+function alphabetCard() {
+  return h('div', { class: 'card lesson-alphabet' },
+    sectionTitle('🔤', 'Touche une lettre'),
+    h('p', { class: 'muted small-note' }, 'Prononciation approximative en français. Les lettres pièges ont un point jaune.'),
+    h('div', { class: 'alpha-grid' }, ALPHABET.map(([letter, sound, trap], i) => {
+      const btn = h('button', {
+        type: 'button', class: `alpha-tile tint-${i % 6}${trap ? ' trap' : ''}`, 'aria-label': `Lettre ${letter}, se prononce ${sound}`,
+        onclick: () => {
+          speak(letter);
+          btn.classList.remove('pop');
+          void btn.offsetWidth;
+          btn.classList.add('pop');
+        },
+      }, h('span', { class: 'alpha-letter', lang: 'en' }, letter), h('span', { class: 'alpha-sound' }, sound));
+      return btn;
+    })));
+}
+
+// Dialogue de la vie réelle, ligne par ligne ou en entier.
+function dialogueCard(lines) {
+  const people = [...new Set(lines.map((l) => l.who || '?'))];
+  const rows = lines.map((l) => {
+    const side = Math.max(0, people.indexOf(l.who || '?')) % 2;
+    return h('div', { class: `dl-line side-${side}` },
+      h('span', { class: `dl-avatar tint-${side ? 5 : 0}`, 'aria-hidden': 'true' }, (l.who || '?').slice(0, 1).toUpperCase()),
+      h('div', { class: 'dl-bubble' },
+        h('div', { class: 'dl-who' }, l.who),
+        h('div', { class: 'en', lang: 'en' }, l.en),
+        l.fr ? h('div', { class: 'fr' }, l.fr) : null),
+      speakBtn(l.en));
+  });
+  const playAll = h('button', { type: 'button', class: 'btn ghost small' }, '▶ Tout écouter');
+  playAll.addEventListener('click', () => speakSequence(lines.map((l, i) => ({ text: l.en, row: rows[i], alt: people.indexOf(l.who) % 2 === 1 }))));
+  return h('div', { class: 'card lesson-dialogue' },
+    h('div', { class: 'card-head' }, sectionTitle('🎭', 'Dialogue'), playAll),
+    h('div', { class: 'dl-list' }, rows));
+}
+
+// Lit une suite de répliques ; deux voix différentes si l'appareil en a.
+function speakSequence(items) {
+  if (!('speechSynthesis' in window)) return toast('La synthèse vocale n’est pas disponible sur cet appareil.');
+  speechSynthesis.cancel();
+  const voices = speechSynthesis.getVoices().filter((v) => /^en[-_]/i.test(v.lang));
+  const other = voices.find((v) => v !== voice && v.lang === (voice && voice.lang)) || voices.find((v) => v !== voice) || voice;
+  items.forEach((it, i) => {
+    const u = new SpeechSynthesisUtterance(it.text);
+    u.lang = 'en-US';
+    u.rate = 0.92;
+    const v = it.alt ? other : voice;
+    if (v) u.voice = v;
+    u.onstart = () => it.row.classList.add('playing');
+    u.onend = u.onerror = () => it.row.classList.remove('playing');
+    speechSynthesis.speak(u);
+  });
+}
+
+function tipCard(tip) {
+  return h('div', { class: 'tip-card' },
+    h('span', { class: 'tip-emoji', 'aria-hidden': 'true' }, tip.emoji || '💡'),
+    h('div', null, h('strong', null, 'Astuce de prof'), h('p', null, tip.text)));
+}
+
+// Quiz : une question à la fois, trois types d'exercices, la mascotte réagit.
+function quizCard(exercises, onComplete) {
   const card = h('div', { class: 'card lesson-quiz' });
   const buddy = mascot('idle', 'quiz-buddy');
   let idx = 0;
   let correct = 0;
 
-  function renderQuestion() {
-    if (idx >= exercises.length) return renderScore();
-    const ex = exercises[idx];
-    const explain = h('div', { class: 'explain', hidden: true });
-    const next = h('button', {
-      type: 'button', class: 'btn primary next-q', hidden: true,
-      onclick: () => { idx++; renderQuestion(); },
-    }, idx === exercises.length - 1 ? 'Mon score 🏆' : 'Suivant →');
+  function answered(good, explainEl, nextEl, text) {
+    if (good) correct++;
+    setMood(buddy, good ? 'happy' : 'oops', 1600);
+    markActive();
+    explainEl.replaceChildren(h('span', { class: 'explain-icon', 'aria-hidden': 'true' }, good ? '🎉' : '💡'), h('span', null, text || (good ? 'Bravo!' : '')));
+    explainEl.hidden = false;
+    nextEl.hidden = false;
+  }
+
+  function optionsFor(ex, explain, next) {
     const buttons = ex.options.map((opt, j) =>
       h('button', {
         type: 'button', class: 'option', lang: 'en',
         onclick: () => {
           buttons.forEach((b) => (b.disabled = true));
           buttons[ex.answer].classList.add('correct');
-          const good = j === ex.answer;
-          if (good) correct++;
-          else buttons[j].classList.add('wrong');
-          setMood(buddy, good ? 'happy' : 'oops', 1600);
-          markActive();
-          explain.replaceChildren(h('span', { class: 'explain-icon', 'aria-hidden': 'true' }, good ? '🎉' : '💡'), h('span', null, ex.explain || (good ? 'Bravo!' : '')));
-          explain.hidden = false;
-          next.hidden = false;
+          if (j !== ex.answer) buttons[j].classList.add('wrong');
+          answered(j === ex.answer, explain, next, ex.explain);
         },
       }, h('span', { class: 'opt-letter', 'aria-hidden': 'true' }, 'ABC'[j]), h('span', null, opt)));
+    return h('div', { class: 'options' }, buttons);
+  }
+
+  // Remettre les mots dans l'ordre : toucher les tuiles pour construire la phrase.
+  function orderFor(ex, explain, next) {
+    const clean = (s) => s.replace(/[.,!?;:]/g, '').trim();
+    const words = clean(ex.sentence).split(/\s+/);
+    let bank = words.map((w, i) => ({ w, i }));
+    for (let k = bank.length - 1; k > 0; k--) {
+      const r = Math.floor(Math.random() * (k + 1));
+      [bank[k], bank[r]] = [bank[r], bank[k]];
+    }
+    if (bank.every((t, k) => t.w === words[k]) && bank.length > 1) bank.push(bank.shift());
+    const picked = [];
+    const line = h('div', { class: 'order-line', 'aria-label': 'Ta phrase' });
+    const pool = h('div', { class: 'order-bank' });
+    let done = false;
+    function draw() {
+      line.replaceChildren(...(picked.length ? picked.map((t) => h('button', {
+        type: 'button', class: 'word-tile in-line', lang: 'en', disabled: done,
+        onclick: () => { picked.splice(picked.indexOf(t), 1); bank.push(t); draw(); },
+      }, t.w)) : [h('span', { class: 'order-hint' }, 'Touche les mots dans le bon ordre')]));
+      pool.replaceChildren(...bank.map((t) => h('button', {
+        type: 'button', class: 'word-tile', lang: 'en', disabled: done,
+        onclick: () => { bank = bank.filter((b) => b !== t); picked.push(t); draw(); check(); },
+      }, t.w)));
+    }
+    function check() {
+      if (bank.length) return;
+      done = true;
+      const good = picked.map((t) => t.w.toLowerCase()).join(' ') === words.map((w) => w.toLowerCase()).join(' ');
+      line.classList.add(good ? 'good' : 'bad');
+      draw();
+      speak(ex.sentence);
+      answered(good, explain, next, good ? ex.explain : `Réponse : « ${ex.sentence} ». ${ex.explain || ''}`);
+    }
+    draw();
+    return h('div', { class: 'order-ex' }, line, pool);
+  }
+
+  function renderQuestion() {
+    if (idx >= exercises.length) return renderScore();
+    const ex = exercises[idx];
+    const type = ex.type || 'choice';
+    const explain = h('div', { class: 'explain', hidden: true });
+    const next = h('button', {
+      type: 'button', class: 'btn primary next-q', hidden: true,
+      onclick: () => { idx++; renderQuestion(); card.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
+    }, idx === exercises.length - 1 ? 'Mon score 🏆' : 'Suivant →');
+
+    let prompt;
+    let body;
+    if (type === 'listen') {
+      prompt = h('div', { class: 'q-bubble listen-bubble' },
+        h('div', { class: 'q-label' }, '🎧 Qu’as-tu entendu?'),
+        h('div', { class: 'listen-btns' },
+          h('button', { type: 'button', class: 'btn primary listen-play', onclick: () => speak(ex.audio, buddy) }, '🔊 Écouter'),
+          h('button', { type: 'button', class: 'btn ghost listen-slow', 'aria-label': 'Écouter lentement', onclick: () => speak(ex.audio, buddy, 0.6) }, '🐢')));
+      body = optionsFor(ex, explain, next);
+    } else if (type === 'order') {
+      prompt = h('div', { class: 'q-bubble' },
+        h('div', { class: 'q-label' }, '🧩 Remets les mots dans l’ordre'),
+        h('div', { class: 'q-fr' }, `« ${ex.fr} »`));
+      body = orderFor(ex, explain, next);
+    } else {
+      prompt = h('div', { class: 'q-bubble', lang: 'en' }, withBlank(ex.question));
+      body = optionsFor(ex, explain, next);
+    }
+
     card.replaceChildren(
-      h('div', { class: 'quiz-head' },
-        h('h2', null, h('span', { class: 'h-icon', 'aria-hidden': 'true' }, '🏆'), h('span', { class: 'mark' }, 'Quiz')),
-        h('span', { class: 'quiz-count' }, `${idx + 1} / ${exercises.length}`)),
+      h('div', { class: 'quiz-head' }, sectionTitle('🏆', 'Exercices'), h('span', { class: 'quiz-count' }, `${idx + 1} / ${exercises.length}`)),
       h('div', { class: 'progress', 'aria-hidden': 'true' }, h('span', { style: `width:${(idx / exercises.length) * 100}%` })),
-      h('div', { class: 'quiz-q' }, buddy, h('div', { class: 'q-bubble', lang: 'en' }, withBlank(ex.question))),
-      h('div', { class: 'options' }, buttons),
+      h('div', { class: 'quiz-q' }, buddy, prompt),
+      body,
       explain,
       next);
   }
@@ -513,15 +873,21 @@ function quizCard(exercises) {
   function renderScore() {
     const n = exercises.length;
     const great = correct >= n / 2;
-    const big = mascot(great ? 'happy' : 'wave', 'score-buddy');
+    const result = onComplete ? onComplete(correct, n) : null;
     const msg = correct === n ? 'Parfait!' : great ? 'Bien joué!' : 'Continue, tu progresses!';
+    const stars = result ? result.stars : (correct === n ? 3 : correct / n >= 0.6 ? 2 : 1);
     card.replaceChildren(
       h('div', { class: 'score-screen' },
-        big,
-        h('div', { class: 'stars', 'aria-label': `${correct} sur ${n}` },
-          Array.from({ length: n }, (_, k) => h('span', { class: k < correct ? 'star on' : 'star', style: `animation-delay:${0.2 + k * 0.18}s` }, '★'))),
+        mascot(great ? 'happy' : 'wave', 'score-buddy'),
+        h('div', { class: 'stars', 'aria-label': `${stars} étoiles sur 3` },
+          [0, 1, 2].map((k) => h('span', { class: k < stars ? 'star on' : 'star', style: `animation-delay:${0.2 + k * 0.2}s` }, '★'))),
         h('div', { class: 'score-text' }, `${correct} / ${n} · ${msg}`),
-        h('button', { type: 'button', class: 'btn ghost', onclick: () => { idx = 0; correct = 0; renderQuestion(); } }, '🔁 Recommencer')));
+        result ? h('div', { class: 'done-chip' }, '✅ Leçon terminée') : null,
+        h('div', { class: 'score-actions' },
+          h('button', { type: 'button', class: 'btn ghost', onclick: () => { idx = 0; correct = 0; renderQuestion(); } }, '🔁 Recommencer'),
+          result && result.nextId
+            ? h('button', { type: 'button', class: 'btn primary', onclick: () => openCourseLesson(result.nextId) }, 'Leçon suivante →')
+            : h('button', { type: 'button', class: 'btn primary', onclick: showHome }, '🧭 Mon parcours'))));
     if (correct === n) confetti();
   }
 
@@ -529,7 +895,7 @@ function quizCard(exercises) {
   return card;
 }
 
-function renderLesson(lesson) {
+function renderLesson(lesson, courseId) {
   const root = $('#lesson');
   const vocabWords = new Set(getVocab().map((v) => v.en.toLowerCase()));
   const steps = (lesson.explanation || []).map((s) => (typeof s === 'string' ? { emoji: '', text: s } : s)).filter((s) => s && s.text);
@@ -559,17 +925,23 @@ function renderLesson(lesson) {
       h('div', { class: 'word-actions' }, speakBtn(v.word), add));
   }));
 
+  const onComplete = courseId ? (correct, total) => completeCourseLesson(courseId, correct, total) : null;
+
   root.replaceChildren(
     h('div', { class: 'card lesson-main' },
       h('div', { class: 'lead-meta' },
         lesson.sample ? h('span', { class: 'badge' }, 'Exemple') : null,
-        lesson.level ? h('span', { class: 'level-chip' }, lesson.level) : null),
+        lesson.level ? h('span', { class: 'level-chip' }, lesson.level) : null,
+        courseId && isDone(courseId) ? h('span', { class: 'level-chip done' }, '✓ Terminée') : null),
       h('h1', null, lesson.title),
       lesson.objective ? h('p', { class: 'objective' }, h('span', { 'aria-hidden': 'true' }, '🎯 '), lesson.objective) : null),
     steps.length ? stepsCard(steps) : null,
-    examples.childElementCount ? h('div', { class: 'card lesson-examples' }, h('h2', null, h('span', { class: 'h-icon', 'aria-hidden': 'true' }, '💬'), h('span', { class: 'mark' }, 'Exemples')), examples) : null,
-    vocab.childElementCount ? h('div', { class: 'card lesson-vocab' }, h('h2', null, h('span', { class: 'h-icon', 'aria-hidden': 'true' }, '🧩'), h('span', { class: 'mark' }, 'Mots utiles')), vocab) : null,
-    (lesson.exercises || []).length ? quizCard(lesson.exercises) : null,
+    lesson.special === 'alphabet' ? alphabetCard() : null,
+    examples.childElementCount ? h('div', { class: 'card lesson-examples' }, sectionTitle('💬', 'Exemples'), examples) : null,
+    (lesson.dialogue || []).length ? dialogueCard(lesson.dialogue) : null,
+    vocab.childElementCount ? h('div', { class: 'card lesson-vocab' }, sectionTitle('🧩', 'Mots utiles'), vocab) : null,
+    lesson.tip && lesson.tip.text ? tipCard(lesson.tip) : null,
+    (lesson.exercises || []).length ? quizCard(lesson.exercises, onComplete) : null,
   );
 }
 
@@ -908,7 +1280,7 @@ document.addEventListener('focusout', () => {
 if (!Array.isArray(store.get(KEYS.vocab, null))) setVocab(SAMPLE_VOCAB);
 greet();
 renderStats();
-renderLesson(store.get(KEYS.lesson, null) || SAMPLE_LESSON);
+loadCourse().then(renderContinue);
 renderChat();
 showTab(['lesson', 'chat', 'vocab'].includes(store.get(KEYS.tab)) ? store.get(KEYS.tab) : 'lesson');
 

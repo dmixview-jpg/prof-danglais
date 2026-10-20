@@ -3,7 +3,15 @@
 Ton coach d'anglais personnel, pensé pour un francophone du Québec et utilisé sur **iPhone et iPad** comme une vraie app (PWA). L'app est **100 % gratuite** : elle utilise des modèles d'IA **open source** (Llama, Qwen, Mistral, Gemma…) chez des fournisseurs gratuits, ou directement sur ton ordinateur.
 
 - **Un petit chat bleu animé** te guide partout. Il remue la queue et frétille de l'oreille. Il salue, réfléchit pendant que l'IA travaille, parle quand tu touches 🔊, saute de joie quand tu réponds juste et fait « oups » quand tu te trompes. Il est dessiné en code : aucune image à télécharger.
-- **Leçon** : choisis un sujet. L'IA prépare une leçon courte et illustrée, adaptée à ton niveau. Les explications défilent en étapes, chacune avec un dessin. Il y a aussi des exemples à écouter, des cartes de mots utiles et un quiz, une question à la fois, avec des étoiles et des confettis.
+- **Un parcours complet, de l'alphabet à la maîtrise** : 7 niveaux (Pré-A1, A1, A2, B1, B2, C1, C2), 36 unités et 179 leçons, plus un bilan à la fin de chaque unité. Le bouton « Continuer » ouvre toujours la prochaine leçon, et chaque leçon terminée rapporte jusqu'à 3 étoiles. Voir la section [Le parcours](#le-parcours).
+- **Leçon** : chaque leçon contient :
+  - des explications en étapes illustrées ;
+  - des exemples à écouter ;
+  - un dialogue de la vie réelle ;
+  - des mots utiles ;
+  - une astuce sur les pièges des francophones ;
+  - 7 exercices de 3 types : choix de réponse, écoute (« Qu'as-tu entendu? ») et remise des mots en ordre.
+- **Leçon libre** : tu peux aussi demander une leçon sur n'importe quel sujet.
 - **Conversation** : discute en anglais avec « Coach ». Il te répond simplement et corrige ton dernier message dans un encadré jaune.
 - **Vocabulaire** : cartes mémoire (anglais / français). Un mot est maîtrisé après 3 « Je sais ».
 - **Prononciation** : un bouton 🔊 sur chaque exemple, chaque mot et chaque réponse du coach. La voix est celle de l'iPhone : gratuite et sans Internet.
@@ -13,6 +21,33 @@ Ton coach d'anglais personnel, pensé pour un francophone du Québec et utilisé
 La clé API reste sur le serveur : elle n'est jamais envoyée au navigateur.
 
 ---
+
+## Le parcours
+
+Le programme suit le **Cadre européen commun de référence (CECR)**, comme les grands cours en ligne (Cambridge English, British Council, BBC Learning English) et la progression des grammaires de référence. Il est pensé pour un francophone du Québec : chaque leçon aborde les pièges typiques (faux amis, « I have 30 years », depuis → present perfect, etc.).
+
+| Niveau | Ce que tu sauras faire | Exemples d'unités |
+|---|---|---|
+| 🌱 **Pré-A1 · Premiers pas** | Prononcer l'alphabet et les sons anglais, compter, saluer | L'alphabet (interactif), épeler, TH / H / R / W, nombres, couleurs, jours et mois |
+| 🐣 **A1 · Débutant** | Te présenter, parler de ton quotidien | to be, présent simple, famille et maison, nourriture, présent continu, passé simple |
+| 🌿 **A2 · Élémentaire** | Raconter, comparer, faire des projets | passé continu, comparatifs, futur, present perfect, conseils, vie pratique |
+| 🌳 **B1 · Intermédiaire** | Te débrouiller partout, travailler en anglais | conditionnels, voix passive, discours indirect, relatives, entrevue d'embauche |
+| 🌲 **B2 · Intermédiaire avancé** | Argumenter et nuancer avec aisance | 3ᵉ conditionnel, déduction, phrases complexes, collocations, faux amis |
+| 🏔️ **C1 · Avancé** | T'exprimer avec précision dans tous les contextes | inversion, subjonctif, écriture professionnelle, idiomes, accents |
+| 🏆 **C2 · Maîtrise** | Comprendre et t'exprimer comme un natif instruit | connotations, figures de style, culture anglophone, écriture experte, art oratoire |
+
+**Comment les leçons sont créées :**
+- **Pré-A1, rédigé à la main.** Les 9 leçons des premiers pas sont écrites directement dans l'app. Elles fonctionnent sans IA et hors ligne.
+- **A1 à C2, générées par l'IA.** L'IA génère chaque leçon la première fois, à partir de l'objectif pédagogique détaillé que fixe le programme. La leçon est ensuite **gardée sur l'appareil** : elle s'ouvre instantanément la fois suivante, même hors ligne. Le bouton **↻** demande une nouvelle version si une leçon ne te plaît pas.
+- **Les bilans d'unité** révisent toutes les leçons de l'unité.
+
+Pour modifier le programme, ajouter une leçon ou changer un objectif, édite `outils/programme/programme.py` (A1 à C2) ou `outils/programme/premiers_pas.py` (Pré-A1), puis lance :
+
+```bash
+python3 outils/programme/construire.py
+```
+
+Cette commande régénère `public/curriculum.json`.
 
 ## 1. Installer Node.js
 
@@ -155,6 +190,7 @@ L'icône 3D « EN » apparaît et l'app s'ouvre en plein écran, sans la barre d
 | Quoi | Où |
 |---|---|
 | Couleurs, polices, tailles | `public/styles.css` (variables en haut du fichier, et bloc `prefers-color-scheme: dark`) |
+| Programme du parcours (niveaux, unités, leçons) | `outils/programme/`, puis `python3 outils/programme/construire.py` |
 | Sujets suggérés, scénarios de conversation, message d'accueil | `public/app.js` : `TOPICS`, `SCENARIOS`, `WELCOME` |
 | Leçon et mots d'exemple | `public/app.js` : `SAMPLE_LESSON`, `SAMPLE_VOCAB` |
 | Nombre de « Je sais » pour maîtriser un mot | `public/app.js` : `MASTERED` |
@@ -178,6 +214,7 @@ Tes données (niveau, leçon courante, conversation, carnet de vocabulaire) sont
 | « Limite gratuite atteinte » | Attends une minute, ou le lendemain si la limite quotidienne est atteinte. Tu peux aussi passer à un autre fournisseur gratuit ou à Ollama. |
 | « Modèle introuvable » | Vérifie `MODEL_LESSON` / `MODEL_CHAT` dans `.env`, ou laisse-les vides pour les valeurs par défaut. Les modèles gratuits d'OpenRouter changent parfois : choisis-en un autre marqué `:free`. |
 | « Ollama ne répond pas » | Ouvre l'application Ollama. Vérifie dans le Terminal avec `ollama list` que le modèle est téléchargé. |
+| Une leçon du parcours est décevante | Touche ↻ en haut de la leçon pour en générer une nouvelle version. |
 | « La leçon reçue était incomplète » | Le modèle a mal formé sa réponse (fréquent avec les petits modèles). Réessaie, ou choisis un modèle plus grand (ex. : Llama 3.3 70B sur Groq). |
 | Les réponses d'Ollama sont très lentes | Normal sur un ordinateur sans carte graphique. Essaie un modèle plus petit, comme `qwen2.5:3b`. |
 | L'iPhone n'arrive pas à ouvrir la page | Même Wi-Fi? Bonne adresse IP? Le serveur tourne-t-il? Le pare-feu de l'ordinateur bloque-t-il `node`? |
@@ -197,12 +234,14 @@ prof-danglais/
 ├── .env.example           # Modèle de configuration
 ├── test/server.test.js    # Tests avec une fausse IA
 ├── outils/icones.py       # Générateur des icônes 3D
+├── outils/programme/      # Programme du parcours (Pré-A1 → C2) et son générateur
 └── public/
     ├── index.html
     ├── styles.css
     ├── app.js
     ├── manifest.webmanifest
     ├── sw.js              # Cache hors ligne (jamais pour /api/)
+    ├── curriculum.json    # Parcours généré par outils/programme/construire.py
     └── icons/
 ```
 
@@ -211,7 +250,7 @@ prof-danglais/
 | Route | Corps | Réponse |
 |---|---|---|
 | `GET /api/health` | — | `{ ok, needsCode, hasKey }` |
-| `POST /api/lesson` | `{ topic, level }` | La leçon en JSON |
+| `POST /api/lesson` | `{ topic, level }` ou `{ lessonId }` (leçon du parcours) | La leçon en JSON |
 | `POST /api/chat` | `{ level, messages }` | `{ content, fix }` |
 
 Si `APP_CODE` est défini, les routes `POST` exigent l'en-tête `x-app-code`. Sinon, elles répondent `401`.
