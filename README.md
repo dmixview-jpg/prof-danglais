@@ -7,7 +7,7 @@ Ton coach d'anglais personnel, pensé pour un francophone du Québec et utilisé
 - **Vocabulaire** : cartes mémoire (anglais / français). Un mot est maîtrisé après 3 « Je sais ».
 - **Prononciation** : un bouton 🔊 sur chaque exemple, chaque mot et chaque réponse du coach. La voix est celle de l'iPhone : gratuite et sans Internet.
 - Niveaux **A1 à C1**, mode sombre automatique, fonctionne hors ligne pour ce qui est déjà chargé.
-- **S'adapte à chaque appareil** : sur iPhone (du SE au Pro Max), les onglets sont en bas et disparaissent quand le clavier s'ouvre. Sur iPad, ils passent en haut à droite. Sur grand iPad en paysage, la leçon et le vocabulaire s'affichent sur deux colonnes. Le portrait, le paysage et le Split View / Slide Over sont aussi pris en charge.
+- **S'adapte à chaque appareil** : testée sur tous les formats d'iPhone, du SE 1re génération à l'iPhone 17 Pro Max (encoche et Dynamic Island compris). En portrait, les onglets sont en bas et disparaissent quand le clavier s'ouvre. En paysage, ils passent dans un en-tête mince pour garder un maximum de place. Sur iPad, ils passent en haut à droite. Sur grand iPad en paysage, la leçon et le vocabulaire s'affichent sur deux colonnes. Le portrait, le paysage et le Split View / Slide Over sont aussi pris en charge.
 
 La clé API reste sur le serveur : elle n'est jamais envoyée au navigateur.
 

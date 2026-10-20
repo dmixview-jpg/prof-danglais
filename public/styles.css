@@ -106,7 +106,7 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique sur i
 .tab-icon { font-size: 1.35rem; line-height: 1; }
 .tab[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); }
 
-@media (max-width: 699px) {
+@media (max-width: 699px) and (min-height: 501px) {
   body.keyboard .tabs { display: none; }
   body.keyboard main { padding-bottom: 16px; }
   body.keyboard .chat-form { bottom: 8px; }
@@ -125,7 +125,7 @@ main {
   padding: 16px max(16px, env(safe-area-inset-right)) calc(var(--tabbar-h) + 28px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
 }
 
-@media (min-width: 700px) {
+@media (min-width: 700px), (orientation: landscape) and (max-height: 500px) {
   /* le flou crée un bloc conteneur pour position:fixed : seulement quand les onglets sont dans l'en-tête */
   .topbar {
     background: color-mix(in srgb, var(--bg) 88%, transparent);
@@ -289,7 +289,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); box-sha
 }
 .chat-form textarea { flex: 1; min-width: 0; resize: none; max-height: 140px; border: 0; background: transparent; box-shadow: none; }
 .chat-form textarea:focus { box-shadow: none; }
-@media (min-width: 700px) {
+@media (min-width: 700px), (orientation: landscape) and (max-height: 500px) {
   .chat-form { bottom: calc(16px + env(safe-area-inset-bottom)); }
 }
 
@@ -340,7 +340,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); box-sha
   max-width: calc(100% - 32px); padding: 12px 18px; border-radius: 14px;
   background: var(--text); color: var(--bg); font-weight: 700; box-shadow: var(--shadow);
 }
-@media (min-width: 700px) { .toast { bottom: 24px; } }
+@media (min-width: 700px), (orientation: landscape) and (max-height: 500px) { .toast { bottom: 24px; } }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
@@ -351,8 +351,8 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); box-sha
   .options { grid-template-columns: repeat(3, 1fr); }
   .flashcard, .flashcard .inner { min-height: 260px; }
 }
-/* iPad mini / iPad en portrait : en-tête serré */
-@media (min-width: 700px) and (max-width: 939px) {
+/* iPad mini / iPad en portrait / iPhone en paysage : en-tête serré */
+@media (min-width: 700px) and (max-width: 939px), (orientation: landscape) and (max-height: 500px) {
   .topbar { gap: 8px; }
   .tab { padding: 0 10px; }
 }
@@ -368,4 +368,26 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); box-sha
   #panel-vocab:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
   .flash-wrap { position: sticky; top: 84px; }
   .flashcard, .flashcard .inner { min-height: 320px; }
+}
+
+/* iPhone en paysage (tous les modèles) : onglets dans l'en-tête, en-tête mince,
+   encoche / Dynamic Island à gauche ou à droite gérée par les safe areas */
+@media (orientation: landscape) and (max-height: 500px) {
+  .topbar { padding-top: calc(6px + env(safe-area-inset-top)); padding-bottom: 6px; }
+  main { padding-top: 10px; }
+  h1 { font-size: 1.4rem; }
+  .flashcard, .flashcard .inner { min-height: 170px; }
+  /* carte à gauche, boutons à droite : tout tient sans défiler */
+  .flash-wrap { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0 12px; align-items: center; }
+  .flash-head, .flash-wrap > .card { grid-column: 1 / -1; }
+  .flash-actions { margin-top: 0; gap: 8px; }
+  .flash-actions .btn { min-height: 48px; padding: 0 8px; font-size: .92rem; white-space: nowrap; }
+  .face .word { font-size: 1.5rem; }
+  .chat-log { min-height: 0; }
+  .chat-form { bottom: calc(8px + env(safe-area-inset-bottom)); }
+  body.keyboard .topbar { position: static; }
+}
+/* Petits iPhone en paysage (SE, 6/7/8) : on garde le logo, sans le nom */
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 739px) {
+  .brand span { display: none; }
 }

@@ -150,7 +150,7 @@ async function api(path, body, { signal } = {}) {
 // ---------- Niveau ----------
 const levelSelect = $('#level');
 const LEVEL_NAMES = { A1: 'Débutant', A2: 'Élémentaire', B1: 'Intermédiaire', B2: 'Avancé', C1: 'Autonome' };
-const compactHeader = matchMedia('(max-width: 419px), (min-width: 700px) and (max-width: 939px)');
+const compactHeader = matchMedia('(max-width: 419px), (min-width: 700px) and (max-width: 939px), (orientation: landscape) and (max-height: 500px)');
 function labelLevels() {
   for (const opt of levelSelect.options) {
     opt.textContent = compactHeader.matches ? `Niveau ${opt.value}` : `${opt.value} · ${LEVEL_NAMES[opt.value]}`;
