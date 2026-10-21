@@ -186,7 +186,22 @@ Pré-A1 reste gratuit ; les niveaux A1 à C2 et les dialogues guidés demandent 
 - Annulation : l'accès reste ouvert jusqu'à la fin de la période payée, puis les niveaux A1 à C2 se verrouillent et la copie hors connexion est effacée.
 - Un compte avec un abonnement actif ne peut pas être supprimé dans l'app : il faut d'abord annuler l'abonnement (sinon Stripe continuerait de facturer).
 
-**À prévoir avant d'ouvrir les abonnements :** des conditions d'utilisation, une politique de confidentialité et une politique de remboursement (Stripe et la loi les demandent). Au Québec, l'inscription aux taxes TPS/TVQ est obligatoire au-delà de 30 000 $ de revenus sur 12 mois ; Stripe Tax peut les calculer.
+**Avant d'ouvrir les abonnements :** remplis les politiques (section suivante). Au Québec, l'inscription aux taxes TPS/TVQ est obligatoire au-delà de 30 000 $ de revenus sur 12 mois ; Stripe Tax peut les calculer.
+
+## Conditions et confidentialité
+
+L'app contient deux pages publiques, liées depuis l'écran de connexion, le menu « Mon compte » et la page d'abonnement :
+- `public/conditions.html` : conditions d'utilisation et de vente (18 ans et plus, essai gratuit offert une fois, renouvellement, annulation en tout temps, **pas de remboursement partiel** sauf exceptions : erreur de facturation, double prélèvement, prélèvement après annulation, panne de plus de 7 jours, fermeture du service).
+- `public/confidentialite.html` : politique de confidentialité conforme à l'esprit de la Loi 25 (responsable des renseignements personnels, fournisseurs hors Québec, droits d'accès, de rectification et de suppression, Commission d'accès à l'information).
+
+Pour créer un compte, la personne doit cocher « J'ai 18 ans ou plus et j'accepte les conditions ». La version acceptée (date d'entrée en vigueur) et la date d'acceptation sont enregistrées dans son profil (`users/{uid}.consent`).
+
+**À faire avant la mise en ligne payante**
+1. Remplis `public/legal-config.js` : nom (ou nom d'entreprise), courriel de contact, adresse postale, téléphone (facultatif) et responsable des renseignements personnels. La loi québécoise exige l'identité et l'adresse du commerçant pour un contrat conclu à distance. Tant qu'un champ est vide, les pages affichent « [à compléter : …] » en rouge.
+2. **Stripe → Paramètres → Détails publics** : ajoute les adresses de `conditions.html` et de `confidentialite.html`, ainsi qu'un courriel de soutien.
+3. Loi 25 : avant de confier des renseignements à Firebase et Stripe (serveurs hors Québec), fais et garde une courte évaluation des facteurs relatifs à la vie privée (la Commission d'accès à l'information publie un guide). Tiens aussi un registre des incidents de confidentialité, même vide.
+4. Si tu modifies un texte de façon importante, change `enVigueur` dans `legal-config.js` et préviens les abonnés 30 jours à l'avance, comme le prévoient les conditions.
+5. Ces textes sont un bon point de départ, pas un avis juridique : fais-les relire par un avocat ou un notaire avant d'encaisser de vrais paiements.
 
 ## Tableau de bord des abonnements (admin)
 
@@ -269,6 +284,10 @@ prof-danglais/
     ├── abonnement.js          # Abonnement Premium (page d'abonnement, Stripe)
     ├── admin.html, admin.js   # Tableau de bord des abonnements (administrateurs)
     ├── fusion.js              # Fusion de la progression appareil + compte
+    ├── conditions.html        # Conditions d'utilisation et de vente
+    ├── confidentialite.html   # Politique de confidentialité (Loi 25)
+    ├── legal-config.js        # Identité du commerçant et date d'entrée en vigueur
+    ├── legal.js, legal.css    # Remplissage et mise en page des deux pages
     ├── firebase-config.js     # Configuration Firebase (null = sans comptes)
     ├── curriculum.json        # Généré : leçons, bilans et dialogues
     ├── manifest.webmanifest

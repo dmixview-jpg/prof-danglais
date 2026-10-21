@@ -66,7 +66,13 @@
     nameField,
     h('label', { class: 'field' }, h('span', null, 'Courriel'), emailInput),
     h('label', { class: 'field' }, h('span', null, 'Mot de passe'), h('div', { class: 'pw' }, passInput, eye)),
-    hint, msg, submit, forgot);
+    hint,
+    h('label', { class: 'consent', 'data-only': 'signup' },
+      h('input', { id: 'auth-consent', type: 'checkbox' }),
+      h('span', null, 'J’ai 18 ans ou plus et j’accepte les ',
+        h('a', { href: 'conditions.html', target: '_blank', rel: 'noopener' }, 'Conditions d’utilisation et de vente'),
+        ' et la ', h('a', { href: 'confidentialite.html', target: '_blank', rel: 'noopener' }, 'Politique de confidentialité'), '.')),
+    msg, submit, forgot);
   const tabs = ['login', 'signup'].map((mode) => h('button', {
     type: 'button', role: 'tab', 'data-mode': mode, onclick: () => setMode(mode),
   }, mode === 'login' ? 'Se connecter' : 'Créer un compte'));
@@ -76,7 +82,10 @@
     mascot('wave', 'auth-buddy'),
     h('h1', { id: 'auth-title' }, 'Prof d’anglais'),
     h('p', { class: 'auth-sub' }, 'Ton coach d’anglais, de l’alphabet à la maîtrise.'),
-    loading, body));
+    loading, body,
+    h('p', { class: 'legal-links' },
+      h('a', { href: 'conditions.html', target: '_blank', rel: 'noopener' }, 'Conditions'), ' · ',
+      h('a', { href: 'confidentialite.html', target: '_blank', rel: 'noopener' }, 'Confidentialité'))));
   document.body.classList.add('auth-open');
   document.body.append(screen);
 
@@ -126,6 +135,7 @@
     const pass = passInput.value;
     const name = $('#auth-name').value.trim();
     if (mode === 'signup' && !name) return say('Écris ton prénom.');
+    if (mode === 'signup' && !$('#auth-consent').checked) return say('Coche la case pour confirmer que tu as 18 ans ou plus et que tu acceptes les conditions.');
     if (!email) return say(MESSAGES['auth/missing-email']);
     if (!pass) return say(MESSAGES['auth/missing-password']);
     busy(true);
@@ -139,6 +149,10 @@
         greet(name);
         renderAccount();
         cred.user.sendEmailVerification().catch(() => {});
+        // Preuve du consentement : version des textes (date d'entrée en vigueur) et date d'acceptation
+        db.collection('users').doc(cred.user.uid).set({
+          consent: { version: (window.PD_LEGAL && window.PD_LEGAL.enVigueur) || '', at: firebase.firestore.FieldValue.serverTimestamp() },
+        }, { merge: true }).catch(() => {});
       }
     } catch (err) {
       say(message(err));
@@ -231,7 +245,10 @@
       note,
       h('button', { type: 'button', class: 'btn primary', onclick: signOut }, 'Se déconnecter'),
       del,
-      h('button', { type: 'button', class: 'btn ghost', onclick: closeSheet }, 'Fermer')));
+      h('button', { type: 'button', class: 'btn ghost', onclick: closeSheet }, 'Fermer'),
+      h('p', { class: 'legal-links' },
+        h('a', { href: 'conditions.html', target: '_blank', rel: 'noopener' }, 'Conditions d’utilisation et de vente'), ' · ',
+        h('a', { href: 'confidentialite.html', target: '_blank', rel: 'noopener' }, 'Confidentialité'))));
     sheet.hidden = false;
     document.body.classList.add('auth-open');
 
@@ -283,7 +300,7 @@
       name: displayName(),
       data: readLocal(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-    });
+    }, { merge: true }); // merge : garde le consentement enregistré à l'inscription
     store.set(PENDING, false);
   }
   function schedulePush() {

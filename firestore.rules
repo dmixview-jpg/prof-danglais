@@ -15,9 +15,10 @@ service cloud.firestore {
     match /users/{uid} {
       allow read, delete: if connecte(uid);
       allow create, update: if connecte(uid)
-        && request.resource.data.keys().hasOnly(['name', 'data', 'updatedAt'])
-        && request.resource.data.name is string && request.resource.data.name.size() <= 60
-        && request.resource.data.data is map;
+        && request.resource.data.keys().hasOnly(['name', 'data', 'updatedAt', 'consent'])
+        && (!('name' in request.resource.data) || (request.resource.data.name is string && request.resource.data.name.size() <= 60))
+        && (!('data' in request.resource.data) || request.resource.data.data is map)
+        && (!('consent' in request.resource.data) || request.resource.data.consent is map);
     }
 
     // Contenu payant (A1 à C2) : lisible seulement par les abonnés.

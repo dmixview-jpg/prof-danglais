@@ -96,6 +96,9 @@
         h('li', null, '☁️ Ta progression sur tous tes appareils, même hors connexion')),
       plansBox,
       note, cta, fine,
+      h('p', { class: 'paywall-fine' }, 'En t’abonnant, tu acceptes les ',
+        h('a', { href: 'conditions.html#premium', target: '_blank', rel: 'noopener' }, 'conditions de vente'),
+        ' (renouvellement, annulation, remboursements).'),
       h('button', { type: 'button', class: 'btn ghost', onclick: fermer }, 'Plus tard')));
     sheet.hidden = false;
     document.body.classList.add('auth-open');
