@@ -201,3 +201,7 @@ prof-danglais/
     ├── sw.js                  # Cache hors ligne
     └── icons/
 ```
+
+## Licence
+
+© 2026 dmixview-jpg. **Tous droits réservés.** Le code, le contenu pédagogique, le logo et les visuels ne peuvent être ni copiés, ni modifiés, ni republiés sans autorisation écrite. Voir [LICENSE](LICENSE). La police Fredoka garde sa propre licence (SIL OFL).

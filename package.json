@@ -1,7 +1,7 @@
 {
   "name": "prof-danglais",
   "version": "1.0.0",
-  "description": "Coach d'anglais personnel (PWA) avec des modèles d'IA open source gratuits",
+  "description": "Coach d'anglais personnel (PWA) : parcours complet de Pré-A1 à C2, gratuit et sans IA",
   "main": "server.js",
   "private": true,
   "scripts": {
@@ -11,5 +11,5 @@
   "engines": {
     "node": ">=18"
   },
-  "license": "MIT"
+  "license": "UNLICENSED"
 }
