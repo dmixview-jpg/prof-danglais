@@ -1210,3 +1210,4 @@ input[type="email"] {
 .account-sheet > .card { margin: auto auto 0; flex: none; }
 .paywall { padding-top: calc(70px + env(safe-area-inset-top)); }
 @media (min-width: 700px) { .account-sheet > .card { margin: auto; } }
+a.btn { text-decoration: none; }

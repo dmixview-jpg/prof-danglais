@@ -1,0 +1,32 @@
+# Donne ou retire l'accès au tableau de bord (admin.html) à un compte de l'app.
+# Actions → « Nommer un administrateur » → Run workflow, puis indique le courriel du compte.
+name: Nommer un administrateur
+
+on:
+  workflow_dispatch:
+    inputs:
+      courriel:
+        description: Courriel du compte (déjà créé dans l'app)
+        required: true
+      retirer:
+        description: Retirer l'accès au lieu de le donner
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  admin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Mettre à jour le compte
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          COURRIEL: ${{ inputs.courriel }}
+          RETIRER: ${{ inputs.retirer && '--retirer' || '' }}
+        run: node outils/admin/nommer_admin.mjs "$COURRIEL" $RETIRER

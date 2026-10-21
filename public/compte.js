@@ -23,6 +23,7 @@
   let db = null;
   let user = null;
   let pushTimer = null;
+  let isAdmin = false; // marque admin=true (outils/admin/nommer_admin.mjs) : lien vers admin.html
   let pendingName = ''; // prénom saisi à l'inscription, avant que Firebase l'ait enregistré
   const displayName = () => (user && user.displayName) || pendingName || '';
 
@@ -217,6 +218,7 @@
       h('p', { class: 'account-sync' }, syncLabel()),
       verify,
       window.PDAbonnement ? window.PDAbonnement.ligneCompte(tell) : null,
+      isAdmin ? h('a', { class: 'btn ghost', href: 'admin.html' }, '📊 Tableau de bord des abonnements') : null,
       note,
       h('button', { type: 'button', class: 'btn primary', onclick: signOut }, 'Se déconnecter'),
       del,
@@ -363,6 +365,7 @@
           renderAccount();
           hideScreen();
           document.dispatchEvent(new CustomEvent('pd:connecte', { detail: { user: u } }));
+          u.getIdTokenResult().then((r) => { isAdmin = !!r.claims.admin; }).catch(() => {});
         }
       });
     })

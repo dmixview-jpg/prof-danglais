@@ -184,6 +184,17 @@ L'essai gratuit est demandé à Stripe par le champ `trial_period_days` de la se
 
 **À prévoir avant d'ouvrir les abonnements :** des conditions d'utilisation, une politique de confidentialité et une politique de remboursement (Stripe et la loi les demandent). Au Québec, l'inscription aux taxes TPS/TVQ est obligatoire au-delà de 30 000 $ de revenus sur 12 mois ; Stripe Tax peut les calculer.
 
+## Tableau de bord des abonnements (admin)
+
+La page `admin.html` (ex. : `https://<ton-site>/admin.html`) résume les abonnements : abonnés payants, essais en cours, revenu mensuel récurrent, paiements en retard, annulations prévues et départs des 30 derniers jours. La section « À faire » signale les paiements en retard, les essais qui se terminent d'ici 3 jours et les annulations demandées, avec un lien vers la fiche Stripe de chaque personne. La page est en lecture seule ; remboursements et factures se font dans Stripe.
+
+**Accès réservé.** Seuls les comptes marqués administrateur peuvent lire ces données (règles de `firestore.rules`). Pour te donner l'accès :
+1. Crée ton compte dans l'app (comme un utilisateur).
+2. Sur GitHub : **Actions → Nommer un administrateur → Run workflow**, écris ton courriel, puis **Run workflow**. (Le secret `FIREBASE_SERVICE_ACCOUNT` doit exister, voir « Abonnement payant ».)
+3. Dans l'app, déconnecte-toi puis reconnecte-toi : le menu « Mon compte » affiche maintenant **📊 Tableau de bord des abonnements**.
+
+Pour retirer l'accès, relance le même workflow en cochant « Retirer l'accès ». En local : `FIREBASE_SERVICE_ACCOUNT="$(cat cle.json)" node outils/admin/nommer_admin.mjs courriel@exemple.com`.
+
 ## 5. Ajouter l'app à l'écran d'accueil
 
 **iPhone / iPad (Safari)** :
@@ -236,6 +247,8 @@ prof-danglais/
 ├── test/fusion.test.js        # Tests de la fusion des progressions (comptes)
 ├── test/abonnement.test.js    # Tests de la séparation gratuit / payant
 ├── outils/icones.py           # Icônes de l'app, tirées des rendus du logo
+├── outils/google.mjs          # Connexion aux services Google (compte de service)
+├── outils/admin/              # nommer_admin.mjs : accès au tableau de bord
 ├── outils/logo/               # Logo 3D : script Blender, rendus HD et police Fredoka (OFL)
 ├── outils/programme/          # Tout le contenu pédagogique (Python) et son générateur
 │   ├── construire.py
@@ -250,6 +263,7 @@ prof-danglais/
     ├── app.js
     ├── compte.js              # Comptes utilisateurs et synchronisation (Firebase)
     ├── abonnement.js          # Abonnement Premium (page d'abonnement, Stripe)
+    ├── admin.html, admin.js   # Tableau de bord des abonnements (administrateurs)
     ├── fusion.js              # Fusion de la progression appareil + compte
     ├── firebase-config.js     # Configuration Firebase (null = sans comptes)
     ├── curriculum.json        # Généré : leçons, bilans et dialogues

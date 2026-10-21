@@ -6,6 +6,10 @@ service cloud.firestore {
     function connecte(uid) {
       return request.auth != null && request.auth.uid == uid;
     }
+    // Administrateur : marque admin=true donnée par outils/admin/nommer_admin.mjs
+    function admin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
 
     // Progression de chaque personne : elle seule peut la lire et la modifier.
     match /users/{uid} {
@@ -31,10 +35,14 @@ service cloud.firestore {
       match /tax_rates/{t} { allow read: if true; }
     }
     match /customers/{uid} {
-      allow read: if connecte(uid);
+      allow read: if connecte(uid) || admin();
       match /checkout_sessions/{id} { allow read, write: if connecte(uid); }
-      match /subscriptions/{id} { allow read: if connecte(uid); }
-      match /payments/{id} { allow read: if connecte(uid); }
+      match /subscriptions/{id} { allow read: if connecte(uid) || admin(); }
+      match /payments/{id} { allow read: if connecte(uid) || admin(); }
+    }
+    // Tableau de bord (admin.html) : lecture de tous les abonnements, en lecture seule.
+    match /{chemin=**}/subscriptions/{id} {
+      allow read: if admin();
     }
 
     // Tout le reste est fermé.

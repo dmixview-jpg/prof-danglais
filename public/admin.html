@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Tableau de bord · Prof d'anglais</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" type="image/png" href="icons/favicon-64.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin">
+  <header class="topbar">
+    <a class="brand" href="./">
+      <img src="icons/icon-192.png" alt="" width="32" height="32">
+      <span>Tableau de bord</span>
+    </a>
+    <span class="admin-who" id="who"></span>
+    <button type="button" class="btn ghost small" id="refresh" aria-label="Actualiser" hidden>↻<span class="refresh-text"> Actualiser</span></button>
+  </header>
+
+  <main class="admin-main">
+    <section id="state" class="card admin-state" role="status">Chargement…</section>
+
+    <section id="login" class="card admin-login" hidden>
+      <h1>Administration</h1>
+      <p class="muted">Connecte-toi avec ton compte administrateur de Prof d'anglais.</p>
+      <form id="login-form" class="auth-form" novalidate>
+        <label class="field"><span>Courriel</span><input id="login-email" type="email" autocomplete="email" autocapitalize="none" required></label>
+        <label class="field"><span>Mot de passe</span><input id="login-pass" type="password" autocomplete="current-password" required></label>
+        <p class="auth-msg" id="login-msg" role="alert" hidden></p>
+        <button type="submit" class="btn primary auth-submit">Se connecter</button>
+      </form>
+    </section>
+
+    <div id="dash" hidden>
+      <p class="admin-updated" id="updated"></p>
+      <div class="kpis" id="kpis"></div>
+      <section class="card admin-section">
+        <h2>À faire</h2>
+        <ul class="todo" id="todo"></ul>
+      </section>
+      <section class="card admin-section">
+        <div class="admin-head">
+          <h2>Abonnements</h2>
+          <div class="filters" id="filters" role="group" aria-label="Filtrer par statut"></div>
+        </div>
+        <div class="subs" id="subs"></div>
+      </section>
+      <p class="admin-foot">Données envoyées par Stripe à Firebase (extension « Run Payments with Stripe »). Pour un remboursement, un changement de formule ou une facture, ouvre la fiche Stripe du client. <a href="https://dashboard.stripe.com" target="_blank" rel="noopener">Tableau de bord Stripe ↗</a></p>
+    </div>
+  </main>
+
+  <script src="firebase-config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
