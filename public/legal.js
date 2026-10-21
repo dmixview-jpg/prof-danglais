@@ -2,6 +2,12 @@
 // Remplit les coordonnées des pages légales à partir de legal-config.js.
 (function () {
   const L = window.PD_LEGAL || {};
+  // Dans l'app des magasins, target="_blank" est ignoré : liens dans la même vue (Capacitor ouvre
+  // les adresses externes dans le navigateur).
+  const C = window.Capacitor;
+  if (C && typeof C.isNativePlatform === 'function' && C.isNativePlatform()) {
+    document.querySelectorAll('a[target="_blank"]').forEach((a) => a.removeAttribute('target'));
+  }
   const LABELS = {
     nom: 'nom du commerçant', courriel: 'courriel de contact', adresse: 'adresse postale',
     telephone: 'téléphone', responsable: 'nom du responsable',

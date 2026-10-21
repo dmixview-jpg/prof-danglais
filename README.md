@@ -248,6 +248,67 @@ La page `admin.html` (ex. : `https://<ton-site>/admin.html`) résume les abonnem
 
 Pour retirer l'accès, relance le même workflow en cochant « Retirer l'accès ». En local : `FIREBASE_SERVICE_ACCOUNT="$(cat cle.json)" node outils/admin/nommer_admin.mjs courriel@exemple.com`.
 
+## App Store et Google Play
+
+L'app web est emballée en vraies apps iPhone/iPad et Android avec **Capacitor** (dossiers `android/` et `ios/`). Les fichiers de `public/` sont inclus dans l'app : elle marche hors connexion dès le premier lancement. Le SDK Firebase et les polices sont aussi inclus (`public/vendor/`, `public/fonts/`), car Apple interdit de télécharger du code. Aucun Mac n'est nécessaire : le workflow **Apps mobiles** construit les deux apps sur GitHub.
+
+**Ce qui change dans les apps**
+- **Paiement** : Apple et Google exigent leurs achats intégrés pour débloquer du contenu. Stripe n'y est jamais proposé.
+  - L'app utilise **RevenueCat** (`public/magasin.js`), gratuit jusqu'à 2 500 $ US de revenus par mois.
+  - Un abonnement pris sur le site, dans l'App Store ou dans Google Play donne le même accès Premium, avec le même compte.
+- **Remboursements et rétractation** : pour les achats dans les magasins, c'est Apple ou Google qui s'en chargent (section « Achat dans l'App Store ou Google Play » des conditions).
+- **Mises à jour** :
+  - une modification de `public/` demande une nouvelle version dans les magasins, avec un nouvel examen ;
+  - le contenu Premium, lui, vient de Firebase et se met à jour sans nouvelle version.
+- **Commission** : 15 % pour un petit développeur, contre environ 3 % avec Stripe sur le site.
+
+**1. Comptes**
+- **Apple Developer Program** : 99 $ US par an, sur <https://developer.apple.com/programs/>.
+  - En tant que particulier, ton nom apparaît comme vendeur.
+  - Une entreprise doit avoir un numéro D-U-N-S (gratuit).
+  - Dans **App Store Connect → Accords**, signe l'accord des apps payantes et remplis les informations bancaires et fiscales : sans cela, pas d'achats intégrés.
+- **Google Play Console** : 25 $ US, une seule fois, sur <https://play.google.com/console>.
+  - Un nouveau compte personnel doit faire un **test fermé avec au moins 12 testeurs pendant 14 jours** avant la mise en production. Tes amis intéressés peuvent servir de testeurs.
+  - Remplis le profil de paiement (Payments profile) pour vendre.
+- **RevenueCat** : compte gratuit sur <https://www.revenuecat.com>.
+
+**2. Créer les apps et les abonnements** (détails et prix dans `magasins/FICHE.md`)
+1. Apple :
+   - **Certificates, Identifiers & Profiles → Identifiers** : enregistre l'identifiant `ca.profdanglais.app`. Il sera définitif après le premier envoi : change-le avant si tu préfères, dans `capacitor.config.json`, `android/app/build.gradle`, le projet iOS et `mobile.yml`.
+   - **App Store Connect → Apps → Nouvelle app** : crée l'app avec cet identifiant.
+   - **Abonnements** : crée le groupe « Premium », avec les produits `premium_mensuel` et `premium_annuel` (offre d'introduction : 7 jours gratuits).
+2. Google : **Play Console → Créer une application**, puis **Monétiser → Abonnements** : crée les mêmes deux produits (forfait de base, plus une offre d'essai gratuit de 7 jours).
+3. RevenueCat :
+   - ajoute l'app iOS (clé d'achats intégrés d'App Store Connect) et l'app Android (compte de service Google) ;
+   - crée le droit d'accès (entitlement) `premium`, rattaché aux quatre produits ;
+   - crée une offre (offering) « default » avec les forfaits Monthly et Annual.
+4. **Firebase → Extensions → « Enable In-App Purchases with RevenueCat »** :
+   - mets « Set custom claims » à **ENABLED** (l'extension ajoute `revenueCatEntitlements` au compte, comme Stripe ajoute `stripeRole`) ;
+   - reporte dans RevenueCat (**Integrations → Firebase**) le secret partagé.
+5. Copie les **clés publiques des SDK** RevenueCat (`appl_…`, `goog_…`) dans `outils/programme/abonnement.json`, bloc `magasins`. Lance `python3 outils/programme/construire.py` et republie `firestore.rules` (accès Premium par RevenueCat).
+6. Dans **App Store Connect → Tarifs et disponibilité** et **Play Console → Pays**, retire la Chine continentale.
+
+**3. Construire et envoyer** (workflow **Actions → Apps mobiles**)
+- À chaque modification de l'app, le workflow vérifie que les deux apps se construisent (onglet Actions, résultat vert). Le paquet Android (`.aab`) est téléchargeable dans les artefacts.
+- Secrets GitHub à créer (**Settings → Secrets and variables → Actions**) :
+  - **Android** :
+    - Crée ta clé d'importation sur ton ordinateur avec `keytool -genkey -v -keystore upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload` (outil fourni avec Java).
+    - `ANDROID_KEYSTORE_BASE64` : le fichier encodé, avec `base64 -i upload.jks` sur Mac ou `base64 -w0 upload.jks` sur Linux.
+    - `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` (`upload`) et `ANDROID_KEY_PASSWORD`.
+    - `PLAY_SERVICE_ACCOUNT_JSON` : le compte de service Google Cloud invité dans la Play Console, avec le droit de publier.
+    - Garde `upload.jks` et ses mots de passe en lieu sûr. Avec la signature d'apps par Google Play, une clé d'importation perdue peut être remplacée.
+  - **Apple** :
+    - `APPLE_TEAM_ID` : identifiant d'équipe à 10 caractères.
+    - `ASC_KEY_ID`, `ASC_ISSUER_ID` et `ASC_PRIVATE_KEY` (contenu du fichier `.p8`) : clé d'API d'**App Store Connect → Utilisateurs et accès → Intégrations**, avec le rôle Admin pour que les certificats se créent seuls.
+- **Actions → Apps mobiles → Run workflow**, coche « Envoyer aux magasins » et indique le numéro de version. Le workflow construit, signe et envoie la version à **TestFlight** et au **test interne** de Google Play.
+- **Premier envoi Google Play** : la Play Console exige que le tout premier `.aab` soit déposé à la main. Télécharge-le dans les artefacts du workflow, puis dépose-le dans **Tests → Test interne**.
+
+**4. Fiche et examen**
+- Textes, mots-clés, visuels (`magasins/captures/`) et note pour l'équipe d'examen : `magasins/FICHE.md`.
+- Questionnaires de confidentialité (App Store « Confidentialité de l'app », Google « Sécurité des données ») : `magasins/DONNEES.md`.
+- Donne un **compte de démonstration** aux équipes d'examen : l'app demande une connexion au démarrage. Apple accepte une connexion obligatoire quand le compte sert vraiment (ici, la progression et l'abonnement sur tous les appareils). Si l'examen la refuse, on pourra laisser essayer Pré-A1 sans compte dans l'app.
+- Teste les achats avec des comptes de test : **Sandbox** chez Apple (TestFlight), **testeurs de licence** chez Google.
+
 ## 5. Ajouter l'app à l'écran d'accueil
 
 **iPhone / iPad (Safari)** :
@@ -300,6 +361,11 @@ prof-danglais/
 ├── test/fusion.test.js        # Tests de la fusion des progressions (comptes)
 ├── test/abonnement.test.js    # Tests de la séparation gratuit / payant
 ├── outils/icones.py           # Icônes de l'app, tirées des rendus du logo
+├── outils/icones_natives.py   # Icônes et écrans de lancement iOS / Android
+├── outils/captures_magasins.py # Visuels des fiches App Store / Google Play
+├── capacitor.config.json      # Apps iOS et Android (Capacitor)
+├── android/, ios/             # Projets natifs générés par Capacitor
+├── magasins/                  # Fiches des magasins, confidentialité, visuels
 ├── outils/google.mjs          # Connexion aux services Google (compte de service)
 ├── outils/admin/              # nommer_admin.mjs : accès au tableau de bord
 ├── outils/logo/               # Logo 3D : script Blender, rendus HD et police Fredoka (OFL)
@@ -316,6 +382,8 @@ prof-danglais/
     ├── app.js
     ├── compte.js              # Comptes utilisateurs et synchronisation (Firebase)
     ├── abonnement.js          # Abonnement Premium (page d'abonnement, Stripe)
+    ├── magasin.js             # Achats intégrés App Store / Google Play (RevenueCat)
+    ├── vendor/firebase/       # SDK Firebase inclus dans l'app
     ├── admin.html, admin.js   # Tableau de bord des abonnements (administrateurs)
     ├── fusion.js              # Fusion de la progression appareil + compte
     ├── conditions.html        # Conditions d'utilisation et de vente

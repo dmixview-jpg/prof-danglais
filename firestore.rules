@@ -21,11 +21,18 @@ service cloud.firestore {
         && (!('consent' in request.resource.data) || request.resource.data.consent is map);
     }
 
+    // Abonné Premium, par le site Web ou par un magasin :
+    // - stripeRole : extension Stripe (métadonnée firebaseRole du produit) ;
+    // - revenueCatEntitlements : extension RevenueCat (achats App Store et Google Play).
+    function abonne() {
+      return request.auth != null && (request.auth.token.stripeRole == 'premium'
+        || ('revenueCatEntitlements' in request.auth.token && 'premium' in request.auth.token.revenueCatEntitlements));
+    }
+
     // Contenu payant (A1 à C2) : lisible seulement par les abonnés.
-    // stripeRole est ajouté au compte par l'extension Stripe (métadonnée firebaseRole du produit).
     // Écrit uniquement par outils/programme/publier_premium.mjs (compte de service).
     match /contenu/{niveau} {
-      allow read: if request.auth != null && request.auth.token.stripeRole == 'premium';
+      allow read: if abonne();
       allow write: if false;
     }
 

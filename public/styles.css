@@ -1205,7 +1205,7 @@ input[type="email"] {
 .account-premium { display: grid; gap: 8px; }
 .account-premium p { margin: 0; font-weight: 700; }
 .account-sub { display: grid; gap: 6px; }
-.account-retract { justify-self: center; margin: 0; font-size: .9rem; text-align: center; }
+.account-retract, .paywall-restore { justify-self: center; margin: 0; font-size: .9rem; text-align: center; }
 .retract-form select { width: 100%; min-height: 48px; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: inherit; font: inherit; }
 @media (max-width: 360px) { .plan-badge { font-size: .64rem; } }
 /* Fenêtres plus hautes que l'écran (petits iPhone) : on fait défiler au lieu de couper le haut */

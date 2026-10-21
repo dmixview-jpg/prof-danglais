@@ -14,6 +14,7 @@
   const base = () => location.origin + location.pathname;
   const compte = () => window.PDCompte || null;
   let premium = false;
+  let source = null; // 'web' (Stripe) ou 'magasin' (App Store, Google Play)
   // Historique Stripe de la personne : un ancien abonné n'a pas droit à un nouvel essai gratuit,
   // et un paiement en retard se règle en mettant la carte à jour (portail Stripe).
   let historique = { deja: false, retard: false, recent: null, retractation: null };
@@ -44,10 +45,18 @@
     if (!document.querySelector('.auth:not([hidden]), .account-sheet:not([hidden])')) document.body.classList.remove('auth-open');
   }
 
-  function ouvrir() {
+  // Dans les apps des magasins (App Store, Google Play) : achats intégrés seulement (magasin.js)
+  const magasin = () => (window.PDMagasin && window.PDMagasin.natif ? window.PDMagasin : null);
+
+  async function ouvrir() {
     const c = conf();
     if (!c) return;
-    const essai = historique.deja ? 0 : c.essaiJours || 0;
+    const M = magasin();
+    // Retard de paiement et essai déjà utilisé : abonnements Stripe seulement (le magasin gère les siens)
+    const retard = !M && historique.retard;
+    let prix = c.prix;
+    if (M) prix = M.actif() ? await M.offres().catch(() => []) : [];
+    const essaiDe = (p) => (M ? (p && p.essai ? c.essaiJours || 0 : 0) : historique.deja ? 0 : c.essaiJours || 0);
     // Ce que Premium débloque, compté dans le programme (reste juste si on ajoute des leçons)
     const payants = COURSE.levels.filter((l) => !c.gratuit.includes(l.id));
     const etapes = payants.flatMap((l) => l.units.flatMap((u) => u.lessons));
@@ -57,12 +66,12 @@
       bilans: etapes.filter((l) => l.review).length,
       dialogues: COURSE.scenarios.filter((sc) => sc.locked).length,
     };
-    let choix = c.prix.find((p) => p.parDefaut) || c.prix[0];
+    let choix = prix.find((p) => p.parDefaut) || prix[0] || null;
     const note = h('p', { class: 'auth-msg', role: 'alert', hidden: true });
     const tell = (text, kind = 'bad') => { note.hidden = !text; note.textContent = text; note.dataset.kind = kind; };
     const fine = h('p', { class: 'paywall-fine' });
     const cta = h('button', { type: 'button', class: 'btn yellow paywall-cta' });
-    const plans = c.prix.map((p) => h('button', {
+    const plans = prix.map((p) => h('button', {
       type: 'button', class: 'plan', role: 'radio', 'data-id': p.id,
       onclick: () => { choix = p; maj(); },
     },
@@ -71,19 +80,24 @@
     p.badge ? h('span', { class: 'plan-badge' }, p.badge) : null));
     const plansBox = h('div', { class: 'plans', role: 'radiogroup', 'aria-label': 'Formule' }, ...plans);
     function maj() {
-      plans.forEach((b) => b.setAttribute('aria-checked', String(b.dataset.id === choix.id)));
-      if (historique.retard) return;
+      plans.forEach((b) => b.setAttribute('aria-checked', String(!!choix && b.dataset.id === choix.id)));
+      if (retard) return;
+      if (!choix) { cta.textContent = 'S’abonner'; fine.hidden = true; return; }
+      const essai = essaiDe(choix);
       cta.textContent = essai ? `Commencer mes ${essai} jours gratuits` : `S’abonner : ${choix.montant} / ${choix.periode}`;
-      fine.textContent = `${essai ? `Gratuit pendant ${essai} jours, puis ` : ''}${choix.montant} par ${choix.periode}, taxes comprises, renouvelé automatiquement. Annule en tout temps dans « Mon compte ». Paiement sécurisé par Stripe.`;
+      const debut = `${essai ? `Gratuit pendant ${essai} jours, puis ` : ''}${choix.montant} par ${choix.periode}`;
+      fine.textContent = M
+        ? `${debut}, renouvelé automatiquement. Paiement par ${M.NOM}, avec ${M.COMPTE}. Annule en tout temps dans les réglages d’abonnement de ${M.NOM}, au moins 24 heures avant le renouvellement.`
+        : `${debut}, taxes comprises, renouvelé automatiquement. Annule en tout temps dans « Mon compte ». Paiement sécurisé par Stripe.`;
     }
     maj();
 
-    const pret = compte() && compte().user();
+    const pret = compte() && compte().user() && choix;
     if (!pret) {
       cta.disabled = true;
       tell('Les abonnements ouvrent bientôt. Merci de ta patience!', 'good');
     }
-    if (historique.retard) {
+    if (retard) {
       tell('Ton dernier paiement n’est pas passé. Mets ta carte à jour pour retrouver tout le parcours.');
       cta.textContent = 'Mettre à jour mon paiement';
       plansBox.hidden = true;
@@ -91,15 +105,31 @@
       cta.addEventListener('click', () => gerer(tell));
     } else cta.addEventListener('click', async () => {
       cta.disabled = true;
-      cta.textContent = 'Ouverture du paiement…';
+      cta.textContent = M ? 'Ouverture de l’achat…' : 'Ouverture du paiement…';
       try {
-        await payer(choix, essai);
+        if (!M) return await payer(choix, essaiDe(choix));
+        if (await M.acheter(choix)) return activerApresAchat();
+        cta.disabled = false; // achat annulé par la personne
+        maj();
       } catch (err) {
         tell(err.message || 'Le paiement n’a pas pu s’ouvrir. Réessaie dans un instant.');
         cta.disabled = false;
         maj();
       }
     });
+    const restaurer = M && M.actif() ? h('button', {
+      type: 'button', class: 'auth-link paywall-restore',
+      onclick: async (e) => {
+        e.currentTarget.disabled = true;
+        try {
+          if (await M.restaurer()) return activerApresAchat();
+          tell(`Aucun abonnement actif trouvé avec ${M.COMPTE}.`);
+        } catch {
+          tell('Impossible de vérifier tes achats. Vérifie ta connexion, puis réessaie.');
+        }
+        e.currentTarget.disabled = false;
+      },
+    }, 'Restaurer mes achats') : null;
 
     sheet.replaceChildren(h('div', { class: 'account-card card paywall-card' },
       mascot('happy', 'paywall-buddy'),
@@ -112,12 +142,31 @@
       plansBox,
       note, cta, fine,
       h('p', { class: 'paywall-fine' }, 'En t’abonnant, tu acceptes les ',
-        h('a', { href: 'conditions.html#premium', target: '_blank', rel: 'noopener' }, 'conditions de vente'),
-        ' (renouvellement, annulation, remboursements). Europe et Royaume-Uni : 14 jours pour te rétracter.'),
+        h('a', { href: M ? 'conditions.html#magasins' : 'conditions.html#premium', target: '_blank', rel: 'noopener' }, 'conditions de vente'),
+        M ? ' et la ' : ' (renouvellement, annulation, remboursements). Europe et Royaume-Uni : 14 jours pour te rétracter.',
+        M ? h('a', { href: 'confidentialite.html', target: '_blank', rel: 'noopener' }, 'politique de confidentialité') : null,
+        M ? '.' : null),
+      restaurer,
       h('button', { type: 'button', class: 'btn ghost', onclick: fermer }, 'Plus tard')));
     sheet.hidden = false;
     document.body.classList.add('auth-open');
     cta.focus();
+  }
+
+  // Après un achat dans le magasin : RevenueCat prévient Firebase, qui active l'accès en quelques secondes.
+  async function activerApresAchat() {
+    fermer();
+    const user = compte().user();
+    if (!(await attendreActivation(user))) {
+      toast('Achat reçu : l’activation peut prendre une minute. Rouvre l’app dans un instant.');
+      return;
+    }
+    premium = true;
+    try {
+      await charger(user);
+      toast('Bienvenue dans Premium! Tout le parcours est débloqué. 🎉');
+      confetti();
+    } catch { /* hors connexion : réessai au prochain lancement */ }
   }
 
   // Crée la session de paiement Stripe, puis envoie la personne sur la page de paiement.
@@ -144,7 +193,12 @@
   }
 
   // Portail Stripe : changer de carte, de formule, ou annuler.
+  // Abonnement pris dans un magasin : ses réglages d'abonnement.
   async function gerer(tell) {
+    const M = magasin();
+    if (source === 'magasin' && M) return M.gerer();
+    if (source === 'magasin') return tell('Ton abonnement a été pris dans l’App Store ou Google Play : gère-le dans les réglages d’abonnement de ton téléphone.');
+    if (M) return tell('Ton abonnement a été pris sur le site Web : gère-le depuis le site, dans « Mon compte ».');
     try {
       // Nom de la fonction : ext-<identifiant de l'extension>-createPortalLink (abonnement.json)
       const fn = compte().functions(conf().region).httpsCallable(conf().fonctionPortail || 'ext-firestore-stripe-payments-createPortalLink');
@@ -161,7 +215,8 @@
     const ligne = premium
       ? h('div', { class: 'account-premium' },
         h('p', null, '⭐ Premium actif. Merci de ton soutien!'),
-        h('button', { type: 'button', class: 'btn ghost', onclick: () => gerer(tell) }, 'Gérer mon abonnement'))
+        h('button', { type: 'button', class: 'btn ghost', onclick: () => gerer(tell) }, 'Gérer mon abonnement'),
+        source === 'magasin' && magasin() ? h('a', { class: 'auth-link account-retract', href: magasin().lienRemboursement(), target: '_blank', rel: 'noopener' }, `Demander un remboursement à ${magasin().NOM}`) : null)
       : h('button', { type: 'button', class: 'btn yellow', onclick: () => { $('.account-sheet:not(.paywall)').hidden = true; ouvrir(); } }, '⭐ Passer à Premium');
     const r = historique.retractation;
     const recu = r && enDate(r.demandeLe);
@@ -252,9 +307,14 @@
   const coursePret = () => new Promise((ok) => {
     const t = setInterval(() => { if (conf() || (typeof COURSE !== 'undefined' && COURSE)) { clearInterval(t); ok(); } }, 100);
   });
+  // Premium par Stripe (site Web) ou par un magasin (RevenueCat) : un seul compte, le même accès.
   async function estPremium(user, forcer) {
-    const r = await user.getIdTokenResult(forcer);
-    return r.claims.stripeRole === 'premium';
+    const { claims } = await user.getIdTokenResult(forcer);
+    const droit = (conf().magasins || {}).droit || 'premium';
+    const web = claims.stripeRole === 'premium';
+    const app = Array.isArray(claims.revenueCatEntitlements) && claims.revenueCatEntitlements.includes(droit);
+    source = web ? 'web' : app ? 'magasin' : null;
+    return web || app;
   }
   async function lireHistorique(user) {
     const client = compte().db().collection('customers').doc(user.uid);
@@ -292,6 +352,7 @@
     const params = new URLSearchParams(location.search);
     const retour = params.get('abonnement');
     if (retour) history.replaceState(null, '', base());
+    if (magasin()) magasin().connecter(user.uid).catch(() => {});
 
     const cache = lireCache(user.uid);
     if (cache) { premium = true; applyPremium(cache); }

@@ -3,7 +3,7 @@
 // Lit en lecture seule les abonnements que l'extension Stripe recopie dans Firestore
 // (customers/{uid}/subscriptions/{id}) ; firestore.rules en interdit l'accès aux autres comptes.
 (function () {
-  const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  const SDK = 'vendor/firebase/'; // SDK Firebase 10.12.2 (compat), inclus dans l'app
   const CONFIG = window.PD_FIREBASE;
   const $ = (sel) => document.querySelector(sel);
   let auth = null;

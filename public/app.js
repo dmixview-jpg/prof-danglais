@@ -1248,6 +1248,7 @@ loadCourse().then(() => {
 });
 showTab(['lesson', 'chat', 'vocab'].includes(store.get(KEYS.tab)) ? store.get(KEYS.tab) : 'lesson');
 
-if ('serviceWorker' in navigator) {
+// Dans l'app des magasins (Capacitor), les fichiers sont déjà sur l'appareil : pas de service worker.
+if ('serviceWorker' in navigator && !(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }

@@ -10,7 +10,7 @@
   const CONFIG = window.PD_FIREBASE;
   if (!CONFIG || !CONFIG.apiKey) return;
 
-  const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  const SDK = 'vendor/firebase/'; // SDK Firebase 10.12.2 (compat), inclus dans l'app
   const OWNER = 'pd.owner'; // compte à qui appartiennent les données de cet appareil
   const PENDING = 'pd.syncPending'; // des changements attendent d'être envoyés
   const SYNCED = {

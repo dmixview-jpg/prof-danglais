@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Prof d\'anglais</string>
+    <string name="title_activity_main">Prof d\'anglais</string>
+    <string name="package_name">ca.profdanglais.app</string>
+    <string name="custom_url_scheme">ca.profdanglais.app</string>
+</resources>

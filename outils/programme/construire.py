@@ -130,6 +130,7 @@ def split_premium(data, config):
             premium.setdefault(lid, {"lessons": {}, "scenarios": {}})["scenarios"][sc["id"]] = sc.pop("turns")
             sc["locked"] = True
     data["abonnement"] = {k: config[k] for k in ("gratuit", "essaiJours", "region", "fonctionPortail", "taxesAutomatiques", "prix")}
+    data["abonnement"]["magasins"] = {k: v for k, v in config.get("magasins", {}).items() if not k.startswith("_")}
     return premium
 
 

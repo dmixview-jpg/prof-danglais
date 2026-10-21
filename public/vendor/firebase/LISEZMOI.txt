@@ -1,0 +1,4 @@
+SDK JavaScript Firebase 10.12.2 (versions « compat »), copié du paquet npm firebase@10.12.2.
+Inclus dans l'app pour qu'elle marche sans télécharger de code (exigence de l'App Store)
+et dès le premier lancement hors connexion. Licence : Apache 2.0, (c) Google LLC.
+https://github.com/firebase/firebase-js-sdk/blob/main/LICENSE

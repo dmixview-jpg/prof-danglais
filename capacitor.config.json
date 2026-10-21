@@ -1,0 +1,16 @@
+{
+  "appId": "ca.profdanglais.app",
+  "appName": "Prof d'anglais",
+  "webDir": "public",
+  "backgroundColor": "#4b74ff",
+  "server": {
+    "androidScheme": "https"
+  },
+  "ios": {
+    "contentInset": "never",
+    "limitsNavigationsToAppBoundDomains": false
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

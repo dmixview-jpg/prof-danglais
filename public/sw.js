@@ -1,5 +1,5 @@
 // Cache hors ligne de Prof d'anglais. Les appels /api/ ne sont jamais mis en cache.
-const CACHE = 'prof-danglais-v21';
+const CACHE = 'prof-danglais-v22';
 // Chemins relatifs au service worker : l'app marche à la racine d'un site
 // comme dans un sous-dossier (ex. : GitHub Pages, /prof-danglais/).
 const ASSETS = [
@@ -9,6 +9,7 @@ const ASSETS = [
   'app.js',
   'fusion.js',
   'compte.js',
+  'magasin.js',
   'abonnement.js',
   'firebase-config.js',
   'legal-config.js',
@@ -25,6 +26,10 @@ const ASSETS = [
   'fonts/atkinson-700-latin-ext.woff2',
   'fonts/bricolage-var-latin.woff2',
   'fonts/bricolage-var-latin-ext.woff2',
+  'vendor/firebase/firebase-app-compat.js',
+  'vendor/firebase/firebase-auth-compat.js',
+  'vendor/firebase/firebase-firestore-compat.js',
+  'vendor/firebase/firebase-functions-compat.js',
   'manifest.webmanifest',
   'curriculum.json',
   'icons/icon-192.png',
@@ -65,21 +70,6 @@ self.addEventListener('fetch', (event) => {
         .catch(() =>
           caches.match(request).then((hit) => hit || (request.mode === 'navigate' ? caches.match('index.html') : Response.error()))
         )
-    );
-    return;
-  }
-
-  // Bibliothèque des comptes (Firebase, version fixe) : cache d'abord.
-  if (url.hostname === 'www.gstatic.com' && url.pathname.startsWith('/firebasejs/')) {
-    event.respondWith(
-      caches.match(request).then((hit) =>
-        hit ||
-        fetch(request).then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE).then((cache) => cache.put(request, copy));
-          return response;
-        })
-      )
     );
   }
 });

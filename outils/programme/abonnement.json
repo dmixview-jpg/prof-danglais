@@ -23,5 +23,11 @@
       "parDefaut": true
     }
   ],
-  "taxesAutomatiques": false
+  "taxesAutomatiques": false,
+  "magasins": {
+    "_aide": "Apps App Store et Google Play : clés publiques des SDK RevenueCat (appl_…, goog_…). Vides : achats intégrés désactivés. droit = identifiant du droit d'accès dans RevenueCat.",
+    "ios": "",
+    "android": "",
+    "droit": "premium"
+  }
 }
