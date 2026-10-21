@@ -197,7 +197,7 @@ L'app contient deux pages publiques, liées depuis l'écran de connexion, le men
 Pour créer un compte, la personne doit cocher « J'ai 18 ans ou plus et j'accepte les conditions ». La version acceptée (date d'entrée en vigueur) et la date d'acceptation sont enregistrées dans son profil (`users/{uid}.consent`).
 
 **À faire avant la mise en ligne payante**
-1. Remplis `public/legal-config.js` : nom (ou nom d'entreprise), courriel de contact, adresse postale, téléphone (facultatif) et responsable des renseignements personnels. La loi québécoise exige l'identité et l'adresse du commerçant pour un contrat conclu à distance. Tant qu'un champ est vide, les pages affichent « [à compléter : …] » en rouge.
+1. Remplis `public/legal-config.js` : nom (ou nom d'entreprise), courriel de contact, adresse postale, téléphone (facultatif) et responsable des renseignements personnels. La loi québécoise exige l'identité et l'adresse du commerçant pour un contrat conclu à distance. Tant qu'un champ est vide, les pages affichent « [à compléter : …] » en surligné.
 2. **Stripe → Paramètres → Détails publics** : ajoute les adresses de `conditions.html` et de `confidentialite.html`, ainsi qu'un courriel de soutien.
 3. Loi 25 : avant de confier des renseignements à Firebase et Stripe (serveurs hors Québec), fais et garde une courte évaluation des facteurs relatifs à la vie privée (la Commission d'accès à l'information publie un guide). Tiens aussi un registre des incidents de confidentialité, même vide.
 4. Si tu modifies un texte de façon importante, change `enVigueur` dans `legal-config.js` et préviens les abonnés 30 jours à l'avance, comme le prévoient les conditions.
