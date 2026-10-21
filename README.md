@@ -159,6 +159,31 @@ Facultatif : **Authentication → Modèles** permet de mettre en français les c
 - Les valeurs de `firebase-config.js` ne sont pas secrètes ; la protection vient des règles Firestore. Le code est dans `public/compte.js` (comptes et synchronisation) et `public/fusion.js` (fusion des progressions, testée par `npm test`).
 - Les courriels de tes utilisateurs sont gardés par Firebase (Google). Si l'app s'ouvre au public, prévois une courte politique de confidentialité.
 
+## Abonnement payant (Stripe)
+
+Pré-A1 reste gratuit ; les niveaux A1 à C2 et les dialogues guidés demandent un abonnement Premium (mensuel ou annuel, avec essai gratuit). Tant que `actif` vaut `false` dans `outils/programme/abonnement.json`, tout reste gratuit, comme avant.
+
+**Comment le contenu est protégé**
+- Avec l'abonnement actif, `construire.py` ne met dans `public/curriculum.json` que le contenu gratuit ; les niveaux payants n'y gardent que leurs titres (avec un cadenas). Le contenu payant va dans `outils/premium/contenu.json` (jamais publié ni enregistré dans Git).
+- `outils/programme/publier_premium.mjs` l'envoie dans Firestore (`contenu/{niveau}`). Les règles de `firestore.rules` ne le laissent lire qu'aux comptes abonnés (`stripeRole == 'premium'`, ajouté par l'extension Stripe). Les abonnés en gardent une copie sur l'appareil pour l'usage hors connexion ; elle est retirée si l'abonnement se termine.
+- Le code est dans `public/abonnement.js` (page « Débloque tout le parcours », paiement, gestion de l'abonnement).
+
+**Mise en route** (après avoir activé les comptes, section précédente)
+1. **Firebase → Utilisation et facturation → Modifier le forfait → Blaze** (paiement à l'usage, nécessaire à l'extension Stripe). Ajoute une alerte de budget, par exemple 5 $.
+2. Crée un compte sur <https://stripe.com> et travaille d'abord en **mode test**.
+3. **Stripe → Catalogue de produits → Ajouter un produit** « Prof d'anglais Premium ». Dans ses **métadonnées**, ajoute `firebaseRole` = `premium`. Crée deux prix récurrents en CAD : 6,99 $ par mois et 49,99 $ par an.
+4. **Stripe → Paramètres → Portail client** : active-le (annulation, changement de formule, carte de paiement).
+5. **Firebase → Extensions → « Run Payments with Stripe »** : installe-la en suivant ses instructions (clé API Stripe, webhook à créer dans Stripe). Collections : `customers` et `products`. Note la région choisie et reporte-la dans `abonnement.json` (`region`).
+6. Dans `outils/programme/abonnement.json` : remplace les `price_A_REMPLACER_…` par les identifiants de tes prix Stripe, vérifie les montants affichés, puis mets `"actif": true`.
+7. **Firebase → Paramètres du projet → Comptes de service → Générer une nouvelle clé privée**. Copie tout le contenu du fichier dans un secret GitHub nommé `FIREBASE_SERVICE_ACCOUNT` (**Settings → Secrets and variables → Actions**). Cette clé est secrète : ne la mets jamais dans le dépôt.
+8. **Rends le dépôt GitHub privé** : sinon les leçons payantes restent lisibles dans les fichiers du programme (`outils/programme/`). Avec un compte GitHub gratuit, GitHub Pages ne publie pas un dépôt privé : héberge alors `public/` sur Netlify ou Cloudflare Pages (gratuits, reliés au dépôt privé), et ajoute la nouvelle adresse aux domaines autorisés de Firebase.
+9. Lance `python3 outils/programme/construire.py`, puis publie sur `main`. Le workflow « Publier le contenu Premium » envoie le contenu payant dans Firebase. Tu peux vérifier en local avec `node outils/programme/publier_premium.mjs --essai`.
+10. Teste un abonnement en mode test avec la carte `4242 4242 4242 4242`, puis passe Stripe en mode réel (nouvelles clés dans l'extension, nouveaux identifiants de prix dans `abonnement.json`).
+
+L'essai gratuit est demandé à Stripe par le champ `trial_period_days` de la session de paiement. Vérifie au premier test que l'essai apparaît sur la page de paiement ; sinon, règle l'essai directement sur le prix dans Stripe.
+
+**À prévoir avant d'ouvrir les abonnements :** des conditions d'utilisation, une politique de confidentialité et une politique de remboursement (Stripe et la loi les demandent). Au Québec, l'inscription aux taxes TPS/TVQ est obligatoire au-delà de 30 000 $ de revenus sur 12 mois ; Stripe Tax peut les calculer.
+
 ## 5. Ajouter l'app à l'écran d'accueil
 
 **iPhone / iPad (Safari)** :
@@ -206,13 +231,16 @@ prof-danglais/
 ├── server.js                  # Petit serveur de fichiers sans dépendance (Node 18+)
 ├── package.json
 ├── .env.example               # Seul réglage : PORT
-├── firestore.rules            # Règles de sécurité des comptes (Firebase)
+├── firestore.rules            # Règles de sécurité Firebase (comptes, contenu payant, Stripe)
 ├── test/server.test.js        # Tests du serveur et de tout le contenu
 ├── test/fusion.test.js        # Tests de la fusion des progressions (comptes)
+├── test/abonnement.test.js    # Tests de la séparation gratuit / payant
 ├── outils/icones.py           # Icônes de l'app, tirées des rendus du logo
 ├── outils/logo/               # Logo 3D : script Blender, rendus HD et police Fredoka (OFL)
 ├── outils/programme/          # Tout le contenu pédagogique (Python) et son générateur
 │   ├── construire.py
+│   ├── abonnement.json        # Abonnement Premium : actif?, prix Stripe, essai gratuit
+│   ├── publier_premium.mjs    # Envoie le contenu payant dans Firebase
 │   ├── aide.py
 │   ├── premiers_pas.py
 │   └── contenu/               # a1_u1.py … c2_u4.py, dialogues.py, dialogues_unites.py
@@ -221,6 +249,7 @@ prof-danglais/
     ├── styles.css
     ├── app.js
     ├── compte.js              # Comptes utilisateurs et synchronisation (Firebase)
+    ├── abonnement.js          # Abonnement Premium (page d'abonnement, Stripe)
     ├── fusion.js              # Fusion de la progression appareil + compte
     ├── firebase-config.js     # Configuration Firebase (null = sans comptes)
     ├── curriculum.json        # Généré : leçons, bilans et dialogues

@@ -1,5 +1,5 @@
 // Cache hors ligne de Prof d'anglais. Les appels /api/ ne sont jamais mis en cache.
-const CACHE = 'prof-danglais-v16';
+const CACHE = 'prof-danglais-v17';
 // Chemins relatifs au service worker : l'app marche à la racine d'un site
 // comme dans un sous-dossier (ex. : GitHub Pages, /prof-danglais/).
 const ASSETS = [
@@ -9,6 +9,7 @@ const ASSETS = [
   'app.js',
   'fusion.js',
   'compte.js',
+  'abonnement.js',
   'firebase-config.js',
   'manifest.webmanifest',
   'curriculum.json',

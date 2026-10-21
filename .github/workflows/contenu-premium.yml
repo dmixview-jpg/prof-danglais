@@ -1,0 +1,31 @@
+# Envoie le contenu payant dans Firebase quand le programme change sur main.
+# Ne fait rien tant que l'abonnement n'est pas actif (outils/programme/abonnement.json)
+# ou que le secret FIREBASE_SERVICE_ACCOUNT n'existe pas (Settings → Secrets and variables → Actions).
+name: Publier le contenu Premium
+
+on:
+  push:
+    branches: [main]
+    paths: ['outils/programme/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    env:
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Construire le programme
+        run: python3 outils/programme/construire.py
+      - name: Vérifier que public/curriculum.json est à jour
+        run: git diff --exit-code public/curriculum.json || (echo "Lance python3 outils/programme/construire.py et publie le résultat." && exit 1)
+      - name: Envoyer le contenu payant
+        if: ${{ env.FIREBASE_SERVICE_ACCOUNT != '' && hashFiles('outils/premium/contenu.json') != '' }}
+        run: node outils/programme/publier_premium.mjs

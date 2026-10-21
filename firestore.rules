@@ -1,16 +1,42 @@
 // Règles de sécurité Firestore pour Prof d'anglais.
-// Chaque personne ne peut lire et modifier QUE son propre document users/{son identifiant}.
 // À coller dans la console Firebase : Firestore Database → Règles → Publier.
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function connecte(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // Progression de chaque personne : elle seule peut la lire et la modifier.
     match /users/{uid} {
-      allow read, delete: if request.auth != null && request.auth.uid == uid;
-      allow create, update: if request.auth != null && request.auth.uid == uid
+      allow read, delete: if connecte(uid);
+      allow create, update: if connecte(uid)
         && request.resource.data.keys().hasOnly(['name', 'data', 'updatedAt'])
         && request.resource.data.name is string && request.resource.data.name.size() <= 60
         && request.resource.data.data is map;
     }
+
+    // Contenu payant (A1 à C2) : lisible seulement par les abonnés.
+    // stripeRole est ajouté au compte par l'extension Stripe (métadonnée firebaseRole du produit).
+    // Écrit uniquement par outils/programme/publier_premium.mjs (compte de service).
+    match /contenu/{niveau} {
+      allow read: if request.auth != null && request.auth.token.stripeRole == 'premium';
+      allow write: if false;
+    }
+
+    // Extension « Run Payments with Stripe » : produits et prix publics, données de paiement privées.
+    match /products/{id} {
+      allow read: if true;
+      match /prices/{p} { allow read: if true; }
+      match /tax_rates/{t} { allow read: if true; }
+    }
+    match /customers/{uid} {
+      allow read: if connecte(uid);
+      match /checkout_sessions/{id} { allow read, write: if connecte(uid); }
+      match /subscriptions/{id} { allow read: if connecte(uid); }
+      match /payments/{id} { allow read: if connecte(uid); }
+    }
+
     // Tout le reste est fermé.
     match /{document=**} {
       allow read, write: if false;

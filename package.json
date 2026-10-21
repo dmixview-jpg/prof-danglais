@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "start": "node server.js",
-    "test": "node --test test/server.test.js test/fusion.test.js"
+    "test": "node --test test/server.test.js test/fusion.test.js test/abonnement.test.js"
   },
   "engines": {
     "node": ">=18"

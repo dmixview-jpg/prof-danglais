@@ -347,6 +347,32 @@ setTimeout(() => (heroMascot.dataset.base = 'idle', setMood(heroMascot, 'idle'))
 let COURSE = null; // contenu de /curriculum.json
 const courseIndex = new Map(); // id → { lesson, unit, level, order }
 const courseOrder = []; // ids dans l'ordre du parcours
+
+// Abonnement : le contenu des niveaux payants arrive de Firebase, pour les abonnés seulement (abonnement.js).
+let premiumData = null;
+const isLocked = (lesson) => !!lesson.locked && !lesson.content;
+const scenarioLocked = (sc) => !!sc && !!sc.locked && !sc.turns;
+function openPaywall() {
+  if (window.PDAbonnement) window.PDAbonnement.ouvrir();
+  else toast('Ce contenu est réservé aux abonnés. Les abonnements ouvrent bientôt!');
+}
+function applyPremium(data) {
+  premiumData = data;
+  if (!COURSE || !data) return;
+  for (const part of Object.values(data.levels || {})) {
+    for (const [id, content] of Object.entries(part.lessons || {})) {
+      const e = courseIndex.get(id);
+      if (e) e.lesson.content = content;
+    }
+    for (const [id, turns] of Object.entries(part.scenarios || {})) {
+      const sc = COURSE.scenarios.find((x) => x.id === id);
+      if (sc) sc.turns = turns;
+    }
+  }
+  renderPath();
+  renderContinue();
+  renderScenarios();
+}
 const openUnits = new Set();
 
 const getProgress = () => store.get(KEYS.progress, {});
@@ -375,6 +401,7 @@ async function loadCourse() {
   const code = COURSE.levels.find((l) => l.id === getPathLevel()).code;
   levelSelect.value = LEVELS.includes(code) ? code : 'A1';
   renderPath();
+  if (premiumData) applyPremium(premiumData);
 }
 
 // Prochaine leçon à faire : la première non terminée du niveau choisi.
@@ -437,7 +464,7 @@ function renderPath() {
     },
     h('span', { class: 'pill-emoji', 'aria-hidden': 'true' }, lv.emoji),
     h('span', { class: 'pill-code' }, lv.code),
-    h('span', { class: 'pill-count' }, p.done ? `${p.done}/${p.total}` : ''));
+    h('span', { class: 'pill-count' }, p.done ? `${p.done}/${p.total}` : lv.units.some((u) => u.lessons.some(isLocked)) ? '🔒' : ''));
   }));
 
   const p = levelProgress(level);
@@ -447,7 +474,10 @@ function renderPath() {
       h('div', null, h('div', { class: 'level-code' }, level.code), h('h3', null, level.name))),
     h('p', null, level.desc),
     h('div', { class: 'progress' }, h('span', { style: `width:${(p.done / p.total) * 100}%` })),
-    h('div', { class: 'level-count' }, `${p.done} / ${p.total} leçons terminées`));
+    h('div', { class: 'level-count' }, `${p.done} / ${p.total} leçons terminées`),
+    level.units.some((u) => u.lessons.some(isLocked))
+      ? h('button', { type: 'button', class: 'btn yellow unlock-btn', onclick: openPaywall }, '🔓 Débloquer ce niveau')
+      : null);
 
   const OFFSETS = [0, 46, 66, 46, 0, -46, -66, -46];
   const units = level.units.map((unit, u) => {
@@ -474,13 +504,15 @@ function renderPath() {
       const prog = getProgress()[lesson.id];
       const isNext = lesson.id === next;
       const state = prog ? 'done' : isNext ? 'next' : 'todo';
+      const locked = isLocked(lesson) || (lesson.dialogue && scenarioLocked(COURSE.scenarios.find((x) => x.id === lesson.dialogue)));
       const off = OFFSETS[i % OFFSETS.length];
       return h('div', { class: `node-row ${state}${off > 0 ? ' buddy-left' : ''}`, style: `--off:${off}px` },
         h('button', {
-          type: 'button', class: `node ${state}${lesson.review ? ' review' : ''}${lesson.dialogue ? ' dialogue' : ''}`,
-          'aria-label': `${lesson.title}${prog ? ', terminée' : ''}`,
+          type: 'button', class: `node ${state}${lesson.review ? ' review' : ''}${lesson.dialogue ? ' dialogue' : ''}${locked ? ' locked' : ''}`,
+          'aria-label': `${lesson.title}${prog ? ', terminée' : ''}${locked ? ', réservée aux abonnés' : ''}`,
           onclick: () => openCourseLesson(lesson.id),
-        }, h('span', { 'aria-hidden': 'true' }, lesson.emoji)),
+        }, h('span', { 'aria-hidden': 'true' }, lesson.emoji),
+        locked ? h('span', { class: 'node-lock', 'aria-hidden': 'true' }, '🔒') : null),
         isNext ? mascot('wave', 'node-buddy') : null,
         h('div', { class: 'node-label' },
           lesson.title,
@@ -523,6 +555,7 @@ function openCourseLesson(id) {
     startDialogue(e.lesson.dialogue);
     return;
   }
+  if (isLocked(e.lesson)) return openPaywall();
   if ($('#panel-lesson').hidden) showTab('lesson');
   showLessonView(`${crumbOf(id)} · ${e.lesson.review ? 'Bilan' : `Leçon ${id.split('.')[2]}`}`);
   renderLesson({ ...e.lesson.content, level: e.level.code }, id);
@@ -895,7 +928,8 @@ function renderScenarios() {
       h('span', { class: 'scenario-unit' }, sc.unit ? `Unité ${sc.unit.split('.')[1]}` : 'Bonus'),
       h('span', { class: 'scenario-meta' },
         stars ? h('span', { class: 'scenario-stars', 'aria-label': `${stars} étoiles sur 3` }, '★'.repeat(stars) + '☆'.repeat(3 - stars))
-          : h('span', { class: 'scenario-new' }, 'À faire')));
+          : scenarioLocked(sc) ? h('span', { class: 'scenario-new' }, '🔒 Premium')
+            : h('span', { class: 'scenario-new' }, 'À faire')));
   }));
 }
 
@@ -925,6 +959,7 @@ function coachNode(turn, live) {
 function startDialogue(id) {
   const scenario = COURSE.scenarios.find((sc) => sc.id === id);
   if (!scenario) return;
+  if (scenarioLocked(scenario)) return openPaywall();
   dialogue = { scenario, idx: 0, correct: 0, asked: scenario.turns.filter((t) => t.options).length };
   $('#dlg-home').hidden = true;
   $('#dlg-view').hidden = false;

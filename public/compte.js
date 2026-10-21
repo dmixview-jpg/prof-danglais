@@ -215,7 +215,9 @@
           h('h2', { id: 'account-title' }, displayName() || 'Mon compte'),
           h('p', { class: 'muted' }, user.email))),
       h('p', { class: 'account-sync' }, syncLabel()),
-      verify, note,
+      verify,
+      window.PDAbonnement ? window.PDAbonnement.ligneCompte(tell) : null,
+      note,
       h('button', { type: 'button', class: 'btn primary', onclick: signOut }, 'Se déconnecter'),
       del,
       h('button', { type: 'button', class: 'btn ghost', onclick: closeSheet }, 'Fermer')));
@@ -257,7 +259,8 @@
   const clearLocal = () => SYNCED_KEYS.forEach((k) => { try { localStorage.removeItem(k); } catch { /* rien */ } });
   function forgetDevice() {
     clearLocal();
-    try { localStorage.removeItem(OWNER); localStorage.removeItem(PENDING); } catch { /* rien */ }
+    // pd.premium : copie hors ligne du contenu payant (abonnement.js), propre à chaque compte
+    try { ['pd.premium', OWNER, PENDING].forEach((k) => localStorage.removeItem(k)); } catch { /* rien */ }
   }
   const withTimeout = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error('timeout')), ms))]);
   const docRef = () => db.collection('users').doc(user.uid);
@@ -331,7 +334,16 @@
     });
   }
 
-  ['firebase-app-compat.js', 'firebase-auth-compat.js', 'firebase-firestore-compat.js']
+  // Accès partagé avec abonnement.js
+  window.PDCompte = {
+    user: () => user,
+    db: () => db,
+    functions: (region) => firebase.app().functions(region),
+    message,
+    forget: forgetDevice,
+  };
+
+  ['firebase-app-compat.js', 'firebase-auth-compat.js', 'firebase-firestore-compat.js', 'firebase-functions-compat.js']
     .reduce((p, f) => p.then(() => loadScript(SDK + f)), Promise.resolve())
     .then(() => {
       firebase.initializeApp(CONFIG);
@@ -350,6 +362,7 @@
           greet(displayName());
           renderAccount();
           hideScreen();
+          document.dispatchEvent(new CustomEvent('pd:connecte', { detail: { user: u } }));
         }
       });
     })
