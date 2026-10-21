@@ -31,7 +31,9 @@ const store = {
     } catch {
       // stockage plein ou désactivé : on continue sans
     }
+    if (store.onSet) store.onSet(key); // comptes : signale un changement à synchroniser (compte.js)
   },
+  onSet: null,
 };
 
 // ---------- Petits utilitaires DOM ----------
@@ -121,9 +123,10 @@ function renderStats() {
     stat('📚', lessons, lessons > 1 ? 'leçons' : 'leçon'));
 }
 
-function greet() {
+function greet(name = '') {
   const hour = new Date().getHours();
-  $('#hello').textContent = hour < 5 ? 'Bonne nuit! 🌙' : hour < 12 ? 'Bonjour! ☀️' : hour < 18 ? 'Bon après-midi! 👋' : 'Bonsoir! 🌆';
+  const [hello, icon] = hour < 5 ? ['Bonne nuit', '🌙'] : hour < 12 ? ['Bonjour', '☀️'] : hour < 18 ? ['Bon après-midi', '👋'] : ['Bonsoir', '🌆'];
+  $('#hello').textContent = `${hello}${name ? `, ${name}` : ''}! ${icon}`;
 }
 
 // ---------- Mascotte : un petit chat bleu animé (dessin SVG, aucune image à télécharger) ----------
@@ -1188,7 +1191,7 @@ $('#vocab-form').addEventListener('submit', (e) => {
 });
 
 // Sur iPhone, le clavier remonte la barre d'onglets fixe : on la cache pendant la saisie.
-const isTextField = (el) => el && el.matches && el.matches('input[type="text"], input[type="password"], textarea');
+const isTextField = (el) => el && el.matches && el.matches('input[type="text"], input[type="password"], input[type="email"], textarea');
 document.addEventListener('focusin', (e) => {
   if (isTextField(e.target)) document.body.classList.add('keyboard');
 });

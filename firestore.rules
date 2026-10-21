@@ -1,0 +1,19 @@
+// Règles de sécurité Firestore pour Prof d'anglais.
+// Chaque personne ne peut lire et modifier QUE son propre document users/{son identifiant}.
+// À coller dans la console Firebase : Firestore Database → Règles → Publier.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'data', 'updatedAt'])
+        && request.resource.data.name is string && request.resource.data.name.size() <= 60
+        && request.resource.data.data is map;
+    }
+    // Tout le reste est fermé.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

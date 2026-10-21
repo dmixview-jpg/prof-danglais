@@ -1,5 +1,5 @@
 // Cache hors ligne de Prof d'anglais. Les appels /api/ ne sont jamais mis en cache.
-const CACHE = 'prof-danglais-v15';
+const CACHE = 'prof-danglais-v16';
 // Chemins relatifs au service worker : l'app marche à la racine d'un site
 // comme dans un sous-dossier (ex. : GitHub Pages, /prof-danglais/).
 const ASSETS = [
@@ -7,6 +7,9 @@ const ASSETS = [
   'index.html',
   'styles.css',
   'app.js',
+  'fusion.js',
+  'compte.js',
+  'firebase-config.js',
   'manifest.webmanifest',
   'curriculum.json',
   'icons/icon-192.png',
@@ -51,8 +54,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Polices Google : cache d'abord.
-  if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
+  // Polices Google et bibliothèque des comptes (Firebase, version fixe) : cache d'abord.
+  if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com' ||
+      (url.hostname === 'www.gstatic.com' && url.pathname.startsWith('/firebasejs/'))) {
     event.respondWith(
       caches.match(request).then((hit) =>
         hit ||

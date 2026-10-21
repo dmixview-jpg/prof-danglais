@@ -137,6 +137,28 @@ Le projet contient déjà le déploiement (`.github/workflows/pages.yml`). Il la
 
 Il n'y a ni clé ni donnée personnelle à protéger : ta progression reste sur ton appareil. Aucun code d'accès n'est donc nécessaire.
 
+## Comptes utilisateurs (Firebase, gratuit)
+
+L'app peut demander une connexion au démarrage : chaque personne crée son compte (prénom, courriel, mot de passe) et retrouve sa progression sur tous ses appareils. Tant que `public/firebase-config.js` contient `null`, l'app fonctionne **sans comptes**, comme avant.
+
+**Activer les comptes (une seule fois, environ 10 minutes)**
+1. Va sur <https://console.firebase.google.com> avec ton compte Google, puis **Créer un projet** (nom : `prof-danglais`). Google Analytics n'est pas nécessaire.
+2. **Authentication → Commencer → Adresse e-mail/Mot de passe → Activer → Enregistrer.**
+3. **Authentication → Paramètres → Domaines autorisés → Ajouter un domaine** : `dmixview-jpg.github.io` (l'adresse de ton app en ligne).
+4. **Firestore Database → Créer une base de données**, en mode **production**. Région conseillée : `northamerica-northeast1` (Montréal).
+5. **Firestore Database → Règles** : remplace tout par le contenu du fichier `firestore.rules`, puis **Publier**. Ces règles font que chaque personne ne peut lire et modifier que sa propre progression.
+6. **Paramètres du projet (roue dentée) → Vos applications → icône `</>` (Web)** : donne un nom, puis **Enregistrer l'application**. Copie les valeurs `apiKey`, `authDomain`, `projectId` et `appId` dans `public/firebase-config.js` (un exemple est dans le fichier).
+7. Publie : les comptes sont actifs dès que la mise à jour arrive sur `main`.
+
+Facultatif : **Authentication → Modèles** permet de mettre en français les courriels de confirmation et de nouveau mot de passe.
+
+**Comment ça marche**
+- La progression (étoiles, carnet, jours de suite, niveau) reste sur l'appareil et se copie dans le compte (document Firestore `users/{identifiant}`). Hors connexion, la personne connectée garde l'app ; tout se synchronise au retour d'Internet.
+- À la première connexion, la progression déjà faite sur l'appareil rejoint le compte. Plusieurs personnes peuvent se connecter tour à tour sur le même appareil : chacune retrouve la sienne.
+- Le menu du compte (bouton rond avec l'initiale) permet de se déconnecter ou de **supprimer son compte** et toutes ses données.
+- Les valeurs de `firebase-config.js` ne sont pas secrètes ; la protection vient des règles Firestore. Le code est dans `public/compte.js` (comptes et synchronisation) et `public/fusion.js` (fusion des progressions, testée par `npm test`).
+- Les courriels de tes utilisateurs sont gardés par Firebase (Google). Si l'app s'ouvre au public, prévois une courte politique de confidentialité.
+
 ## 5. Ajouter l'app à l'écran d'accueil
 
 **iPhone / iPad (Safari)** :
@@ -184,7 +206,9 @@ prof-danglais/
 ├── server.js                  # Petit serveur de fichiers sans dépendance (Node 18+)
 ├── package.json
 ├── .env.example               # Seul réglage : PORT
+├── firestore.rules            # Règles de sécurité des comptes (Firebase)
 ├── test/server.test.js        # Tests du serveur et de tout le contenu
+├── test/fusion.test.js        # Tests de la fusion des progressions (comptes)
 ├── outils/icones.py           # Icônes de l'app, tirées des rendus du logo
 ├── outils/logo/               # Logo 3D : script Blender, rendus HD et police Fredoka (OFL)
 ├── outils/programme/          # Tout le contenu pédagogique (Python) et son générateur
@@ -196,6 +220,9 @@ prof-danglais/
     ├── index.html
     ├── styles.css
     ├── app.js
+    ├── compte.js              # Comptes utilisateurs et synchronisation (Firebase)
+    ├── fusion.js              # Fusion de la progression appareil + compte
+    ├── firebase-config.js     # Configuration Firebase (null = sans comptes)
     ├── curriculum.json        # Généré : leçons, bilans et dialogues
     ├── manifest.webmanifest
     ├── sw.js                  # Cache hors ligne

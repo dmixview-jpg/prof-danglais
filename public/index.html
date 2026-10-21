@@ -42,6 +42,7 @@
         <option value="C2">C2 · Maîtrise</option>
       </select>
     </label>
+    <button type="button" id="account-btn" class="account-btn" hidden aria-label="Mon compte"></button>
     <nav class="tabs" role="tablist" aria-label="Sections">
       <button class="tab" role="tab" data-tab="lesson" aria-selected="true">
         <span class="tab-icon" aria-hidden="true">📘</span><span>Leçon</span>
@@ -145,6 +146,9 @@
 
   <div id="toast" class="toast" role="status" hidden></div>
 
+  <script src="firebase-config.js"></script>
+  <script src="fusion.js"></script>
   <script src="app.js"></script>
+  <script src="compte.js"></script>
 </body>
 </html>
