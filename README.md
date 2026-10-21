@@ -173,14 +173,18 @@ Pré-A1 reste gratuit ; les niveaux A1 à C2 et les dialogues guidés demandent 
 2. Crée un compte sur <https://stripe.com> et travaille d'abord en **mode test**.
 3. **Stripe → Catalogue de produits → Ajouter un produit** « Prof d'anglais Premium ». Dans ses **métadonnées**, ajoute `firebaseRole` = `premium`. Crée deux prix récurrents en CAD : 6,99 $ par mois et 49,99 $ par an.
 4. **Stripe → Paramètres → Portail client** : active-le (annulation, changement de formule, carte de paiement).
-5. **Firebase → Extensions → « Run Payments with Stripe »** : installe-la en suivant ses instructions (clé API Stripe, webhook à créer dans Stripe). Collections : `customers` et `products`. Note la région choisie et reporte-la dans `abonnement.json` (`region`).
+5. **Firebase → Extensions → « Run Payments with Stripe »** : installe-la en suivant ses instructions (clé API Stripe, webhook à créer dans Stripe). Collections : `customers` et `products`. Pour « Automatically delete Stripe customer objects », garde « Do not delete » (l'historique des paiements reste dans Stripe pour ta comptabilité). Reporte dans `abonnement.json` la région choisie (`region`) et, si tu as changé l'identifiant de l'extension, le nom de la fonction du portail (`fonctionPortail` : `ext-<identifiant>-createPortalLink`).
 6. Dans `outils/programme/abonnement.json` : remplace les `price_A_REMPLACER_…` par les identifiants de tes prix Stripe, vérifie les montants affichés, puis mets `"actif": true`.
 7. **Firebase → Paramètres du projet → Comptes de service → Générer une nouvelle clé privée**. Copie tout le contenu du fichier dans un secret GitHub nommé `FIREBASE_SERVICE_ACCOUNT` (**Settings → Secrets and variables → Actions**). Cette clé est secrète : ne la mets jamais dans le dépôt.
 8. **Rends le dépôt GitHub privé** : sinon les leçons payantes restent lisibles dans les fichiers du programme (`outils/programme/`). Avec un compte GitHub gratuit, GitHub Pages ne publie pas un dépôt privé : héberge alors `public/` sur Netlify ou Cloudflare Pages (gratuits, reliés au dépôt privé), et ajoute la nouvelle adresse aux domaines autorisés de Firebase.
 9. Lance `python3 outils/programme/construire.py`, puis publie sur `main`. Le workflow « Publier le contenu Premium » envoie le contenu payant dans Firebase. Tu peux vérifier en local avec `node outils/programme/publier_premium.mjs --essai`.
 10. Teste un abonnement en mode test avec la carte `4242 4242 4242 4242`, puis passe Stripe en mode réel (nouvelles clés dans l'extension, nouveaux identifiants de prix dans `abonnement.json`).
 
-L'essai gratuit est demandé à Stripe par le champ `trial_period_days` de la session de paiement. Vérifie au premier test que l'essai apparaît sur la page de paiement ; sinon, règle l'essai directement sur le prix dans Stripe.
+**Règles de gestion déjà programmées**
+- L'essai gratuit (`essaiJours`) n'est offert qu'une fois : une personne qui a déjà eu un abonnement voit « S'abonner », sans nouvel essai.
+- Paiement refusé : l'extension retire l'accès Premium dès que l'abonnement passe « en retard », pendant que Stripe réessaie. Dans l'app, la page d'abonnement affiche alors « Mettre à jour mon paiement » (portail Stripe) ; l'accès revient dès que le paiement passe.
+- Annulation : l'accès reste ouvert jusqu'à la fin de la période payée, puis les niveaux A1 à C2 se verrouillent et la copie hors connexion est effacée.
+- Un compte avec un abonnement actif ne peut pas être supprimé dans l'app : il faut d'abord annuler l'abonnement (sinon Stripe continuerait de facturer).
 
 **À prévoir avant d'ouvrir les abonnements :** des conditions d'utilisation, une politique de confidentialité et une politique de remboursement (Stripe et la loi les demandent). Au Québec, l'inscription aux taxes TPS/TVQ est obligatoire au-delà de 30 000 $ de revenus sur 12 mois ; Stripe Tax peut les calculer.
 

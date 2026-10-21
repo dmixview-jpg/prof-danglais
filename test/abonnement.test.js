@@ -10,7 +10,11 @@ const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pd-abo-'));
 execFileSync('python3', [path.join(__dirname, '..', 'outils', 'programme', 'construire.py'), '--essai', dir]);
 const pub = JSON.parse(fs.readFileSync(path.join(dir, 'curriculum.json'), 'utf8'));
 const prem = JSON.parse(fs.readFileSync(path.join(dir, 'contenu.json'), 'utf8'));
-const full = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'public', 'curriculum.json'), 'utf8'));
+const fullDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pd-tout-'));
+execFileSync('python3', [path.join(__dirname, '..', 'outils', 'programme', 'construire.py'), '--tout', fullDir]);
+const full = JSON.parse(fs.readFileSync(path.join(fullDir, 'curriculum.json'), 'utf8'));
+const committed = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'public', 'curriculum.json'), 'utf8'));
+const config = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'outils', 'programme', 'abonnement.json'), 'utf8'));
 const lessons = (data) => data.levels.flatMap((lv) => lv.units.flatMap((u) => u.lessons.map((l) => ({ lv: lv.id, l }))));
 
 test('Pré-A1 reste entièrement gratuit', () => {
@@ -51,7 +55,7 @@ test('aucun texte payant ne fuit dans le fichier public', () => {
   assert.ok(pub.abonnement && pub.abonnement.essaiJours >= 0 && pub.abonnement.prix.length);
 });
 
-test('sans abonnement actif, le fichier public contient tout (comportement actuel)', () => {
-  assert.strictEqual(full.abonnement, undefined);
-  assert.ok(lessons(full).every(({ l }) => l.content || l.dialogue));
+test('public/curriculum.json est à jour et suit le réglage actif de abonnement.json', () => {
+  assert.deepStrictEqual(committed, config.actif ? pub : full,
+    'Lance python3 outils/programme/construire.py puis enregistre public/curriculum.json');
 });

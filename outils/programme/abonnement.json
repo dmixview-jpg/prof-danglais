@@ -1,11 +1,26 @@
 {
   "_aide": "Abonnement Premium. actif=false : tout le contenu est gratuit, comme avant. Voir le README, section « Abonnement payant ».",
   "actif": false,
-  "gratuit": ["pre"],
+  "gratuit": [
+    "pre"
+  ],
   "essaiJours": 7,
   "region": "us-central1",
+  "fonctionPortail": "ext-firestore-stripe-payments-createPortalLink",
   "prix": [
-    { "id": "price_A_REMPLACER_MENSUEL", "nom": "Mensuel", "montant": "6,99 $", "periode": "mois" },
-    { "id": "price_A_REMPLACER_ANNUEL", "nom": "Annuel", "montant": "49,99 $", "periode": "an", "badge": "≈ 40 % de rabais", "parDefaut": true }
+    {
+      "id": "price_A_REMPLACER_MENSUEL",
+      "nom": "Mensuel",
+      "montant": "6,99 $",
+      "periode": "mois"
+    },
+    {
+      "id": "price_A_REMPLACER_ANNUEL",
+      "nom": "Annuel",
+      "montant": "49,99 $",
+      "periode": "an",
+      "badge": "≈ 40 % de rabais",
+      "parDefaut": true
+    }
   ]
 }

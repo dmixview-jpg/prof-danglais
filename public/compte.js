@@ -182,6 +182,11 @@
     let confirmDelete = false;
     const del = h('button', { type: 'button', class: 'btn ghost account-delete' }, 'Supprimer mon compte');
     del.addEventListener('click', async () => {
+      // Un abonnement Stripe continuerait d'être facturé : on demande de l'annuler d'abord.
+      if (window.PDAbonnement && window.PDAbonnement.estPremium()) {
+        tell('Ton abonnement Premium est actif. Annule-le d’abord avec « Gérer mon abonnement », puis supprime ton compte.');
+        return;
+      }
       if (!confirmDelete) {
         confirmDelete = true;
         del.textContent = 'Confirmer : tout supprimer définitivement';
@@ -190,12 +195,16 @@
         return;
       }
       del.disabled = true;
+      let erased = false;
       try {
         await db.collection('users').doc(user.uid).delete();
+        erased = true;
         await user.delete();
         forgetDevice();
         location.reload();
       } catch (err) {
+        // Firebase demande parfois de se reconnecter avant de supprimer : on remet la progression en ligne.
+        if (erased) await push().catch(() => {});
         del.disabled = false;
         tell(message(err));
       }

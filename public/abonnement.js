@@ -10,11 +10,13 @@
 // =====================================================================
 (function () {
   const CACHE = 'pd.premium';
-  const PORTAL = 'ext-firestore-stripe-payments-createPortalLink';
   const conf = () => (typeof COURSE !== 'undefined' && COURSE && COURSE.abonnement) || null;
   const base = () => location.origin + location.pathname;
   const compte = () => window.PDCompte || null;
   let premium = false;
+  // Historique Stripe de la personne : un ancien abonné n'a pas droit à un nouvel essai gratuit,
+  // et un paiement en retard se règle en mettant la carte à jour (portail Stripe).
+  let historique = { deja: false, retard: false };
 
   // ---------------------------------------------------------------- Page « Débloque tout »
   const sheet = h('div', { class: 'account-sheet paywall', hidden: true, role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'paywall-title' });
@@ -30,7 +32,16 @@
   function ouvrir() {
     const c = conf();
     if (!c) return;
-    const essai = c.essaiJours || 0;
+    const essai = historique.deja ? 0 : c.essaiJours || 0;
+    // Ce que Premium débloque, compté dans le programme (reste juste si on ajoute des leçons)
+    const payants = COURSE.levels.filter((l) => !c.gratuit.includes(l.id));
+    const etapes = payants.flatMap((l) => l.units.flatMap((u) => u.lessons));
+    const n = {
+      niveaux: payants.length, de: payants[0].code, a: payants[payants.length - 1].code,
+      lecons: etapes.filter((l) => !l.review && !l.dialogue).length,
+      bilans: etapes.filter((l) => l.review).length,
+      dialogues: COURSE.scenarios.filter((sc) => sc.locked).length,
+    };
     let choix = c.prix.find((p) => p.parDefaut) || c.prix[0];
     const note = h('p', { class: 'auth-msg', role: 'alert', hidden: true });
     const tell = (text, kind = 'bad') => { note.hidden = !text; note.textContent = text; note.dataset.kind = kind; };
@@ -43,8 +54,10 @@
     h('span', { class: 'plan-name' }, p.nom),
     h('span', { class: 'plan-price' }, p.montant, h('small', null, ` / ${p.periode}`)),
     p.badge ? h('span', { class: 'plan-badge' }, p.badge) : null));
+    const plansBox = h('div', { class: 'plans', role: 'radiogroup', 'aria-label': 'Formule' }, ...plans);
     function maj() {
       plans.forEach((b) => b.setAttribute('aria-checked', String(b.dataset.id === choix.id)));
+      if (historique.retard) return;
       cta.textContent = essai ? `Commencer mes ${essai} jours gratuits` : `S’abonner : ${choix.montant} / ${choix.periode}`;
       fine.textContent = `${essai ? `Gratuit pendant ${essai} jours, puis ` : ''}${choix.montant} par ${choix.periode}, renouvelé automatiquement. Annule en tout temps dans « Mon compte ». Paiement sécurisé par Stripe.`;
     }
@@ -55,7 +68,13 @@
       cta.disabled = true;
       tell('Les abonnements ouvrent bientôt. Merci de ta patience!', 'good');
     }
-    cta.addEventListener('click', async () => {
+    if (historique.retard) {
+      tell('Ton dernier paiement n’est pas passé. Mets ta carte à jour pour retrouver tout le parcours.');
+      cta.textContent = 'Mettre à jour mon paiement';
+      plansBox.hidden = true;
+      fine.hidden = true;
+      cta.addEventListener('click', () => gerer(tell));
+    } else cta.addEventListener('click', async () => {
       cta.disabled = true;
       cta.textContent = 'Ouverture du paiement…';
       try {
@@ -72,10 +91,10 @@
       h('h2', { id: 'paywall-title' }, 'Débloque tout le parcours'),
       h('p', { class: 'muted paywall-sub' }, 'Pré-A1 est gratuit. Avec Premium, continue jusqu’à la maîtrise.'),
       h('ul', { class: 'paywall-perks' },
-        h('li', null, '📚 6 niveaux, de A1 à C2 : 179 leçons et 36 bilans'),
-        h('li', null, '🎭 35 dialogues guidés pour pratiquer de vraies situations'),
+        h('li', null, `📚 ${n.niveaux} niveaux, de ${n.de} à ${n.a} : ${n.lecons} leçons et ${n.bilans} bilans`),
+        h('li', null, `🎭 ${n.dialogues} dialogues guidés pour pratiquer de vraies situations`),
         h('li', null, '☁️ Ta progression sur tous tes appareils, même hors connexion')),
-      h('div', { class: 'plans', role: 'radiogroup', 'aria-label': 'Formule' }, ...plans),
+      plansBox,
       note, cta, fine,
       h('button', { type: 'button', class: 'btn ghost', onclick: fermer }, 'Plus tard')));
     sheet.hidden = false;
@@ -107,7 +126,8 @@
   // Portail Stripe : changer de carte, de formule, ou annuler.
   async function gerer(tell) {
     try {
-      const fn = compte().functions(conf().region).httpsCallable(PORTAL);
+      // Nom de la fonction : ext-<identifiant de l'extension>-createPortalLink (abonnement.json)
+      const fn = compte().functions(conf().region).httpsCallable(conf().fonctionPortail || 'ext-firestore-stripe-payments-createPortalLink');
       const { data } = await fn({ returnUrl: base(), locale: 'auto' });
       location.assign(data.url);
     } catch {
@@ -138,6 +158,11 @@
   async function estPremium(user, forcer) {
     const r = await user.getIdTokenResult(forcer);
     return r.claims.stripeRole === 'premium';
+  }
+  async function lireHistorique(user) {
+    const snap = await compte().db().collection('customers').doc(user.uid).collection('subscriptions').get();
+    const statuts = snap.docs.map((d) => d.data().status);
+    historique = { deja: statuts.length > 0, retard: statuts.some((st) => st === 'past_due' || st === 'unpaid') };
   }
   async function charger(user) {
     const db = compte().db();
@@ -171,7 +196,8 @@
     if (cache) { premium = true; applyPremium(cache); }
     let statut;
     try {
-      statut = retour === 'ok' ? await attendreActivation(user) : await estPremium(user, false);
+      // En ligne, on redemande le statut à Firebase (abonnement pris ou annulé sur un autre appareil).
+      statut = retour === 'ok' ? await attendreActivation(user) : await estPremium(user, navigator.onLine);
     } catch {
       return; // hors connexion : on garde la copie déjà téléchargée
     }
@@ -187,6 +213,8 @@
       // Abonnement terminé : on retire le contenu payant de l'appareil.
       try { localStorage.removeItem(CACHE); } catch { /* rien */ }
       location.reload();
+    } else {
+      await lireHistorique(user).catch(() => {});
     }
   });
 

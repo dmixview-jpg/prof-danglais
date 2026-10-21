@@ -3,7 +3,8 @@
 # Si l'abonnement est actif (abonnement.json), seuls les niveaux gratuits gardent leur contenu
 # dans public/ ; le contenu payant va dans outils/premium/contenu.json, envoyé à Firebase
 # par publier_premium.mjs et lisible seulement par les abonnés.
-#   python3 outils/programme/construire.py --essai DOSSIER   (test : abonnement forcé, sorties dans DOSSIER)
+#   python3 outils/programme/construire.py --essai DOSSIER   (tests : abonnement forcé, sorties dans DOSSIER)
+#   python3 outils/programme/construire.py --tout DOSSIER    (tests : tout le contenu, sans abonnement)
 import hashlib
 import importlib
 import json
@@ -128,17 +129,19 @@ def split_premium(data, config):
         if lid and lid not in free:
             premium.setdefault(lid, {"lessons": {}, "scenarios": {}})["scenarios"][sc["id"]] = sc.pop("turns")
             sc["locked"] = True
-    data["abonnement"] = {k: config[k] for k in ("gratuit", "essaiJours", "region", "prix")}
+    data["abonnement"] = {k: config[k] for k in ("gratuit", "essaiJours", "region", "fonctionPortail", "prix")}
     return premium
 
 
 def main():
     args = sys.argv[1:]
-    test_dir = args[args.index("--essai") + 1] if "--essai" in args else None
+    test_dir = None
     with open(os.path.join(HERE, "abonnement.json"), encoding="utf-8") as f:
         config = json.load(f)
-    if test_dir:
-        config["actif"] = True
+    for flag, actif in (("--essai", True), ("--tout", False)):
+        if flag in args:
+            test_dir = args[args.index(flag) + 1]
+            config["actif"] = actif
     scenarios = load_scenarios()
     levels = [build_level(PRE[0], PRE[1], PRE[2], PRE[3], PRE[5],
                           [(t, em, g, [(le, lt, c) for le, lt, c in ls]) for t, em, g, ls in PRE[6]])]
