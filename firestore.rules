@@ -40,9 +40,24 @@ service cloud.firestore {
       match /checkout_sessions/{id} { allow read, write: if connecte(uid); }
       match /subscriptions/{id} { allow read: if connecte(uid) || admin(); }
       match /payments/{id} { allow read: if connecte(uid) || admin(); }
+      // Droit de rétractation (UE, EEE, Royaume-Uni) : la personne dépose sa demande ;
+      // l'administration la marque traitée après avoir annulé et remboursé dans Stripe.
+      match /retractations/{id} {
+        allow read: if connecte(uid) || admin();
+        allow create: if connecte(uid)
+          && request.resource.data.keys().hasOnly(['abonnement', 'pays', 'courriel', 'demandeLe'])
+          && request.resource.data.abonnement is string && request.resource.data.abonnement.size() <= 100
+          && request.resource.data.pays is string && request.resource.data.pays.size() <= 60
+          && request.resource.data.courriel is string && request.resource.data.courriel.size() <= 200
+          && request.resource.data.demandeLe == request.time;
+        allow update: if admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['traiteLe']);
+      }
     }
     // Tableau de bord (admin.html) : lecture de tous les abonnements, en lecture seule.
     match /{chemin=**}/subscriptions/{id} {
+      allow read: if admin();
+    }
+    match /{chemin=**}/retractations/{id} {
       allow read: if admin();
     }
 

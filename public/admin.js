@@ -10,6 +10,7 @@
   let db = null;
   let rows = [];
   let customers = {};
+  let retractations = [];
   let filter = 'all';
 
   function h(tag, attrs, ...children) {
@@ -58,7 +59,7 @@
   };
   const late = (r) => r.status === 'past_due' || r.status === 'unpaid';
   const ending = (r) => (r.status === 'active' || r.status === 'trialing') && r.cancel_at_period_end;
-  const email = (r) => (customers[r.uid] && customers[r.uid].email) || `Compte ${r.uid.slice(0, 8)}…`;
+  const email = (r) => (customers[r.uid] && customers[r.uid].email) || r.courriel || `Compte ${r.uid.slice(0, 8)}…`;
   function stripeLink(r) {
     const c = customers[r.uid] || {};
     return c.stripeLink || (c.stripeId ? `https://dashboard.stripe.com/customers/${c.stripeId}` : null);
@@ -90,14 +91,19 @@
       kpi('Départs (30 jours)', String(recent.length), 'abonnements terminés'));
 
     const todo = [
+      ...retractations.filter((x) => !x.traiteLe).map((x) => ({
+        r: x, icon: '↩️', fait: x,
+        text: `Rétractation demandée le ${date(x.demandeLe)} (${x.pays}). ${x.pays === 'Autre pays' ? 'Vérifie si la loi de son pays l’impose. ' : ''}Dans Stripe : annule l’abonnement et rembourse, puis confirme par courriel.`,
+      })),
       ...rows.filter(late).map((r) => ({ r, icon: '⚠️', text: `Paiement en retard (${plan(r).texte || plan(r).nom}). Stripe réessaie ; écris à la personne si ça dure.` })),
       ...soon.map((r) => ({ r, icon: '⏳', text: `Fin de l’essai le ${date(r.trial_end)} : premier paiement de ${plan(r).texte || plan(r).nom}.` })),
       ...rows.filter(ending).map((r) => ({ r, icon: '👋', text: `A demandé l’annulation : accès jusqu’au ${date(r.cancel_at || r.current_period_end || r.trial_end)}.` })),
     ];
-    $('#todo').replaceChildren(...(todo.length ? todo.map(({ r, icon, text }) => h('li', null,
+    $('#todo').replaceChildren(...(todo.length ? todo.map(({ r, icon, text, fait }) => h('li', null,
       h('span', { class: 'todo-icon', 'aria-hidden': 'true' }, icon),
       h('span', { class: 'todo-text' }, h('strong', null, email(r)), ' ', text),
-      stripeLink(r) ? h('a', { href: stripeLink(r), target: '_blank', rel: 'noopener', class: 'todo-link' }, 'Stripe ↗') : null))
+      stripeLink(r) ? h('a', { href: stripeLink(r), target: '_blank', rel: 'noopener', class: 'todo-link' }, 'Stripe ↗') : null,
+      fait ? h('button', { type: 'button', class: 'todo-link todo-done', onclick: (e) => traiter(fait, e.currentTarget) }, 'Marquer comme traitée') : null))
       : [h('li', { class: 'todo-empty' }, 'Rien à signaler. 🎉')]));
 
     const FILTERS = [['all', 'Tous', () => true], ['active', 'Actifs', (r) => r.status === 'active'], ['trialing', 'Essais', (r) => r.status === 'trialing'],
@@ -122,12 +128,27 @@
     show('dash');
   }
 
+  // Rétractation réglée dans Stripe : on la retire de « À faire ».
+  async function traiter(x, btn) {
+    btn.disabled = true;
+    try {
+      await db.collection('customers').doc(x.uid).collection('retractations').doc(x.id)
+        .set({ traiteLe: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      x.traiteLe = new Date();
+      render();
+    } catch {
+      btn.disabled = false;
+      alert('Impossible d’enregistrer. Vérifie ta connexion, puis réessaie.');
+    }
+  }
+
   async function load() {
     $('#refresh').disabled = true;
     try {
-      const snap = await db.collectionGroup('subscriptions').get();
+      const [snap, retr] = await Promise.all([db.collectionGroup('subscriptions').get(), db.collectionGroup('retractations').get()]);
       rows = snap.docs.map((d) => ({ id: d.id, uid: d.ref.parent.parent.id, ...d.data() }));
-      const uids = [...new Set(rows.map((r) => r.uid))];
+      retractations = retr.docs.map((d) => ({ id: d.id, uid: d.ref.parent.parent.id, ...d.data() }));
+      const uids = [...new Set([...rows, ...retractations].map((r) => r.uid))];
       customers = Object.fromEntries(await Promise.all(uids.map(async (uid) => {
         const c = await db.collection('customers').doc(uid).get();
         return [uid, c.exists ? c.data() : {}];

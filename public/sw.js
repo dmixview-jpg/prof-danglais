@@ -1,5 +1,5 @@
 // Cache hors ligne de Prof d'anglais. Les appels /api/ ne sont jamais mis en cache.
-const CACHE = 'prof-danglais-v20';
+const CACHE = 'prof-danglais-v21';
 // Chemins relatifs au service worker : l'app marche à la racine d'un site
 // comme dans un sous-dossier (ex. : GitHub Pages, /prof-danglais/).
 const ASSETS = [
@@ -16,6 +16,15 @@ const ASSETS = [
   'confidentialite.html',
   'legal.css',
   'legal.js',
+  'fonts/fonts.css',
+  'fonts/atkinson-400-latin.woff2',
+  'fonts/atkinson-400-latin-ext.woff2',
+  'fonts/atkinson-400-italic-latin.woff2',
+  'fonts/atkinson-400-italic-latin-ext.woff2',
+  'fonts/atkinson-700-latin.woff2',
+  'fonts/atkinson-700-latin-ext.woff2',
+  'fonts/bricolage-var-latin.woff2',
+  'fonts/bricolage-var-latin-ext.woff2',
   'manifest.webmanifest',
   'curriculum.json',
   'icons/icon-192.png',
@@ -60,9 +69,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Polices Google et bibliothèque des comptes (Firebase, version fixe) : cache d'abord.
-  if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com' ||
-      (url.hostname === 'www.gstatic.com' && url.pathname.startsWith('/firebasejs/'))) {
+  // Bibliothèque des comptes (Firebase, version fixe) : cache d'abord.
+  if (url.hostname === 'www.gstatic.com' && url.pathname.startsWith('/firebasejs/')) {
     event.respondWith(
       caches.match(request).then((hit) =>
         hit ||

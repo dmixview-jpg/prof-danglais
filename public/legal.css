@@ -29,3 +29,10 @@ body.legal { padding-bottom: env(safe-area-inset-bottom); }
   .topbar, .legal-foot { display: none; }
   .legal-doc { box-shadow: none; }
 }
+/* Tableaux (bases légales, autorités par pays) : défilement horizontal dans leur cadre seulement */
+.legal-table-wrap { margin: 10px 0; overflow-x: auto; border-radius: 14px; background: var(--surface-2); }
+.legal-table { width: 100%; border-collapse: collapse; font-size: .94rem; line-height: 1.45; }
+.legal-table th, .legal-table td { padding: 9px 12px; text-align: left; vertical-align: top; }
+.legal-table th { font-weight: 800; border-bottom: 1px solid var(--border); }
+.legal-table tr + tr td { border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }
+.legal-table td:first-child { min-width: 9em; }

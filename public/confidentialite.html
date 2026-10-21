@@ -7,9 +7,7 @@
   <meta name="description" content="Quels renseignements personnels Prof d'anglais recueille, pourquoi, où ils sont conservés, et comment exercer vos droits.">
   <meta name="color-scheme" content="light dark">
   <link rel="icon" type="image/png" href="icons/favicon-64.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="fonts/fonts.css">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="legal.css">
 </head>
@@ -27,9 +25,10 @@
         <strong>L'essentiel</strong>
         <ul>
           <li>Nous recueillons seulement ce qu'il faut pour faire fonctionner l'application : votre prénom, votre courriel et votre progression. Votre abonnement est géré par Stripe.</li>
-          <li>Nous ne vendons pas vos renseignements. Il n'y a ni publicité, ni pisteur, ni outil d'analyse dans l'application.</li>
+          <li>Nous ne vendons pas vos renseignements. Il n'y a ni publicité, ni pisteur, ni outil d'analyse, ni témoin (cookie) publicitaire dans l'application.</li>
           <li>Votre numéro de carte est traité par Stripe. Nous n'y avons jamais accès.</li>
           <li>Vous pouvez consulter, corriger ou supprimer vos renseignements en tout temps. La suppression du compte efface votre progression immédiatement.</li>
+          <li>Où que vous habitiez, ces protections s'appliquent à vous. La section 10 précise vos droits et l'autorité à joindre selon votre région : Canada, Europe, Amériques, Afrique, Asie.</li>
         </ul>
       </div>
 
@@ -38,25 +37,31 @@
         <ol>
           <li><a href="#responsable">Responsable</a></li>
           <li><a href="#recueillis">Renseignements recueillis</a></li>
-          <li><a href="#fins">Pourquoi nous les utilisons</a></li>
+          <li><a href="#fins">Utilisations et bases légales</a></li>
           <li><a href="#consentement">Consentement</a></li>
-          <li><a href="#fournisseurs">Fournisseurs et lieu de conservation</a></li>
+          <li><a href="#fournisseurs">Fournisseurs et transferts internationaux</a></li>
           <li><a href="#appareil">Ce qui reste sur votre appareil</a></li>
           <li><a href="#conservation">Durée de conservation</a></li>
           <li><a href="#securite">Sécurité</a></li>
           <li><a href="#droits">Vos droits</a></li>
+          <li><a href="#regions">Selon votre région</a></li>
           <li><a href="#mineurs">Personnes mineures</a></li>
           <li><a href="#incidents">Incidents de confidentialité</a></li>
           <li><a href="#modifications">Modifications</a></li>
         </ol>
       </nav>
 
-      <h2 id="responsable">1. Responsable de la protection des renseignements personnels</h2>
-      <p>Prof d'anglais est offert par <strong data-legal="nom"></strong>. Conformément à la <em>Loi sur la protection des renseignements personnels dans le secteur privé</em> du Québec (modifiée par la Loi 25), la personne responsable de la protection des renseignements personnels est :</p>
+      <h2 id="responsable">1. Responsable</h2>
+      <p>Prof d'anglais est offert par <strong data-legal="nom"></strong>, établi au Québec (Canada), qui est responsable du traitement de vos renseignements personnels. Conformément à la <em>Loi sur la protection des renseignements personnels dans le secteur privé</em> du Québec (Loi 25), la personne responsable de la protection des renseignements personnels est :</p>
       <div class="legal-card">
         <p><strong data-legal="responsable"></strong>, responsable de la protection des renseignements personnels</p>
         <p>Courriel : <span data-legal="courriel"></span></p>
         <p data-legal="adresse"></p>
+      </div>
+      <p>Représentants désignés pour les personnes qui résident en Europe (article 27 du RGPD et du RGPD britannique). Vous pouvez aussi leur écrire pour toute question sur vos renseignements :</p>
+      <div class="legal-card">
+        <p><strong>Union européenne et EEE :</strong> <span data-legal="representantUE"></span></p>
+        <p><strong>Royaume-Uni :</strong> <span data-legal="representantRU"></span></p>
       </div>
 
       <h2 id="recueillis">2. Renseignements que nous recueillons</h2>
@@ -65,7 +70,7 @@
         <li>Votre <strong>prénom</strong>, pour vous saluer dans l'application.</li>
         <li>Votre <strong>adresse courriel</strong>, pour vous connecter, confirmer votre compte, réinitialiser votre mot de passe et vous écrire au sujet de votre compte ou de votre abonnement.</li>
         <li>Votre <strong>mot de passe</strong>. Il est géré par Google Firebase sous une forme chiffrée : nous ne le connaissons pas et ne pouvons pas le lire.</li>
-        <li>La <strong>date d'acceptation</strong> des conditions d'utilisation et de cette politique.</li>
+        <li>La <strong>date d'acceptation</strong> des conditions d'utilisation et de cette politique, et leur version.</li>
       </ul>
       <h3>Quand vous utilisez l'application</h3>
       <ul>
@@ -73,75 +78,138 @@
       </ul>
       <h3>Si vous vous abonnez</h3>
       <ul>
-        <li>Stripe recueille vos renseignements de paiement (carte, adresse de facturation, au besoin) pour traiter le paiement. Nous n'avons jamais accès à votre numéro de carte.</li>
+        <li>Stripe recueille vos renseignements de paiement (carte, nom, pays et adresse de facturation) pour traiter le paiement et calculer les taxes de votre pays. Nous n'avons jamais accès à votre numéro de carte.</li>
         <li>Nous recevons de Stripe l'état de votre abonnement : formule, statut (essai, actif, annulé, paiement en retard), dates et montants. Nous en avons besoin pour vous donner accès au contenu Premium et pour notre comptabilité.</li>
+        <li>Si vous vous rétractez, nous enregistrons votre demande : date et heure, pays de résidence déclaré et courriel du compte.</li>
       </ul>
       <h3>Renseignements techniques</h3>
       <ul>
-        <li>Comme pour tout site web, notre hébergeur et nos fournisseurs (Google Firebase, Stripe, Google Fonts pour les polices de caractères) reçoivent votre adresse IP et des données techniques (type d'appareil et de navigateur) lorsque l'application les contacte. Ils peuvent les conserver dans leurs journaux, pour la sécurité et le bon fonctionnement de leurs services.</li>
-        <li>Nous n'utilisons aucun outil d'analyse d'audience, aucun pisteur et aucun témoin (cookie) publicitaire.</li>
+        <li>Comme pour tout site web, notre hébergeur et nos fournisseurs (Google Firebase, Stripe) reçoivent votre adresse IP et des données techniques (type d'appareil et de navigateur) lorsque l'application les contacte. Ils peuvent les conserver dans leurs journaux, pour la sécurité et le bon fonctionnement de leurs services.</li>
+        <li>Les polices de caractères sont hébergées avec l'application : aucune donnée n'est envoyée à un service de polices.</li>
+        <li>Nous n'utilisons aucun outil d'analyse d'audience, aucun pisteur et aucun témoin (cookie) publicitaire. Nous ne prenons aucune décision automatisée qui vous concerne, et nous ne faisons pas de profilage.</li>
       </ul>
 
-      <h2 id="fins">3. Pourquoi nous utilisons vos renseignements</h2>
-      <ul>
-        <li>Créer et sécuriser votre compte, et vous permettre de vous connecter.</li>
-        <li>Sauvegarder et synchroniser votre progression.</li>
-        <li>Gérer votre abonnement : essai, paiements, accès Premium, reçus et rappels.</li>
-        <li>Vous écrire au sujet de votre compte ou de votre abonnement : confirmation de courriel, nouveau mot de passe, paiement refusé, changement de prix ou de conditions.</li>
-        <li>Répondre à vos questions et à vos demandes.</li>
-        <li>Respecter nos obligations légales, notamment fiscales et comptables.</li>
-      </ul>
-      <p>Nous n'utilisons pas vos renseignements pour de la publicité, nous ne faisons pas de profilage et nous ne les vendons ni ne les louons à personne. Nous ne vous enverrons pas d'infolettre ni d'offre commerciale sans votre consentement exprès.</p>
+      <h2 id="fins">3. Utilisations et bases légales</h2>
+      <p>Nous utilisons vos renseignements seulement pour les fins ci-dessous. Pour les personnes visées par le RGPD (Europe) ou par une loi semblable, nous indiquons aussi la base légale.</p>
+      <div class="legal-table-wrap">
+        <table class="legal-table">
+          <thead><tr><th scope="col">Ce que nous faisons</th><th scope="col">Base légale</th></tr></thead>
+          <tbody>
+            <tr><td>Créer et sécuriser votre compte, vous connecter, sauvegarder et synchroniser votre progression</td><td>Exécution du contrat</td></tr>
+            <tr><td>Gérer votre abonnement : essai, paiements, accès Premium, reçus, rappels, rétractation et remboursements</td><td>Exécution du contrat</td></tr>
+            <tr><td>Vous écrire au sujet de votre compte ou de votre abonnement : confirmation, nouveau mot de passe, paiement refusé, changement de prix ou de conditions</td><td>Exécution du contrat</td></tr>
+            <tr><td>Répondre à vos questions et à vos demandes</td><td>Exécution du contrat ; obligation légale pour l'exercice de vos droits</td></tr>
+            <tr><td>Tenir nos registres comptables et fiscaux, conserver la preuve de votre consentement</td><td>Obligation légale</td></tr>
+            <tr><td>Prévenir la fraude et les abus, protéger le service</td><td>Intérêt légitime : la sécurité du service et de ses utilisateurs</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Nous n'utilisons pas vos renseignements pour de la publicité, et nous ne les vendons, ne les louons ni ne les partageons à des fins publicitaires avec personne. Nous ne vous enverrons pas d'infolettre ni d'offre commerciale sans votre consentement exprès.</p>
 
       <h2 id="consentement">4. Consentement</h2>
-      <p>En créant un compte, vous consentez à ce que vos renseignements soient recueillis et utilisés aux fins décrites ci-dessus. Vous pouvez retirer votre consentement en tout temps en supprimant votre compte. L'application fonctionne alors sans compte, mais votre progression n'est plus sauvegardée en ligne.</p>
+      <p>En créant un compte, vous acceptez cette politique et consentez à ce que vos renseignements soient recueillis, utilisés et communiqués à nos fournisseurs, y compris à l'extérieur de votre pays (section 5), aux fins décrites ici. Lorsque la loi de votre pays exige un consentement, c'est celui-là. Vous pouvez le retirer en tout temps en supprimant votre compte. L'application fonctionne alors sans compte, mais votre progression n'est plus sauvegardée en ligne.</p>
 
-      <h2 id="fournisseurs">5. Fournisseurs et lieu de conservation</h2>
+      <h2 id="fournisseurs">5. Fournisseurs et transferts internationaux</h2>
       <p>Pour faire fonctionner l'application, nous confions certains renseignements à des fournisseurs, qui les traitent pour notre compte. Ils sont tenus par contrat de les protéger et de ne les utiliser que pour nous fournir leurs services.</p>
       <ul>
-        <li><strong>Google Firebase</strong> (Google LLC) : comptes, connexion, sauvegarde de la progression et de l'état des abonnements.</li>
-        <li><strong>Stripe</strong> (Stripe, Inc. et ses sociétés affiliées) : paiements, abonnements, reçus et portail de gestion de l'abonnement. Stripe agit aussi selon sa propre <a href="https://stripe.com/fr-ca/privacy" target="_blank" rel="noopener">politique de confidentialité</a> pour certaines obligations (prévention de la fraude, obligations financières).</li>
+        <li><strong>Google Firebase</strong> (Google LLC, États-Unis) : comptes, connexion, sauvegarde de la progression et de l'état des abonnements.</li>
+        <li><strong>Stripe</strong> (Stripe, Inc., États-Unis, et ses sociétés affiliées, dont Stripe Payments Europe, Irlande) : paiements, taxes, abonnements, reçus et portail de gestion de l'abonnement. Stripe agit aussi selon sa propre <a href="https://stripe.com/fr/privacy" target="_blank" rel="noopener">politique de confidentialité</a> pour certaines obligations (prévention de la fraude, obligations financières).</li>
         <li><strong>Notre hébergeur web</strong> : il diffuse les fichiers de l'application.</li>
-        <li><strong>Google Fonts</strong> : il fournit les polices de caractères de l'application.</li>
       </ul>
-      <p>Ces fournisseurs peuvent conserver vos renseignements <strong>à l'extérieur du Québec</strong>, notamment aux États-Unis, où des lois différentes s'appliquent. Avant de leur communiquer des renseignements, nous évaluons s'ils assurent une protection adéquate, comme l'exige la loi.</p>
+      <p>Vos renseignements sont donc conservés et traités <strong>au Canada, aux États-Unis et dans l'Union européenne</strong>, où les lois peuvent être différentes de celles de votre pays. Nous les protégeons ainsi :</p>
+      <ul>
+        <li><strong>Depuis le Québec :</strong> avant de communiquer des renseignements hors du Québec, nous évaluons s'ils y bénéficient d'une protection adéquate, comme l'exige la Loi 25.</li>
+        <li><strong>Depuis l'Europe :</strong> la Commission européenne et le Royaume-Uni reconnaissent que le Canada offre une protection adéquate. Pour les États-Unis, Google et Stripe adhèrent au Data Privacy Framework UE–États-Unis (et à ses extensions britannique et suisse) et s'engagent par les clauses contractuelles types de la Commission européenne.</li>
+        <li><strong>Depuis les autres pays :</strong> nous nous appuyons sur ces mêmes engagements contractuels, et sur votre consentement lorsque la loi de votre pays l'exige pour un transfert à l'étranger.</li>
+      </ul>
+      <p>Vous pouvez nous demander une copie des garanties applicables (section 9).</p>
 
       <h2 id="appareil">6. Ce qui reste sur votre appareil</h2>
-      <p>L'application enregistre dans le stockage local de votre navigateur votre progression, vos préférences (voix, vitesse) et, si vous êtes abonné, une copie des leçons Premium pour les utiliser hors connexion. Ces données restent sur votre appareil. Lorsque vous vous déconnectez, votre progression et la copie Premium sont retirées de l'appareil.</p>
+      <p>L'application enregistre dans le stockage local de votre navigateur votre progression, vos préférences (voix, vitesse), votre session de connexion et, si vous êtes abonné, une copie des leçons Premium pour les utiliser hors connexion. Ces données sont strictement nécessaires au service que vous demandez ; elles ne servent ni à vous suivre, ni à la publicité. C'est pourquoi l'application n'affiche pas de bandeau de témoins (cookies). Lorsque vous vous déconnectez, votre progression et la copie Premium sont retirées de l'appareil.</p>
 
       <h2 id="conservation">7. Durée de conservation</h2>
       <ul>
         <li><strong>Compte et progression :</strong> tant que votre compte existe. Ils sont supprimés dès que vous supprimez votre compte.</li>
-        <li><strong>Renseignements d'abonnement et de facturation :</strong> conservés le temps exigé par les lois fiscales (en général 6 ans), puis détruits.</li>
+        <li><strong>Renseignements d'abonnement, de facturation et de rétractation :</strong> conservés le temps exigé par les lois fiscales et commerciales (en général 6 ans après l'année du paiement), puis détruits.</li>
         <li><strong>Comptes inactifs :</strong> un compte sans abonnement et sans connexion depuis 3 ans peut être supprimé, après un avis par courriel.</li>
       </ul>
 
       <h2 id="securite">8. Sécurité</h2>
       <ul>
         <li>Toutes les communications sont chiffrées (https).</li>
-        <li>Des règles d'accès strictes font que chaque personne ne peut lire que sa propre progression. Seul le responsable désigné peut consulter l'état des abonnements, et uniquement pour gérer le service.</li>
+        <li>Des règles d'accès strictes font que chaque personne ne peut lire que sa propre progression. Seul le responsable désigné peut consulter l'état des abonnements et les demandes de rétractation, et uniquement pour gérer le service.</li>
         <li>Les mots de passe et les données de paiement sont gérés par Google Firebase et Stripe, avec leurs propres mesures de sécurité.</li>
       </ul>
       <p>Aucun système n'est parfaitement sûr. Choisissez un mot de passe unique et gardez-le pour vous.</p>
 
       <h2 id="droits">9. Vos droits</h2>
-      <p>Vous pouvez en tout temps :</p>
+      <p>Où que vous habitiez, vous pouvez gratuitement :</p>
       <ul>
-        <li><strong>consulter</strong> les renseignements que nous détenons sur vous ;</li>
+        <li><strong>savoir</strong> quels renseignements nous détenons sur vous et <strong>en obtenir une copie</strong> ;</li>
         <li><strong>les faire corriger</strong> s'ils sont inexacts ou incomplets ;</li>
         <li><strong>les faire supprimer</strong>, en supprimant votre compte dans « Mon compte » ou en nous écrivant ;</li>
         <li><strong>retirer votre consentement</strong> ;</li>
-        <li><strong>obtenir une copie</strong> de vos renseignements dans un format technologique structuré et couramment utilisé.</li>
+        <li><strong>les recevoir dans un format structuré et couramment utilisé</strong>, ou les faire transmettre à un autre service (portabilité) ;</li>
+        <li><strong>vous opposer</strong> à un traitement fondé sur notre intérêt légitime, ou en <strong>demander la limitation</strong> ;</li>
+        <li><strong>désigner une personne</strong> pour exercer vos droits après votre décès, lorsque la loi de votre pays le prévoit.</li>
       </ul>
-      <p>Pour exercer ces droits, écrivez à <span data-legal="courriel"></span>. Nous pourrions vous demander de confirmer votre identité. Nous répondons dans un délai de 30 jours. Si vous n'êtes pas satisfait de notre réponse, vous pouvez porter plainte à la Commission d'accès à l'information du Québec (<a href="https://www.cai.gouv.qc.ca" target="_blank" rel="noopener">cai.gouv.qc.ca</a>).</p>
+      <p>Pour exercer ces droits, écrivez à <span data-legal="courriel"></span>. Nous pourrions vous demander de confirmer votre identité. Nous répondons dans un délai de 30 jours. Si nous refusons votre demande, nous vous expliquons pourquoi ; vous pouvez nous demander de la réexaminer en répondant à notre courriel, puis vous adresser à l'autorité de protection des données de votre pays (section 10). Exercer vos droits ne change rien au prix ni à la qualité du service.</p>
 
-      <h2 id="mineurs">10. Personnes mineures</h2>
-      <p>Il faut avoir 18 ans ou plus pour créer un compte. Nous ne recueillons pas sciemment de renseignements sur des personnes mineures. Si vous pensez qu'une personne mineure a créé un compte, écrivez-nous : nous le supprimerons.</p>
+      <h2 id="regions">10. Selon votre région</h2>
+      <h3>Canada</h3>
+      <p>Au Québec, la Loi 25 s'applique : vous pouvez porter plainte à la Commission d'accès à l'information (<a href="https://www.cai.gouv.qc.ca" target="_blank" rel="noopener">cai.gouv.qc.ca</a>). Ailleurs au Canada, la LPRPDE s'applique : vous pouvez vous adresser au Commissariat à la protection de la vie privée du Canada (<a href="https://www.priv.gc.ca" target="_blank" rel="noopener">priv.gc.ca</a>).</p>
+      <h3>Europe : Union européenne, EEE, Royaume-Uni et Suisse</h3>
+      <p>Le Règlement général sur la protection des données (RGPD), le RGPD britannique et la loi suisse sur la protection des données s'appliquent. En plus des droits de la section 9, vous pouvez porter plainte auprès de l'autorité de protection des données de votre pays, par exemple la CNIL en France (<a href="https://www.cnil.fr" target="_blank" rel="noopener">cnil.fr</a>), l'Autorité de protection des données en Belgique, la CNPD au Luxembourg, l'ICO au Royaume-Uni ou le PFPDT en Suisse. La liste des autorités européennes est sur <a href="https://www.edpb.europa.eu/about-edpb/about-edpb/members_fr" target="_blank" rel="noopener">edpb.europa.eu</a>.</p>
+      <h3>États-Unis</h3>
+      <p>Nous ne vendons pas vos renseignements personnels et ne les partageons pas à des fins de publicité ciblée, au sens des lois des États (par exemple la Californie). Nous ne traitons pas de renseignements sensibles. Quel que soit votre État, vous pouvez exercer les droits de la section 9, y compris faire appel d'un refus ; si l'appel est refusé, vous pouvez vous adresser au procureur général de votre État.</p>
+      <h3>Amérique latine et Caraïbes</h3>
+      <p>Vous bénéficiez des droits prévus par la loi de votre pays, par exemple la LGPD au Brésil (autorité : ANPD). Vous pouvez vous adresser à l'autorité de protection des données de votre pays.</p>
+      <h3>Afrique</h3>
+      <p>Nous respectons les lois de protection des données personnelles des pays africains, qui accordent des droits semblables à ceux de la section 9. Vous pouvez vous adresser à l'autorité de votre pays, notamment :</p>
+      <div class="legal-table-wrap">
+        <table class="legal-table">
+          <thead><tr><th scope="col">Pays</th><th scope="col">Autorité</th></tr></thead>
+          <tbody>
+            <tr><td>Afrique du Sud</td><td>Information Regulator (POPIA)</td></tr>
+            <tr><td>Algérie</td><td>Autorité nationale de protection des données à caractère personnel (ANPDP)</td></tr>
+            <tr><td>Bénin</td><td>Autorité de protection des données personnelles (APDP)</td></tr>
+            <tr><td>Côte d'Ivoire</td><td>Autorité de régulation des télécommunications (ARTCI)</td></tr>
+            <tr><td>Ghana</td><td>Data Protection Commission</td></tr>
+            <tr><td>Kenya</td><td>Office of the Data Protection Commissioner (ODPC)</td></tr>
+            <tr><td>Maroc</td><td>Commission nationale de contrôle de la protection des données à caractère personnel (CNDP)</td></tr>
+            <tr><td>Nigeria</td><td>Nigeria Data Protection Commission (NDPC)</td></tr>
+            <tr><td>Sénégal</td><td>Commission de protection des données personnelles (CDP)</td></tr>
+            <tr><td>Tunisie</td><td>Instance nationale de protection des données personnelles (INPDP)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Si votre pays n'est pas dans la liste, écrivez-nous : nous vous indiquerons l'autorité compétente.</p>
+      <h3>Asie et Océanie</h3>
+      <p>Vous bénéficiez des droits prévus par la loi de votre pays. Vous pouvez vous adresser à l'autorité de votre pays, notamment :</p>
+      <div class="legal-table-wrap">
+        <table class="legal-table">
+          <thead><tr><th scope="col">Pays ou territoire</th><th scope="col">Autorité</th></tr></thead>
+          <tbody>
+            <tr><td>Australie</td><td>Office of the Australian Information Commissioner (OAIC)</td></tr>
+            <tr><td>Corée du Sud</td><td>Personal Information Protection Commission (PIPC)</td></tr>
+            <tr><td>Hong Kong</td><td>Privacy Commissioner for Personal Data (PCPD)</td></tr>
+            <tr><td>Inde</td><td>Data Protection Board of India (loi DPDP)</td></tr>
+            <tr><td>Japon</td><td>Personal Information Protection Commission (PPC)</td></tr>
+            <tr><td>Philippines</td><td>National Privacy Commission (NPC)</td></tr>
+            <tr><td>Singapour</td><td>Personal Data Protection Commission (PDPC)</td></tr>
+            <tr><td>Thaïlande</td><td>Personal Data Protection Committee (PDPC)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Le service n'est pas offert en Chine continentale (voir les <a href="conditions.html#pays">Conditions</a>).</p>
 
-      <h2 id="incidents">11. Incidents de confidentialité</h2>
-      <p>En cas d'accès non autorisé, de perte ou de communication non autorisée de renseignements personnels, nous prenons rapidement les mesures pour réduire le risque de préjudice. S'il existe un risque de préjudice sérieux, nous avisons les personnes concernées et la Commission d'accès à l'information, comme l'exige la loi. Nous tenons aussi un registre de ces incidents.</p>
+      <h2 id="mineurs">11. Personnes mineures</h2>
+      <p>Il faut avoir 18 ans ou plus, et l'âge de la majorité dans son pays, pour créer un compte. Nous ne recueillons pas sciemment de renseignements sur des personnes mineures. Si vous pensez qu'une personne mineure a créé un compte, écrivez-nous : nous le supprimerons.</p>
 
-      <h2 id="modifications">12. Modifications</h2>
+      <h2 id="incidents">12. Incidents de confidentialité</h2>
+      <p>En cas d'accès non autorisé, de perte ou de communication non autorisée de renseignements personnels, nous prenons rapidement les mesures pour réduire le risque de préjudice. Nous avisons les autorités compétentes et les personnes concernées lorsque la loi l'exige, dans les délais qu'elle prévoit (par exemple dans les 72 heures pour l'autorité européenne compétente). Nous tenons aussi un registre de ces incidents.</p>
+
+      <h2 id="modifications">13. Modifications</h2>
       <p>Nous pouvons mettre à jour cette politique. La date d'entrée en vigueur en haut de la page indique la dernière version. Pour un changement important, nous vous en informons par courriel ou dans l'application avant qu'il s'applique.</p>
     </article>
     <p class="legal-foot"><a href="./">Retour à l'app</a> · <a href="conditions.html">Conditions d'utilisation et de vente</a></p>

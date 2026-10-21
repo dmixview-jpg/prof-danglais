@@ -188,20 +188,54 @@ Pré-A1 reste gratuit ; les niveaux A1 à C2 et les dialogues guidés demandent 
 
 **Avant d'ouvrir les abonnements :** remplis les politiques (section suivante). Au Québec, l'inscription aux taxes TPS/TVQ est obligatoire au-delà de 30 000 $ de revenus sur 12 mois ; Stripe Tax peut les calculer.
 
-## Conditions et confidentialité
+## Conditions et confidentialité (clientèle internationale)
 
-L'app contient deux pages publiques, liées depuis l'écran de connexion, le menu « Mon compte » et la page d'abonnement :
-- `public/conditions.html` : conditions d'utilisation et de vente (18 ans et plus, essai gratuit offert une fois, renouvellement, annulation en tout temps, **pas de remboursement partiel** sauf exceptions : erreur de facturation, double prélèvement, prélèvement après annulation, panne de plus de 7 jours, fermeture du service).
-- `public/confidentialite.html` : politique de confidentialité conforme à l'esprit de la Loi 25 (responsable des renseignements personnels, fournisseurs hors Québec, droits d'accès, de rectification et de suppression, Commission d'accès à l'information).
+L'app vise une clientèle francophone en Europe, dans les Amériques, en Afrique et en Asie. Deux pages publiques, liées depuis l'écran de connexion, le menu « Mon compte » et la page d'abonnement, couvrent ces régions :
+- `public/conditions.html` : conditions d'utilisation et de vente.
+  - Réservé aux personnes de 18 ans ou plus ayant l'âge de la majorité dans leur pays.
+  - Offert partout sauf en Chine continentale, où Firebase est bloqué.
+  - Prix en $ CA, taxes du pays comprises ; essai offert une fois ; rappel avant le renouvellement annuel.
+  - **Droit de rétractation de 14 jours** en Union européenne, dans l'EEE et au Royaume-Uni, avec modèle de formulaire. Ailleurs, il s'applique seulement si la loi du pays le prévoit.
+  - Pas de remboursement partiel en dehors de ces cas et des exceptions prévues.
+  - Loi du Québec, sans priver le client des protections obligatoires de son pays.
+- `public/confidentialite.html` : politique de confidentialité.
+  - Loi 25 et RGPD : bases légales et transferts internationaux (Canada, États-Unis, UE).
+  - Droits valables partout.
+  - Section « Selon votre région » : Canada, Europe, États-Unis, Amérique latine, Afrique, Asie et Océanie, avec l'autorité à joindre dans chaque pays.
 
-Pour créer un compte, la personne doit cocher « J'ai 18 ans ou plus et j'accepte les conditions ». La version acceptée (date d'entrée en vigueur) et la date d'acceptation sont enregistrées dans son profil (`users/{uid}.consent`).
+Pour créer un compte, la personne doit cocher « J'ai 18 ans ou plus et l'âge de la majorité dans mon pays, et j'accepte les conditions ». La version acceptée et la date d'acceptation sont enregistrées dans son profil (`users/{uid}.consent`).
+
+**Bouton de rétractation** (obligatoire dans l'UE depuis le 19 juin 2026)
+- Pendant 14 jours après le début d'un abonnement, « Mon compte » affiche **Me rétracter du contrat**.
+- La personne choisit son pays de résidence et confirme. L'app affiche aussitôt un accusé de réception avec la date et l'heure, et la demande est enregistrée dans `customers/{uid}/retractations`.
+- Elle apparaît dans le tableau de bord, section « À faire ». Si le pays est « Autre pays », vérifie si sa loi l'impose.
+- **À toi de jouer**, sans délai :
+  1. Écris à la personne pour confirmer la réception.
+  2. Dans Stripe, annule l'abonnement et rembourse les paiements dans les 14 jours.
+  3. Touche « Marquer comme traitée ».
+
+**Polices.** Les polices sont hébergées avec l'app (`public/fonts/`, licence OFL) : aucune adresse IP n'est envoyée à Google Fonts, ce que des tribunaux européens ont jugé contraire au RGPD.
 
 **À faire avant la mise en ligne payante**
-1. Remplis `public/legal-config.js` : nom (ou nom d'entreprise), courriel de contact, adresse postale, téléphone (facultatif) et responsable des renseignements personnels. La loi québécoise exige l'identité et l'adresse du commerçant pour un contrat conclu à distance. Tant qu'un champ est vide, les pages affichent « [à compléter : …] » en surligné.
-2. **Stripe → Paramètres → Détails publics** : ajoute les adresses de `conditions.html` et de `confidentialite.html`, ainsi qu'un courriel de soutien.
-3. Loi 25 : avant de confier des renseignements à Firebase et Stripe (serveurs hors Québec), fais et garde une courte évaluation des facteurs relatifs à la vie privée (la Commission d'accès à l'information publie un guide). Tiens aussi un registre des incidents de confidentialité, même vide.
-4. Si tu modifies un texte de façon importante, change `enVigueur` dans `legal-config.js` et préviens les abonnés 30 jours à l'avance, comme le prévoient les conditions.
-5. Ces textes sont un bon point de départ, pas un avis juridique : fais-les relire par un avocat ou un notaire avant d'encaisser de vrais paiements.
+1. Remplis `public/legal-config.js` : nom ou nom d'entreprise, courriel de contact, adresse postale, téléphone (facultatif) et responsable des renseignements personnels. Ce sont des mentions obligatoires au Québec comme en Europe. Tant qu'un champ est vide, les pages affichent « [à compléter : …] » en surligné.
+2. **Représentants en Europe** (`representantUE`, `representantRU`) : un commerçant hors Europe qui vend à des Européens doit en désigner un dans l'Union européenne et un au Royaume-Uni (article 27 du RGPD). Des entreprises spécialisées offrent ce service, souvent pour quelques centaines d'euros par an.
+3. **Taxes à l'étranger** : plusieurs pays taxent les services numériques vendus à leurs résidents, souvent dès la première vente :
+   - Union européenne : TVA, avec le guichet unique OSS « non-Union » ;
+   - Royaume-Uni, Suisse, Norvège ;
+   - Afrique du Sud, Kenya, Nigeria ;
+   - Inde, Japon, Corée, Singapour, Australie, etc.
+
+   Active **Stripe Tax** (environ 0,5 % par transaction) : il surveille les seuils et calcule la bonne taxe. Ensuite :
+   - dans Stripe, règle tes prix en « taxes incluses » ;
+   - mets `"taxesAutomatiques": true` dans `outils/programme/abonnement.json`, puis relance `construire.py`.
+
+   Inscris-toi auprès de chaque pays quand Stripe te le signale. Un comptable peut t'aider.
+4. **Stripe → Paramètres → Facturation → Abonnements et courriels** : active les courriels de rappel avant les renouvellements (formule annuelle). Les conditions le promettent, et la Californie l'exige.
+5. **Stripe → Paramètres → Détails publics** : ajoute les adresses de `conditions.html` et de `confidentialite.html`, ainsi qu'un courriel de soutien.
+6. Republie `firestore.rules` (nouvelles règles pour les demandes de rétractation).
+7. Loi 25 : avant de confier des renseignements à Firebase et Stripe (serveurs hors Québec), fais et garde une courte évaluation des facteurs relatifs à la vie privée. Tiens aussi un registre des incidents de confidentialité, même vide.
+8. Si tu modifies un texte de façon importante, change `enVigueur` dans `legal-config.js` et préviens les abonnés 30 jours à l'avance.
+9. Ces textes sont un bon point de départ, pas un avis juridique. Fais-les relire par un avocat avant d'encaisser de vrais paiements, idéalement quelqu'un qui connaît le droit de la consommation européen, puisque l'Europe est le marché le plus encadré.
 
 ## Tableau de bord des abonnements (admin)
 
@@ -288,6 +322,7 @@ prof-danglais/
     ├── confidentialite.html   # Politique de confidentialité (Loi 25)
     ├── legal-config.js        # Identité du commerçant et date d'entrée en vigueur
     ├── legal.js, legal.css    # Remplissage et mise en page des deux pages
+    ├── fonts/                 # Polices hébergées avec l'app (OFL)
     ├── firebase-config.js     # Configuration Firebase (null = sans comptes)
     ├── curriculum.json        # Généré : leçons, bilans et dialogues
     ├── manifest.webmanifest

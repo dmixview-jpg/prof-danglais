@@ -40,6 +40,9 @@ body.admin { padding-bottom: env(safe-area-inset-bottom); }
 .todo-icon { flex: none; }
 .todo-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .todo-link { flex: none; color: var(--accent); font-weight: 700; }
+.todo li:has(.todo-done) { flex-wrap: wrap; }
+.todo-done { flex-basis: 100%; padding: 4px 0 0; border: 0; background: none; font: inherit; text-align: right; cursor: pointer; }
+.todo-done:disabled { opacity: .5; }
 .todo-empty { justify-content: center; color: var(--muted); }
 
 /* Liste des abonnements */

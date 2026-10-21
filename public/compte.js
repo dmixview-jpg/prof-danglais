@@ -69,7 +69,7 @@
     hint,
     h('label', { class: 'consent', 'data-only': 'signup' },
       h('input', { id: 'auth-consent', type: 'checkbox' }),
-      h('span', null, 'J’ai 18 ans ou plus et j’accepte les ',
+      h('span', null, 'J’ai 18 ans ou plus et l’âge de la majorité dans mon pays, et j’accepte les ',
         h('a', { href: 'conditions.html', target: '_blank', rel: 'noopener' }, 'Conditions d’utilisation et de vente'),
         ' et la ', h('a', { href: 'confidentialite.html', target: '_blank', rel: 'noopener' }, 'Politique de confidentialité'), '.')),
     msg, submit, forgot);
@@ -135,7 +135,7 @@
     const pass = passInput.value;
     const name = $('#auth-name').value.trim();
     if (mode === 'signup' && !name) return say('Écris ton prénom.');
-    if (mode === 'signup' && !$('#auth-consent').checked) return say('Coche la case pour confirmer que tu as 18 ans ou plus et que tu acceptes les conditions.');
+    if (mode === 'signup' && !$('#auth-consent').checked) return say('Coche la case pour confirmer que tu as 18 ans ou plus (et l’âge de la majorité dans ton pays) et que tu acceptes les conditions.');
     if (!email) return say(MESSAGES['auth/missing-email']);
     if (!pass) return say(MESSAGES['auth/missing-password']);
     busy(true);

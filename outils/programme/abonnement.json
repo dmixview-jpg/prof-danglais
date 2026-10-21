@@ -1,5 +1,5 @@
 {
-  "_aide": "Abonnement Premium. actif=false : tout le contenu est gratuit, comme avant. Voir le README, section « Abonnement payant ».",
+  "_aide": "Abonnement Premium. actif=false : tout le contenu est gratuit, comme avant. Voir le README, section « Abonnement payant ». taxesAutomatiques=true : Stripe Tax calcule les taxes selon le pays du client (TVA, TPS/TVQ…).",
   "actif": false,
   "gratuit": [
     "pre"
@@ -11,16 +11,17 @@
     {
       "id": "price_A_REMPLACER_MENSUEL",
       "nom": "Mensuel",
-      "montant": "6,99 $",
+      "montant": "6,99 $ CA",
       "periode": "mois"
     },
     {
       "id": "price_A_REMPLACER_ANNUEL",
       "nom": "Annuel",
-      "montant": "49,99 $",
+      "montant": "49,99 $ CA",
       "periode": "an",
       "badge": "≈ 40 % de rabais",
       "parDefaut": true
     }
-  ]
+  ],
+  "taxesAutomatiques": false
 }

@@ -129,7 +129,7 @@ def split_premium(data, config):
         if lid and lid not in free:
             premium.setdefault(lid, {"lessons": {}, "scenarios": {}})["scenarios"][sc["id"]] = sc.pop("turns")
             sc["locked"] = True
-    data["abonnement"] = {k: config[k] for k in ("gratuit", "essaiJours", "region", "fonctionPortail", "prix")}
+    data["abonnement"] = {k: config[k] for k in ("gratuit", "essaiJours", "region", "fonctionPortail", "taxesAutomatiques", "prix")}
     return premium
 
 
