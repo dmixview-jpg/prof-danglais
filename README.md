@@ -184,6 +184,7 @@ Pré-A1 reste gratuit ; les niveaux A1 à C2 et les dialogues guidés demandent 
 - L'essai gratuit (`essaiJours`) n'est offert qu'une fois : une personne qui a déjà eu un abonnement voit « S'abonner », sans nouvel essai.
 - Paiement refusé : l'extension retire l'accès Premium dès que l'abonnement passe « en retard », pendant que Stripe réessaie. Dans l'app, la page d'abonnement affiche alors « Mettre à jour mon paiement » (portail Stripe) ; l'accès revient dès que le paiement passe.
 - Annulation : l'accès reste ouvert jusqu'à la fin de la période payée, puis les niveaux A1 à C2 se verrouillent et la copie hors connexion est effacée.
+- Hors connexion : la copie des leçons Premium reste utilisable 30 jours après la dernière vérification en ligne de l'abonnement (`HORS_LIGNE_MAX` dans `abonnement.js`). Ensuite, l'app demande de se connecter à Internet une fois pour la garder.
 - Un compte avec un abonnement actif ne peut pas être supprimé dans l'app : il faut d'abord annuler l'abonnement (sinon Stripe continuerait de facturer).
 
 **Avant d'ouvrir les abonnements :** remplis les politiques (section suivante). Au Québec, l'inscription aux taxes TPS/TVQ est obligatoire au-delà de 30 000 $ de revenus sur 12 mois ; Stripe Tax peut les calculer.
@@ -239,7 +240,9 @@ Pour créer un compte, la personne doit cocher « J'ai 18 ans ou plus et l'âge 
 
 ## Tableau de bord des abonnements (admin)
 
-La page `admin.html` (ex. : `https://<ton-site>/admin.html`) résume les abonnements : abonnés payants, essais en cours, revenu mensuel récurrent, paiements en retard, annulations prévues et départs des 30 derniers jours. La section « À faire » signale les paiements en retard, les essais qui se terminent d'ici 3 jours et les annulations demandées, avec un lien vers la fiche Stripe de chaque personne. La page est en lecture seule ; remboursements et factures se font dans Stripe.
+La page `admin.html` (ex. : `https://<ton-site>/admin.html`) résume tous les abonnements, du site (Stripe) comme de l'App Store et de Google Play (RevenueCat) : abonnés payants, essais en cours, revenu mensuel récurrent, paiements en retard, annulations prévues et départs des 30 derniers jours. La section « À faire » signale les paiements en retard, les essais qui se terminent d'ici 3 jours et les annulations demandées, avec un lien vers la fiche Stripe de chaque personne. La page est en lecture seule ; remboursements et factures se font dans Stripe.
+
+**Abonnés des magasins.** Pour qu'ils y apparaissent, installe l'extension RevenueCat (section « App Store et Google Play ») avec le paramètre **Location of the customers collection** = `revenuecat`. L'app donne aussi le courriel du compte à RevenueCat pour reconnaître chaque abonné. Le revenu des magasins est estimé avec les prix de `abonnement.json`, avant la commission d'Apple ou de Google. Les achats de test (sandbox) sont listés avec la mention « Test », mais ne sont pas comptés.
 
 **Accès réservé.** Seuls les comptes marqués administrateur peuvent lire ces données (règles de `firestore.rules`). Pour te donner l'accès :
 1. Crée ton compte dans l'app (comme un utilisateur).
@@ -284,6 +287,7 @@ L'app web est emballée en vraies apps iPhone/iPad et Android avec **Capacitor**
    - crée une offre (offering) « default » avec les forfaits Monthly et Annual.
 4. **Firebase → Extensions → « Enable In-App Purchases with RevenueCat »** :
    - mets « Set custom claims » à **ENABLED** (l'extension ajoute `revenueCatEntitlements` au compte, comme Stripe ajoute `stripeRole`) ;
+   - mets « Location of the customers collection » à `revenuecat` (abonnés des magasins dans le tableau de bord) ;
    - reporte dans RevenueCat (**Integrations → Firebase**) le secret partagé.
 5. Copie les **clés publiques des SDK** RevenueCat (`appl_…`, `goog_…`) dans `outils/programme/abonnement.json`, bloc `magasins`. Lance `python3 outils/programme/construire.py` et republie `firestore.rules` (accès Premium par RevenueCat).
 6. Dans **App Store Connect → Tarifs et disponibilité** et **Play Console → Pays**, retire la Chine continentale.

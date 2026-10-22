@@ -21,6 +21,10 @@
   // Droit de rétractation (Union européenne, EEE, Royaume-Uni) : 14 jours après l'abonnement.
   const DELAI_RETRACTATION = 14;
   const JOUR = 86400000;
+  // Copie hors connexion du contenu Premium : valable 30 jours après la dernière vérification en
+  // ligne de l'abonnement. Ensuite, il faut se connecter à Internet une fois pour la garder.
+  const HORS_LIGNE_MAX = 30 * JOUR;
+  let aConfirmer = false;
   const PAYS_RETRACTATION = ['Allemagne', 'Autriche', 'Belgique', 'Bulgarie', 'Chypre', 'Croatie', 'Danemark', 'Espagne',
     'Estonie', 'Finlande', 'France', 'Grèce', 'Hongrie', 'Irlande', 'Islande', 'Italie', 'Lettonie', 'Liechtenstein',
     'Lituanie', 'Luxembourg', 'Malte', 'Norvège', 'Pays-Bas', 'Pologne', 'Portugal', 'République tchèque', 'Roumanie',
@@ -70,6 +74,7 @@
     const note = h('p', { class: 'auth-msg', role: 'alert', hidden: true });
     const tell = (text, kind = 'bad') => { note.hidden = !text; note.textContent = text; note.dataset.kind = kind; };
     const fine = h('p', { class: 'paywall-fine' });
+    const confirmer = aConfirmer && !navigator.onLine;
     const cta = h('button', { type: 'button', class: 'btn yellow paywall-cta' });
     const plans = prix.map((p) => h('button', {
       type: 'button', class: 'plan', role: 'radio', 'data-id': p.id,
@@ -96,6 +101,14 @@
     if (!pret) {
       cta.disabled = true;
       tell('Les abonnements ouvrent bientôt. Merci de ta patience!', 'good');
+    }
+    // Abonné hors connexion depuis plus de 30 jours : pas besoin de payer, seulement de se connecter
+    if (confirmer) {
+      tell(MSG_CONFIRMER, 'good');
+      cta.disabled = true;
+      cta.textContent = 'Connexion Internet requise';
+      plansBox.hidden = true;
+      fine.hidden = true;
     }
     if (retard) {
       tell('Ton dernier paiement n’est pas passé. Mets ta carte à jour pour retrouver tout le parcours.');
@@ -298,10 +311,16 @@
   }
 
   // ---------------------------------------------------------------- Statut et contenu
+  const MSG_CONFIRMER = 'Connecte-toi à Internet pour confirmer ton abonnement Premium : c’est nécessaire au moins une fois tous les 30 jours.';
   const lireCache = (uid) => {
     try {
       const c = JSON.parse(localStorage.getItem(CACHE) || 'null');
-      return c && c.uid === uid ? c.data : null;
+      if (!c || c.uid !== uid) return null;
+      if (!c.verifieLe) { // copie d'une version précédente : le délai commence maintenant
+        c.verifieLe = Date.now();
+        localStorage.setItem(CACHE, JSON.stringify(c));
+      }
+      return c;
     } catch { return null; }
   };
   const coursePret = () => new Promise((ok) => {
@@ -331,7 +350,8 @@
     const docs = await Promise.all(ids.map((id) => db.collection('contenu').doc(id).get()));
     const data = { levels: {} };
     docs.forEach((d, i) => { if (d.exists) data.levels[ids[i]] = d.data(); });
-    try { localStorage.setItem(CACHE, JSON.stringify({ uid: user.uid, data })); } catch { /* stockage plein */ }
+    // verifieLe : l'abonnement vient d'être confirmé en ligne (le contenu vient de Firebase)
+    try { localStorage.setItem(CACHE, JSON.stringify({ uid: user.uid, data, verifieLe: Date.now() })); } catch { /* stockage plein */ }
     applyPremium(data);
   }
 
@@ -352,16 +372,20 @@
     const params = new URLSearchParams(location.search);
     const retour = params.get('abonnement');
     if (retour) history.replaceState(null, '', base());
-    if (magasin()) magasin().connecter(user.uid).catch(() => {});
+    if (magasin()) magasin().connecter(user.uid, user.email).catch(() => {});
 
     const cache = lireCache(user.uid);
-    if (cache) { premium = true; applyPremium(cache); }
+    const valide = cache && Date.now() - cache.verifieLe < HORS_LIGNE_MAX;
+    if (valide) { premium = true; applyPremium(cache.data); }
+    aConfirmer = !!cache && !valide;
     let statut;
     try {
       // En ligne, on redemande le statut à Firebase (abonnement pris ou annulé sur un autre appareil).
       statut = retour === 'ok' ? await attendreActivation(user) : await estPremium(user, navigator.onLine);
     } catch {
-      return; // hors connexion : on garde la copie déjà téléchargée
+      // Hors connexion : la copie déjà téléchargée reste utilisée, si elle a été vérifiée il y a moins de 30 jours.
+      if (aConfirmer) toast(MSG_CONFIRMER);
+      return;
     }
     if (retour === 'annule') toast('Paiement annulé. Tu peux t’abonner quand tu veux.');
     if (retour === 'ok' && !statut) toast('Paiement reçu : l’activation peut prendre une minute. Rouvre l’app dans un instant.');
@@ -370,12 +394,17 @@
     if (statut) {
       try {
         await charger(user);
+        aConfirmer = false;
         if (retour === 'ok') { toast('Bienvenue dans Premium! Tout le parcours est débloqué. 🎉'); confetti(); }
-      } catch { /* hors connexion : la copie locale reste utilisée */ }
+      } catch {
+        // hors connexion (jeton encore valide en mémoire) : la copie locale reste utilisée
+        if (aConfirmer) toast(MSG_CONFIRMER);
+      }
     } else if (cache) {
       // Abonnement terminé : on retire le contenu payant de l'appareil.
+      aConfirmer = false;
       try { localStorage.removeItem(CACHE); } catch { /* rien */ }
-      location.reload();
+      if (valide) location.reload();
     }
   });
 

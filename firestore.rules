@@ -60,6 +60,11 @@ service cloud.firestore {
         allow update: if admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['traiteLe']);
       }
     }
+    // Extension RevenueCat (achats App Store et Google Play) : un document par compte.
+    // Écrit par l'extension seulement ; lu par la personne et par le tableau de bord.
+    match /revenuecat/{uid} {
+      allow read: if connecte(uid) || admin();
+    }
     // Tableau de bord (admin.html) : lecture de tous les abonnements, en lecture seule.
     match /{chemin=**}/subscriptions/{id} {
       allow read: if admin();

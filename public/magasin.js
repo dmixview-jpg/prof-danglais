@@ -39,7 +39,8 @@
   const actif = () => !!(Purchases && cle());
 
   // Une seule configuration par lancement ; un changement de compte passe par logIn.
-  async function connecter(uid) {
+  // Le courriel du compte est donné à RevenueCat pour reconnaître l'abonné dans le tableau de bord.
+  async function connecter(uid, courriel) {
     if (!actif()) return;
     if (!configure) configure = Purchases.configure({ apiKey: cle(), appUserID: uid }).then(() => uid);
     const deja = await configure;
@@ -47,6 +48,7 @@
       await Purchases.logIn({ appUserID: uid });
       configure = Promise.resolve(uid);
     }
+    if (courriel) await Purchases.setEmail({ email: courriel }).catch(() => {});
   }
 
   // Formules du magasin, avec le prix local fourni par Apple ou Google (devise et taxes du pays).
