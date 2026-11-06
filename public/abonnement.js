@@ -24,6 +24,13 @@
   // Copie hors connexion du contenu Premium : valable 30 jours après la dernière vérification en
   // ligne de l'abonnement. Ensuite, il faut se connecter à Internet une fois pour la garder.
   const HORS_LIGNE_MAX = 30 * JOUR;
+  // La copie ne dépasse jamais la fin de la période payée (mois en cours), plus 3 jours de marge
+  // pour un renouvellement fait hors connexion. Un abonné qui ne paie plus perd donc l'accès
+  // à la fin de son mois, même s'il reste hors ligne.
+  const MARGE_RENOUVELLEMENT = 3 * JOUR;
+  // Horloge reculée sur l'appareil pour prolonger la copie : elle n'est plus valide.
+  const RECUL_TOLERE = 10 * 60000;
+  let finPayee = null; // fin de la période payée (Stripe ou magasin), lue en ligne
   let aConfirmer = false;
   // Marque « essai utilisé » (essais/{uid}) : un paiement abandonné peut être repris pendant une heure.
   const ESSAI_REPRISE = 3600000;
@@ -343,6 +350,20 @@
       return c;
     } catch { return null; }
   };
+  // Copie hors connexion encore utilisable : vérifiée en ligne il y a moins de 30 jours, période
+  // payée pas encore terminée (plus la marge), et horloge de l'appareil pas reculée.
+  function copieValide(c) {
+    if (!c) return false;
+    const now = Date.now();
+    if (c.vuLe && now < c.vuLe - RECUL_TOLERE) return false;
+    if (now - c.verifieLe >= HORS_LIGNE_MAX) return false;
+    if (c.jusqua && now >= c.jusqua + MARGE_RENOUVELLEMENT) return false;
+    if (!c.vuLe || now > c.vuLe) {
+      c.vuLe = now;
+      try { localStorage.setItem(CACHE, JSON.stringify(c)); } catch { /* rien */ }
+    }
+    return true;
+  }
   const coursePret = () => new Promise((ok) => {
     const t = setInterval(() => { if (conf() || (typeof COURSE !== 'undefined' && COURSE)) { clearInterval(t); ok(); } }, 100);
   });
@@ -358,8 +379,8 @@
   async function lireHistorique(user) {
     const db = compte().db();
     const client = db.collection('customers').doc(user.uid);
-    const [subs, retr, marque] = await Promise.all([client.collection('subscriptions').get(), client.collection('retractations').get(),
-      db.collection('essais').doc(user.uid).get()]);
+    const [subs, retr, marque, rc] = await Promise.all([client.collection('subscriptions').get(), client.collection('retractations').get(),
+      db.collection('essais').doc(user.uid).get(), db.collection('revenuecat').doc(user.uid).get().catch(() => null)]);
     essaiLe = marque.exists ? enDate(marque.data().le) : null;
     const liste = subs.docs.map((d) => ({ id: d.id, ...d.data() }));
     const statuts = liste.map((x) => x.status);
@@ -367,6 +388,12 @@
     const retractation = (recent && retr.docs.map((d) => d.data()).find((x) => x.abonnement === recent.id)) || null;
     // Essai déjà utilisé : la marque essais/{uid} a plus d'une heure (les règles Firestore refusent alors tout nouvel essai)
     const essaiPasse = !!essaiLe && Date.now() - essaiLe.getTime() > ESSAI_REPRISE;
+    // Fin de la période payée : abonnement Stripe actif ou en essai, ou droit d'accès du magasin
+    const fins = liste.filter((x) => x.status === 'active' || x.status === 'trialing').map((x) => enDate(x.current_period_end));
+    const droitMagasin = rc && rc.exists && ((rc.data().entitlements || {})[(conf().magasins || {}).droit || 'premium']);
+    if (droitMagasin) fins.push(enDate(droitMagasin.grace_period_expires_date) || enDate(droitMagasin.expires_date));
+    const valides = fins.filter(Boolean).map((d) => d.getTime());
+    finPayee = valides.length ? Math.max(...valides) : null;
     historique = { deja: statuts.length > 0 || essaiPasse, retard: statuts.some((st) => st === 'past_due' || st === 'unpaid'), recent, retractation };
   }
   async function charger(user) {
@@ -376,7 +403,8 @@
     const data = { levels: {} };
     docs.forEach((d, i) => { if (d.exists) data.levels[ids[i]] = d.data(); });
     // verifieLe : l'abonnement vient d'être confirmé en ligne (le contenu vient de Firebase)
-    try { localStorage.setItem(CACHE, JSON.stringify({ uid: user.uid, data, verifieLe: Date.now() })); } catch { /* stockage plein */ }
+    const now = Date.now();
+    try { localStorage.setItem(CACHE, JSON.stringify({ uid: user.uid, data, verifieLe: now, vuLe: now, jusqua: finPayee })); } catch { /* stockage plein */ }
     applyPremium(data);
   }
 
@@ -400,7 +428,7 @@
     if (magasin()) magasin().connecter(user.uid, user.email).catch(() => {});
 
     const cache = lireCache(user.uid);
-    const valide = cache && Date.now() - cache.verifieLe < HORS_LIGNE_MAX;
+    const valide = copieValide(cache);
     if (valide) { premium = true; applyPremium(cache.data); }
     aConfirmer = !!cache && !valide;
     let statut;

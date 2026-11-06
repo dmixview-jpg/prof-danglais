@@ -184,7 +184,13 @@ Pré-A1 reste gratuit ; les niveaux A1 à C2 et les dialogues guidés demandent 
 - L'essai gratuit (`essaiJours`) n'est offert qu'une fois : une personne qui a déjà eu un abonnement voit « S'abonner », sans nouvel essai.
 - Paiement refusé : l'extension retire l'accès Premium dès que l'abonnement passe « en retard », pendant que Stripe réessaie. Dans l'app, la page d'abonnement affiche alors « Mettre à jour mon paiement » (portail Stripe) ; l'accès revient dès que le paiement passe.
 - Annulation : l'accès reste ouvert jusqu'à la fin de la période payée, puis les niveaux A1 à C2 se verrouillent et la copie hors connexion est effacée.
-- Hors connexion : la copie des leçons Premium reste utilisable 30 jours après la dernière vérification en ligne de l'abonnement (`HORS_LIGNE_MAX` dans `abonnement.js`). Ensuite, l'app demande de se connecter à Internet une fois pour la garder.
+- Hors connexion : la copie des leçons Premium reste utilisable jusqu'à la **fin de la période payée** (plus 3 jours de marge pour un renouvellement fait hors ligne), et au plus 30 jours après la dernière vérification en ligne (`HORS_LIGNE_MAX` dans `abonnement.js`). Un abonné qui ne paie plus perd donc l'accès à la fin de son mois, même s'il reste hors ligne. Si l'horloge de l'appareil est reculée pour prolonger la copie, elle n'est plus acceptée. Ensuite, l'app demande de se connecter à Internet une fois.
+- En ligne, l'accès Premium est vérifié par Firebase à chaque ouverture de l'app : dès que l'extension Stripe retire le rôle (paiement en retard, impayé, annulé), les règles Firestore refusent le contenu payant et la copie de l'appareil est effacée. Le jeton de connexion se renouvelle au plus tard toutes les heures.
+- **Réglages Stripe à faire** (Paramètres → Facturation → Récupération des revenus) :
+  - **Relances** : active les Smart Retries (Stripe réessaie la carte pendant environ 2 semaines) ;
+  - **Si toutes les relances échouent** : choisis **Annuler l'abonnement** ;
+  - **Courriels** : active l'envoi d'un courriel quand un paiement échoue et quand la carte va expirer ;
+  - **Litiges** (Paramètres → Facturation → Abonnements) : en cas de contestation d'un paiement, annule l'abonnement dans Stripe.
 - Un compte avec un abonnement actif ne peut pas être supprimé dans l'app : il faut d'abord annuler l'abonnement (sinon Stripe continuerait de facturer).
 
 **Avant d'ouvrir les abonnements :** remplis les politiques (section suivante). Au Québec, l'inscription aux taxes TPS/TVQ est obligatoire au-delà de 30 000 $ de revenus sur 12 mois ; Stripe Tax peut les calculer.
