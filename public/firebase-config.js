@@ -12,4 +12,9 @@
 // };
 //
 // Ces valeurs ne sont pas secrètes : la sécurité vient des règles Firestore (firestore.rules).
-window.PD_FIREBASE = null;
+window.PD_FIREBASE = {
+  apiKey: 'AIzaSyAT0RDC6vGxISzvQs7nClEAT9-bjTitWHQ',
+  authDomain: 'prof-danglais-f2db6.firebaseapp.com',
+  projectId: 'prof-danglais-f2db6',
+  appId: '1:147917123161:web:a50daed0a5646fec244b48',
+};
