@@ -16,15 +16,15 @@
       "id": "price_A_REMPLACER_MENSUEL",
       "nom": "Mensuel",
       "montant": "6,99 $ CA",
-      "periode": "mois"
+      "periode": "mois",
+      "parDefaut": true
     },
     {
       "id": "price_A_REMPLACER_ANNUEL",
       "nom": "Annuel",
       "montant": "49,99 $ CA",
       "periode": "an",
-      "badge": "≈ 40 % de rabais",
-      "parDefaut": true
+      "badge": "≈ 40 % de rabais"
     }
   ],
   "taxesAutomatiques": false,

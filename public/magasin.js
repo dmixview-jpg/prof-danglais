@@ -63,7 +63,7 @@
         const libre = p.product.defaultOption && p.product.defaultOption.freePhase;
         return {
           id: p.identifier, paquet: p, nom: annuel ? 'Annuel' : 'Mensuel', periode: annuel ? 'an' : 'mois',
-          montant: p.product.priceString, badge: annuel ? rabais(paquets, p) : null, parDefaut: annuel,
+          montant: p.product.priceString, badge: annuel ? rabais(paquets, p) : null, parDefaut: !annuel,
           essai: !!((intro && intro.price === 0) || libre),
         };
       })
