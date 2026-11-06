@@ -10,7 +10,7 @@
   const CONFIG = window.PD_FIREBASE;
   if (!CONFIG || !CONFIG.apiKey) return;
 
-  const SDK = 'vendor/firebase/'; // SDK Firebase 10.12.2 (compat), inclus dans l'app
+  const SDK = 'vendor/firebase/'; // SDK Firebase 12.19.0 (compat), inclus dans l'app
   const OWNER = 'pd.owner'; // compte à qui appartiennent les données de cet appareil
   const PENDING = 'pd.syncPending'; // des changements attendent d'être envoyés
   const SYNCED = {
@@ -31,7 +31,8 @@
     'auth/invalid-email': 'Ce courriel n’est pas valide.',
     'auth/missing-email': 'Écris ton courriel.',
     'auth/missing-password': 'Écris ton mot de passe.',
-    'auth/weak-password': 'Le mot de passe doit contenir au moins 6 caractères.',
+    'auth/weak-password': 'Le mot de passe doit contenir au moins 8 caractères, dont au moins une lettre et un chiffre.',
+    'auth/password-does-not-meet-requirements': 'Le mot de passe doit contenir au moins 8 caractères, dont au moins une lettre et un chiffre.',
     'auth/email-already-in-use': 'Un compte existe déjà avec ce courriel. Connecte-toi plutôt.',
     'auth/invalid-credential': 'Courriel ou mot de passe incorrect.',
     'auth/invalid-login-credentials': 'Courriel ou mot de passe incorrect.',
@@ -51,7 +52,7 @@
     h('span', null, 'Prénom'),
     h('input', { id: 'auth-name', type: 'text', autocomplete: 'given-name', maxlength: '40', enterkeyhint: 'next' }));
   const emailInput = h('input', { id: 'auth-email', type: 'email', autocomplete: 'email', inputmode: 'email', autocapitalize: 'none', spellcheck: 'false', required: true, enterkeyhint: 'next' });
-  const passInput = h('input', { id: 'auth-pass', type: 'password', autocomplete: 'current-password', minlength: '6', required: true, enterkeyhint: 'go' });
+  const passInput = h('input', { id: 'auth-pass', type: 'password', autocomplete: 'current-password', minlength: '8', required: true, enterkeyhint: 'go' });
   const eye = h('button', { type: 'button', class: 'pw-toggle', 'aria-label': 'Afficher le mot de passe' }, 'Afficher');
   eye.addEventListener('click', () => {
     const show = passInput.type === 'password';

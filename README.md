@@ -259,11 +259,18 @@ Ces règles sont testées sur l'émulateur Firebase (Java 11 ou plus récent) : 
 
 **En-têtes de sécurité** : chaque page déclare une politique de sécurité du contenu (CSP) qui n'autorise que les fichiers de l'app, Firebase et reCAPTCHA. Le fichier `public/_headers` ajoute la protection contre l'affichage dans un faux site (clickjacking) et le https obligatoire. Netlify et Cloudflare Pages l'appliquent ; GitHub Pages l'ignore.
 
+**Autres protections en place**
+- SDK Firebase 12.19 inclus dans l'app ; `npm audit` ne signale aucune faille connue.
+- Android : sauvegarde des données de l'app désactivée (`allowBackup="false"`), pour que la session et la copie Premium ne puissent pas être extraites d'une sauvegarde. iOS : aucune exception au https.
+- Workflows GitHub : chaque action est épinglée par son empreinte (commit), pour qu'une action piratée ne puisse pas voler tes clés de signature. Dependabot (`.github/dependabot.yml`) propose les mises à jour chaque semaine.
+- Aucun secret dans l'historique Git (vérifié : clés Stripe, Firebase, Apple, Google, RevenueCat, fichiers de clés).
+
 **À faire toi-même**
 - Double authentification (application ou clé de sécurité, pas SMS) sur GitHub, Google/Firebase, Stripe, Apple, Google Play et RevenueCat. Un gestionnaire de mots de passe, un mot de passe unique par service.
 - GitHub → **Settings → Branches** : protège `main` (fusion par PR seulement). **Settings → Code security** : active Dependabot et Secret scanning.
 - Google Cloud → **IAM** : donne au compte de service de `FIREBASE_SERVICE_ACCOUNT` seulement les rôles nécessaires (Cloud Datastore User, Firebase Authentication Admin), pas « Propriétaire ».
 - Firebase → **Authentication → Paramètres** : active la protection contre l'énumération des adresses e-mail.
+- Firebase → **Authentication → Paramètres → Règles relatives aux mots de passe** : 8 caractères minimum, au moins une lettre et un chiffre, mode **Appliquer**. L'app affiche déjà ces exigences.
 - Stripe → **Radar** : garde les règles par défaut contre la fraude ; elles repèrent aussi une même carte utilisée pour plusieurs essais.
 - Firebase → **Utilisation et facturation** : alerte de budget (ex. 5 $).
 
