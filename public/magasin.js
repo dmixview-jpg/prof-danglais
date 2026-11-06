@@ -4,7 +4,7 @@
 // Dans les apps installées depuis les magasins, Apple et Google exigent leur propre système de
 // paiement pour débloquer du contenu : Stripe n'y est jamais proposé.
 // - RevenueCat gère les achats des deux magasins ; l'identifiant client est l'uid Firebase.
-// - Son extension Firebase ajoute revenueCatEntitlements = ['premium'] au jeton de connexion,
+// - La fonction Firebase revenuecatWebhook (functions/) ajoute revenueCatEntitlements = ['premium'] au jeton de connexion,
 //   que firestore.rules accepte comme stripeRole = 'premium' (même contenu, même compte).
 // - Clés publiques des SDK dans abonnement.json (magasins.ios, magasins.android).
 // Sur le Web, ce module ne fait rien.

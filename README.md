@@ -174,7 +174,7 @@ Sur le site, la page « Débloque tout le parcours » invite à s'abonner dans l
 **Paiements refusés : réglages à faire dans les magasins**
 - **App Store Connect → Apps → Abonnements → Période de grâce de facturation** : active-la (6 ou 16 jours). Apple réessaie la carte pendant 60 jours au total ; après la période de grâce, l'accès est coupé.
 - **Play Console → Monétiser → Abonnements → Période de grâce** (jusqu'à 30 jours) **et suspension du compte** (« account hold », jusqu'à 30 jours) : pendant la suspension, l'accès est coupé ; il revient dès que le paiement passe.
-- RevenueCat prévient Firebase à chaque changement : l'extension retire le rôle Premium quand le droit d'accès expire, et l'app efface la copie hors connexion à la fin de la période payée.
+- RevenueCat prévient Firebase à chaque changement : la fonction `revenuecatWebhook` retire le rôle Premium quand le droit d'accès expire, et l'app efface la copie hors connexion à la fin de la période payée.
 
 ## Paiement sur le site avec Stripe (facultatif, désactivé)
 
@@ -303,7 +303,7 @@ Ces règles sont testées sur l'émulateur Firebase (Java 11 ou plus récent) : 
 
 La page `admin.html` (ex. : `https://<ton-site>/admin.html`) résume tous les abonnements, du site (Stripe) comme de l'App Store et de Google Play (RevenueCat) : abonnés payants, essais en cours, revenu mensuel récurrent, paiements en retard, annulations prévues et départs des 30 derniers jours. La section « À faire » signale les paiements en retard, les essais qui se terminent d'ici 3 jours et les annulations demandées, avec un lien vers la fiche Stripe de chaque personne. La page est en lecture seule ; remboursements et factures se font dans Stripe.
 
-**Abonnés des magasins.** Pour qu'ils y apparaissent, installe l'extension RevenueCat (section « App Store et Google Play ») avec le paramètre **Location of the customers collection** = `revenuecat`. L'app donne aussi le courriel du compte à RevenueCat pour reconnaître chaque abonné. Le revenu des magasins est estimé avec les prix de `abonnement.json`, avant la commission d'Apple ou de Google. Les achats de test (sandbox) sont listés avec la mention « Test », mais ne sont pas comptés.
+**Abonnés des magasins.** Ils y apparaissent dès que les fonctions Firebase du dossier `functions/` sont déployées (section « App Store et Google Play »). L'app donne aussi le courriel du compte à RevenueCat pour reconnaître chaque abonné. Le revenu des magasins est estimé avec les prix de `abonnement.json`, avant la commission d'Apple ou de Google. Les achats de test (sandbox) sont listés avec la mention « Test », mais ne sont pas comptés.
 
 **Accès réservé.** Seuls les comptes marqués administrateur peuvent lire ces données (règles de `firestore.rules`). Pour te donner l'accès :
 1. Crée ton compte dans l'app (comme un utilisateur).
@@ -346,10 +346,23 @@ L'app web est emballée en vraies apps iPhone/iPad et Android avec **Capacitor**
    - ajoute l'app iOS (clé d'achats intégrés d'App Store Connect) et l'app Android (compte de service Google) ;
    - crée le droit d'accès (entitlement) `premium`, rattaché aux quatre produits ;
    - crée une offre (offering) « default » avec les forfaits Monthly et Annual.
-4. **Firebase → Extensions → « Enable In-App Purchases with RevenueCat »** :
-   - mets « Set custom claims » à **ENABLED** (l'extension ajoute `revenueCatEntitlements` au compte, comme Stripe ajoute `stripeRole`) ;
-   - mets « Location of the customers collection » à `revenuecat` (abonnés des magasins dans le tableau de bord) ;
-   - reporte dans RevenueCat (**Integrations → Firebase**) le secret partagé.
+4. **Fonctions Firebase** (dossier `functions/`, remplacent l'extension RevenueCat : les extensions Firebase s'arrêtent le 31 mars 2027) :
+   - `revenuecatWebhook` reçoit chaque changement d'abonnement (achat, renouvellement, échec de paiement, annulation, expiration, remboursement). Elle ne croit pas le message : elle relit l'abonnement chez RevenueCat avec la clé secrète, puis met à jour l'attribut `revenueCatEntitlements` du compte (lu par `firestore.rules`) et le document `revenuecat/{uid}` (tableau de bord, fin de la période payée).
+   - `synchroniserMagasin` : l'app l'appelle juste après un achat ou une restauration, pour activer l'accès sans attendre le webhook. Elle ne touche que le compte connecté, au plus une fois toutes les 10 secondes.
+   - Deux secrets, rangés dans Secret Manager (jamais dans le code ni dans le chat) :
+     - `REVENUECAT_WEBHOOK_SECRET` : une longue valeur aléatoire, aussi collée dans RevenueCat (**Integrations → Webhooks → Authorization header value**) ;
+     - `REVENUECAT_API_KEY` : clé API secrète RevenueCat, version V1 (**Project settings → API keys → + New secret API key**).
+   - Déploiement depuis **Google Cloud Shell** (<https://shell.cloud.google.com>, déjà connecté à ton compte, rien à installer) :
+     ```
+     git clone -b claude/project-thread-l0v983 https://github.com/dmixview-jpg/prof-danglais.git && cd prof-danglais
+     npx -y firebase-tools@15 functions:secrets:set REVENUECAT_WEBHOOK_SECRET --project prof-danglais-f2db6
+     npx -y firebase-tools@15 functions:secrets:set REVENUECAT_API_KEY --project prof-danglais-f2db6
+     (cd functions && npm ci)
+     npx -y firebase-tools@15 deploy --only functions --project prof-danglais-f2db6
+     ```
+     Chaque commande `secrets:set` demande la valeur : colle-la toi-même (elle ne s'affiche pas).
+   - Dans RevenueCat, **Integrations → Webhooks → + Add** : adresse `https://northamerica-northeast1-prof-danglais-f2db6.cloudfunctions.net/revenuecatWebhook`, en-tête Authorization = la valeur de `REVENUECAT_WEBHOOK_SECRET`, environnement « Both ». Envoie un **test event** : il doit répondre 200.
+   - N'utilise pas **Integrations → Firebase** de RevenueCat (il sert à l'extension).
 5. Copie les **clés publiques des SDK** RevenueCat (`appl_…`, `goog_…`) dans `outils/programme/abonnement.json`, bloc `magasins`. Lance `python3 outils/programme/construire.py` et republie `firestore.rules` (accès Premium par RevenueCat).
 6. Dans **App Store Connect → Tarifs et disponibilité** et **Play Console → Pays**, retire la Chine continentale.
 

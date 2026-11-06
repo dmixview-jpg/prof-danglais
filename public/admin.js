@@ -11,8 +11,8 @@
   let lignes = []; // tous les abonnements : site (Stripe) et magasins (RevenueCat)
   let customers = {};
   let retractations = [];
-  // Abonnements App Store et Google Play : documents revenuecat/{uid} écrits par l'extension
-  // RevenueCat (paramètre « Location of the customers collection » = revenuecat).
+  // Abonnements App Store et Google Play : documents revenuecat/{uid} écrits par la fonction
+  // revenuecatWebhook (functions/), au format des abonnés RevenueCat.
   const COLLECTION_MAGASINS = 'revenuecat';
   let prixConf = {}; // prix de abonnement.json (centimes CAD), pour estimer le revenu des magasins
   let filter = 'all';
@@ -188,7 +188,7 @@
     try {
       const [snap, retr, rc, cur] = await Promise.all([
         db.collectionGroup('subscriptions').get(), db.collectionGroup('retractations').get(),
-        db.collection(COLLECTION_MAGASINS).get().catch(() => ({ docs: [] })), // extension RevenueCat pas encore installée
+        db.collection(COLLECTION_MAGASINS).get().catch(() => ({ docs: [] })), // fonctions RevenueCat pas encore déployées
         fetch('curriculum.json').then((r) => r.json()).catch(() => ({})),
       ]);
       for (const p of ((cur.abonnement || {}).prix || [])) prixConf[p.periode === 'an' ? 'year' : 'month'] = centimes(p.montant);

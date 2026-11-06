@@ -35,9 +35,11 @@
   ],
   "taxesAutomatiques": false,
   "magasins": {
-    "_aide": "Apps App Store et Google Play : clés publiques des SDK RevenueCat (appl_…, goog_…). Vides : achats intégrés désactivés. droit = identifiant du droit d'accès dans RevenueCat.",
+    "_aide": "Apps App Store et Google Play : clés publiques des SDK RevenueCat (appl_…, goog_…). Vides : achats intégrés désactivés. droit = identifiant du droit d'accès dans RevenueCat. region et fonction : fonction Firebase qui relit l'abonnement après un achat (dossier functions/).",
     "ios": "",
     "android": "",
-    "droit": "premium"
+    "droit": "premium",
+    "region": "northamerica-northeast1",
+    "fonction": "synchroniserMagasin"
   }
 }

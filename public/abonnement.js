@@ -196,6 +196,7 @@
         const btn = e.currentTarget; // currentTarget redevient null après le premier await
         btn.disabled = true;
         try {
+          await synchroniserMagasin();
           if (await estPremium(user, true)) return activerApresAchat();
           tell('Aucun abonnement actif sur ce compte. Dans l’app, vérifie que tu es connecté avec le même courriel.');
         } catch {
@@ -225,10 +226,20 @@
     (sheet.querySelector('a.btn') || sheet.querySelector('button')).focus();
   }
 
-  // Après un achat dans le magasin : RevenueCat prévient Firebase, qui active l'accès en quelques secondes.
+  // Demande au serveur de relire l'abonnement chez RevenueCat (fonction synchroniserMagasin).
+  // Sans réponse, le webhook RevenueCat active quand même l'accès quelques secondes plus tard.
+  async function synchroniserMagasin() {
+    const m = conf().magasins || {};
+    try {
+      await compte().functions(m.region || 'northamerica-northeast1').httpsCallable(m.fonction || 'synchroniserMagasin')();
+    } catch { /* le webhook prend le relais */ }
+  }
+
+  // Après un achat dans le magasin : le serveur relit l'abonnement chez RevenueCat et active l'accès.
   async function activerApresAchat() {
     fermer();
     const user = compte().user();
+    await synchroniserMagasin();
     if (!(await attendreActivation(user))) {
       toast('Achat reçu : l’activation peut prendre une minute. Rouvre l’app dans un instant.');
       return;
