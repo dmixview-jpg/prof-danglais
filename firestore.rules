@@ -7,9 +7,21 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == uid;
     }
     // Administrateur : marque admin=true donnée par outils/admin/nommer_admin.mjs
+    // Le courriel doit être confirmé : sinon, quelqu'un pourrait créer un compte avec ton adresse
+    // avant toi et recevoir le rôle d'administrateur.
     function admin() {
-      return request.auth != null && request.auth.token.admin == true;
+      return request.auth != null && request.auth.token.admin == true
+        && request.auth.token.email_verified == true;
     }
+    function courrielConfirme() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    // <généré : outils/programme/abonnement.json> (construire.py réécrit ce bloc, ne le modifie pas à la main)
+    function prixAutorise(p) { return p in ['price_A_REMPLACER_MENSUEL', 'price_A_REMPLACER_ANNUEL']; }
+    function adresseAutorisee(u) { return u is string && u.size() <= 300 && (u.matches('https://dmixview\\-jpg\\.github\\.io/prof\\-danglais/.*')); }
+    function essaiJours() { return 7; }
+    // </généré>
 
     // Progression de chaque personne : elle seule peut la lire et la modifier.
     match /users/{uid} {
@@ -17,8 +29,11 @@ service cloud.firestore {
       allow create, update: if connecte(uid)
         && request.resource.data.keys().hasOnly(['name', 'data', 'updatedAt', 'consent'])
         && (!('name' in request.resource.data) || (request.resource.data.name is string && request.resource.data.name.size() <= 60))
-        && (!('data' in request.resource.data) || request.resource.data.data is map)
-        && (!('consent' in request.resource.data) || request.resource.data.consent is map);
+        && (!('data' in request.resource.data) || (request.resource.data.data is map
+          && request.resource.data.data.keys().hasOnly(['progress', 'lessons', 'days', 'dialogues', 'vocab', 'level', 'pathLevel'])))
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt == request.time)
+        && (!('consent' in request.resource.data) || (request.resource.data.consent is map
+          && request.resource.data.consent.keys().hasOnly(['version', 'at'])));
     }
 
     // Abonné Premium, par le site Web ou par un magasin :
@@ -42,9 +57,38 @@ service cloud.firestore {
       match /prices/{p} { allow read: if true; }
       match /tax_rates/{t} { allow read: if true; }
     }
+    // Essai gratuit : une seule fois par compte. La marque essais/{uid} est créée en même temps que
+    // la première demande de paiement avec essai, et ne peut ni changer ni disparaître. Elle reste
+    // valable une heure (paiement abandonné puis repris), puis plus aucun essai n'est accepté.
+    function essaiPermis(uid) {
+      return request.resource.data.trial_period_days == essaiJours()
+        && ((!exists(/databases/$(database)/documents/essais/$(uid))
+             && existsAfter(/databases/$(database)/documents/essais/$(uid)))
+          || (exists(/databases/$(database)/documents/essais/$(uid))
+             && get(/databases/$(database)/documents/essais/$(uid)).data.le > request.time - duration.value(1, 'h')));
+    }
+    match /essais/{uid} {
+      allow read: if connecte(uid);
+      allow create: if connecte(uid) && request.resource.data.keys().hasOnly(['le'])
+        && request.resource.data.le == request.time;
+    }
+
     match /customers/{uid} {
       allow read: if connecte(uid) || admin();
-      match /checkout_sessions/{id} { allow read, write: if connecte(uid); }
+      // Demande de paiement : l'extension Stripe la transmet telle quelle à Stripe. Seuls les champs
+      // prévus sont acceptés (pas de prix fabriqué, pas d'essai à rallonge, pas d'adresse de retour
+      // vers un autre site), et une demande ne peut plus être modifiée une fois créée.
+      match /checkout_sessions/{id} {
+        allow read: if connecte(uid);
+        allow create: if connecte(uid) && courrielConfirme()
+          && request.resource.data.keys().hasOnly(['price', 'success_url', 'cancel_url', 'allow_promotion_codes', 'automatic_tax', 'trial_period_days'])
+          && prixAutorise(request.resource.data.price)
+          && adresseAutorisee(request.resource.data.success_url)
+          && adresseAutorisee(request.resource.data.cancel_url)
+          && (!('allow_promotion_codes' in request.resource.data) || request.resource.data.allow_promotion_codes is bool)
+          && (!('automatic_tax' in request.resource.data) || request.resource.data.automatic_tax is bool)
+          && (!('trial_period_days' in request.resource.data) || essaiPermis(uid));
+      }
       match /subscriptions/{id} { allow read: if connecte(uid) || admin(); }
       match /payments/{id} { allow read: if connecte(uid) || admin(); }
       // Droit de rétractation (UE, EEE, Royaume-Uni) : la personne dépose sa demande ;
@@ -55,7 +99,7 @@ service cloud.firestore {
           && request.resource.data.keys().hasOnly(['abonnement', 'pays', 'courriel', 'demandeLe'])
           && request.resource.data.abonnement is string && request.resource.data.abonnement.size() <= 100
           && request.resource.data.pays is string && request.resource.data.pays.size() <= 60
-          && request.resource.data.courriel is string && request.resource.data.courriel.size() <= 200
+          && request.resource.data.courriel == request.auth.token.email
           && request.resource.data.demandeLe == request.time;
         allow update: if admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['traiteLe']);
       }

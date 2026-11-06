@@ -5,6 +5,10 @@
     "pre"
   ],
   "essaiJours": 7,
+  "_aideSites": "Adresses de ton site (https, finissant par /). Le paiement Stripe ne peut revenir que vers ces adresses ; vide = paiement bloqué. Change-la si tu passes à Netlify ou Cloudflare Pages.",
+  "sites": [
+    "https://dmixview-jpg.github.io/prof-danglais/"
+  ],
   "region": "us-central1",
   "fonctionPortail": "ext-firestore-stripe-payments-createPortalLink",
   "prix": [

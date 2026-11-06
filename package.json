@@ -6,7 +6,8 @@
   "private": true,
   "scripts": {
     "start": "node server.js",
-    "test": "node --test test/server.test.js test/fusion.test.js test/abonnement.test.js"
+    "test": "node --test test/server.test.js test/fusion.test.js test/abonnement.test.js",
+    "test:regles": "npx -y firebase-tools@13 emulators:exec --only firestore --project demo-prof-danglais \"node --test test/regles.test.mjs\""
   },
   "engines": {
     "node": ">=18"
@@ -19,6 +20,8 @@
     "@revenuecat/purchases-capacitor": "^13.7.4"
   },
   "devDependencies": {
-    "@capacitor/cli": "^8.5.3"
+    "@capacitor/cli": "^8.5.3",
+    "@firebase/rules-unit-testing": "^3.0.4",
+    "firebase": "^10.12.2"
   }
 }

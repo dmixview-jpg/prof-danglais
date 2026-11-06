@@ -30,6 +30,11 @@ if (!users || !users.length) {
   process.exit(1);
 }
 const user = users[0];
+// Sans courriel confirmé, n'importe qui aurait pu créer ce compte avec ton adresse : pas d'accès admin.
+if (!retirer && !user.emailVerified) {
+  console.error('Ce compte n’a pas confirmé son courriel. Clique d’abord sur le lien de confirmation reçu par courriel, puis recommence.');
+  process.exit(1);
+}
 const marques = JSON.parse(user.customAttributes || '{}');
 if (retirer) delete marques.admin;
 else marques.admin = true;

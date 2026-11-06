@@ -174,7 +174,7 @@ Pré-A1 reste gratuit ; les niveaux A1 à C2 et les dialogues guidés demandent 
 3. **Stripe → Catalogue de produits → Ajouter un produit** « Prof d'anglais Premium ». Dans ses **métadonnées**, ajoute `firebaseRole` = `premium`. Crée deux prix récurrents en CAD : 6,99 $ par mois et 49,99 $ par an.
 4. **Stripe → Paramètres → Portail client** : active-le (annulation, changement de formule, carte de paiement).
 5. **Firebase → Extensions → « Run Payments with Stripe »** : installe-la en suivant ses instructions (clé API Stripe, webhook à créer dans Stripe). Collections : `customers` et `products`. Pour « Automatically delete Stripe customer objects », garde « Do not delete » (l'historique des paiements reste dans Stripe pour ta comptabilité). Reporte dans `abonnement.json` la région choisie (`region`) et, si tu as changé l'identifiant de l'extension, le nom de la fonction du portail (`fonctionPortail` : `ext-<identifiant>-createPortalLink`).
-6. Dans `outils/programme/abonnement.json` : remplace les `price_A_REMPLACER_…` par les identifiants de tes prix Stripe, vérifie les montants affichés, puis mets `"actif": true`.
+6. Dans `outils/programme/abonnement.json` : remplace les `price_A_REMPLACER_…` par les identifiants de tes prix Stripe, vérifie les montants affichés et l'adresse de ton site dans `sites`, puis mets `"actif": true`. Lance `python3 outils/programme/construire.py` : il recopie les prix, l'adresse et la durée de l'essai dans `firestore.rules`. Republie ensuite les règles dans Firebase.
 7. **Firebase → Paramètres du projet → Comptes de service → Générer une nouvelle clé privée**. Copie tout le contenu du fichier dans un secret GitHub nommé `FIREBASE_SERVICE_ACCOUNT` (**Settings → Secrets and variables → Actions**). Cette clé est secrète : ne la mets jamais dans le dépôt.
 8. **Rends le dépôt GitHub privé** : sinon les leçons payantes restent lisibles dans les fichiers du programme (`outils/programme/`). Avec un compte GitHub gratuit, GitHub Pages ne publie pas un dépôt privé : héberge alors `public/` sur Netlify ou Cloudflare Pages (gratuits, reliés au dépôt privé), et ajoute la nouvelle adresse aux domaines autorisés de Firebase.
 9. Lance `python3 outils/programme/construire.py`, puis publie sur `main`. Le workflow « Publier le contenu Premium » envoie le contenu payant dans Firebase. Tu peux vérifier en local avec `node outils/programme/publier_premium.mjs --essai`.
@@ -237,6 +237,35 @@ Pour créer un compte, la personne doit cocher « J'ai 18 ans ou plus et l'âge 
 7. Loi 25 : avant de confier des renseignements à Firebase et Stripe (serveurs hors Québec), fais et garde une courte évaluation des facteurs relatifs à la vie privée. Tiens aussi un registre des incidents de confidentialité, même vide.
 8. Si tu modifies un texte de façon importante, change `enVigueur` dans `legal-config.js` et préviens les abonnés 30 jours à l'avance.
 9. Ces textes sont un bon point de départ, pas un avis juridique. Fais-les relire par un avocat avant d'encaisser de vrais paiements, idéalement quelqu'un qui connaît le droit de la consommation européen, puisque l'Europe est le marché le plus encadré.
+
+## Sécurité
+
+**Les données de carte ne passent jamais par l'app.** Sur le site, le paiement se fait sur la page de Stripe (Stripe Checkout) ; dans les apps, par les achats intégrés d'Apple et de Google. Pour la norme PCI DSS, c'est le niveau le plus léger (questionnaire SAQ A, proposé dans le tableau de bord Stripe).
+
+**Ce que les règles Firestore (`firestore.rules`) bloquent**
+- Une demande de paiement ne peut contenir que les champs prévus : un des prix de `abonnement.json`, des adresses de retour vers ton site (`sites`) et l'essai de `essaiJours` jours. Impossible de fabriquer un prix, d'ajouter une remise ou de s'offrir un essai plus long.
+- L'essai gratuit n'est offert qu'une fois par compte : la marque `essais/{uid}` ne peut ni changer ni disparaître. Un paiement abandonné peut être repris pendant une heure.
+- Pour payer, le courriel doit être confirmé. Pour être administrateur aussi : sinon, quelqu'un pourrait créer un compte avec ton adresse avant toi (`nommer_admin.mjs` le refuse aussi).
+- Chaque personne ne lit et n'écrit que ses données, avec seulement les champs prévus. Le contenu Premium n'est lisible qu'avec le rôle d'abonné donné par Stripe ou RevenueCat.
+
+Ces règles sont testées sur l'émulateur Firebase (Java 11 ou plus récent) : `npm run test:regles`. Le workflow « Règles Firestore » les vérifie à chaque modification.
+
+**App Check (anti-robots, conseillé avant l'ouverture)** : seule ta vraie app peut alors parler à Firebase, pas un script qui créerait des milliers de comptes ou gonflerait ta facture.
+1. **Google Cloud → Sécurité → reCAPTCHA** (même projet que Firebase) : crée une clé de site **Web**, avec ton domaine (ex. `dmixview-jpg.github.io`).
+2. **Firebase → App Check → Applications** : enregistre l'app Web avec **reCAPTCHA Enterprise** et cette clé.
+3. Ajoute la clé dans `public/firebase-config.js` : `appCheck: '6Lc…'`.
+4. Laisse App Check en mode **surveillance** quelques jours (Firebase → App Check → API → Firestore, Authentication). Active l'**application obligatoire** (« Enforce ») quand presque toutes les requêtes sont vérifiées.
+5. Apps des magasins : App Check n'y est pas encore actif (il faudrait App Attest et Play Integrity). N'active pas « Enforce » avant de publier les apps, ou elles seraient bloquées.
+
+**En-têtes de sécurité** : chaque page déclare une politique de sécurité du contenu (CSP) qui n'autorise que les fichiers de l'app, Firebase et reCAPTCHA. Le fichier `public/_headers` ajoute la protection contre l'affichage dans un faux site (clickjacking) et le https obligatoire. Netlify et Cloudflare Pages l'appliquent ; GitHub Pages l'ignore.
+
+**À faire toi-même**
+- Double authentification (application ou clé de sécurité, pas SMS) sur GitHub, Google/Firebase, Stripe, Apple, Google Play et RevenueCat. Un gestionnaire de mots de passe, un mot de passe unique par service.
+- GitHub → **Settings → Branches** : protège `main` (fusion par PR seulement). **Settings → Code security** : active Dependabot et Secret scanning.
+- Google Cloud → **IAM** : donne au compte de service de `FIREBASE_SERVICE_ACCOUNT` seulement les rôles nécessaires (Cloud Datastore User, Firebase Authentication Admin), pas « Propriétaire ».
+- Firebase → **Authentication → Paramètres** : active la protection contre l'énumération des adresses e-mail.
+- Stripe → **Radar** : garde les règles par défaut contre la fraude ; elles repèrent aussi une même carte utilisée pour plusieurs essais.
+- Firebase → **Utilisation et facturation** : alerte de budget (ex. 5 $).
 
 ## Tableau de bord des abonnements (admin)
 
@@ -361,9 +390,11 @@ prof-danglais/
 ├── package.json
 ├── .env.example               # Seul réglage : PORT
 ├── firestore.rules            # Règles de sécurité Firebase (comptes, contenu payant, Stripe)
+├── firebase.json              # Émulateur Firebase pour tester les règles (npm run test:regles)
 ├── test/server.test.js        # Tests du serveur et de tout le contenu
 ├── test/fusion.test.js        # Tests de la fusion des progressions (comptes)
 ├── test/abonnement.test.js    # Tests de la séparation gratuit / payant
+├── test/regles.test.mjs       # Attaques contre les règles Firestore, jouées sur l'émulateur
 ├── outils/icones.py           # Icônes de l'app, tirées des rendus du logo
 ├── outils/icones_natives.py   # Icônes et écrans de lancement iOS / Android
 ├── outils/captures_magasins.py # Visuels des fiches App Store / Google Play

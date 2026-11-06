@@ -222,10 +222,12 @@
     s.src = src; s.onload = ok; s.onerror = fail;
     document.head.append(s);
   });
-  ['firebase-app-compat.js', 'firebase-auth-compat.js', 'firebase-firestore-compat.js']
+  // App Check : même réglage que l'app (firebase-config.js, clé « appCheck »)
+  ['firebase-app-compat.js', ...(CONFIG.appCheck ? ['firebase-app-check-compat.js'] : []), 'firebase-auth-compat.js', 'firebase-firestore-compat.js']
     .reduce((p, f) => p.then(() => loadScript(SDK + f)), Promise.resolve())
     .then(() => {
       firebase.initializeApp(CONFIG);
+      if (CONFIG.appCheck) firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(CONFIG.appCheck), true);
       auth = firebase.auth();
       auth.languageCode = 'fr';
       db = firebase.firestore();

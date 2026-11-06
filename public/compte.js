@@ -371,10 +371,15 @@
     forget: forgetDevice,
   };
 
-  ['firebase-app-compat.js', 'firebase-auth-compat.js', 'firebase-firestore-compat.js', 'firebase-functions-compat.js']
+  // App Check (reCAPTCHA Enterprise) : seule la vraie app du site peut parler à Firebase,
+  // pas un robot ou un script. Actif si firebase-config.js donne une clé « appCheck ».
+  const natif = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+  const appCheck = !!CONFIG.appCheck && !natif;
+  ['firebase-app-compat.js', ...(appCheck ? ['firebase-app-check-compat.js'] : []), 'firebase-auth-compat.js', 'firebase-firestore-compat.js', 'firebase-functions-compat.js']
     .reduce((p, f) => p.then(() => loadScript(SDK + f)), Promise.resolve())
     .then(() => {
       firebase.initializeApp(CONFIG);
+      if (appCheck) firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(CONFIG.appCheck), true);
       auth = firebase.auth();
       auth.languageCode = 'fr';
       db = firebase.firestore();

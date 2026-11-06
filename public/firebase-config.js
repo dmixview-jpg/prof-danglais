@@ -8,6 +8,7 @@
 //   authDomain: 'prof-danglais.firebaseapp.com',
 //   projectId: 'prof-danglais',
 //   appId: '1:123456789:web:abc123',
+//   appCheck: '6Lc…', // facultatif mais conseillé : clé de site reCAPTCHA Enterprise (voir le README, « Sécurité »)
 // };
 //
 // Ces valeurs ne sont pas secrètes : la sécurité vient des règles Firestore (firestore.rules).

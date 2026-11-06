@@ -25,6 +25,9 @@
   // ligne de l'abonnement. Ensuite, il faut se connecter à Internet une fois pour la garder.
   const HORS_LIGNE_MAX = 30 * JOUR;
   let aConfirmer = false;
+  // Marque « essai utilisé » (essais/{uid}) : un paiement abandonné peut être repris pendant une heure.
+  const ESSAI_REPRISE = 3600000;
+  let essaiLe = null;
   const PAYS_RETRACTATION = ['Allemagne', 'Autriche', 'Belgique', 'Bulgarie', 'Chypre', 'Croatie', 'Danemark', 'Espagne',
     'Estonie', 'Finlande', 'France', 'Grèce', 'Hongrie', 'Irlande', 'Islande', 'Italie', 'Lettonie', 'Liechtenstein',
     'Lituanie', 'Luxembourg', 'Malte', 'Norvège', 'Pays-Bas', 'Pologne', 'Portugal', 'République tchèque', 'Roumanie',
@@ -185,6 +188,13 @@
   // Crée la session de paiement Stripe, puis envoie la personne sur la page de paiement.
   async function payer(prix, essai) {
     const { user, db } = { user: compte().user(), db: compte().db() };
+    // Courriel confirmé exigé par les règles Firestore : les reçus doivent arriver à la bonne personne.
+    await user.reload();
+    if (!user.emailVerified) {
+      user.sendEmailVerification().catch(() => {});
+      throw new Error(`Confirme d’abord ton courriel : clique sur le lien envoyé à ${user.email}, puis réessaie.`);
+    }
+    await user.getIdToken(true);
     const session = {
       price: prix.id,
       success_url: `${base()}?abonnement=ok`,
@@ -194,7 +204,17 @@
     if (essai) session.trial_period_days = essai;
     // Stripe Tax : TVA, TPS/TVQ, GST… calculées selon le pays du client (abonnement.json)
     if (conf().taxesAutomatiques) session.automatic_tax = true;
-    const ref = await db.collection('customers').doc(user.uid).collection('checkout_sessions').add(session);
+    const ref = db.collection('customers').doc(user.uid).collection('checkout_sessions').doc();
+    if (essai && !essaiLe) {
+      // Premier essai : la marque et la demande partent ensemble (les règles l'exigent)
+      const lot = db.batch();
+      lot.set(db.collection('essais').doc(user.uid), { le: firebase.firestore.FieldValue.serverTimestamp() });
+      lot.set(ref, session);
+      await lot.commit();
+      essaiLe = new Date();
+    } else {
+      await ref.set(session);
+    }
     await new Promise((ok, fail) => {
       const timer = setTimeout(() => { stop(); fail(new Error('Le service de paiement ne répond pas. Vérifie ta connexion, puis réessaie.')); }, 25000);
       const stop = ref.onSnapshot((snap) => {
@@ -336,13 +356,18 @@
     return web || app;
   }
   async function lireHistorique(user) {
-    const client = compte().db().collection('customers').doc(user.uid);
-    const [subs, retr] = await Promise.all([client.collection('subscriptions').get(), client.collection('retractations').get()]);
+    const db = compte().db();
+    const client = db.collection('customers').doc(user.uid);
+    const [subs, retr, marque] = await Promise.all([client.collection('subscriptions').get(), client.collection('retractations').get(),
+      db.collection('essais').doc(user.uid).get()]);
+    essaiLe = marque.exists ? enDate(marque.data().le) : null;
     const liste = subs.docs.map((d) => ({ id: d.id, ...d.data() }));
     const statuts = liste.map((x) => x.status);
     const recent = liste.sort((a, b) => (enDate(b.created) || 0) - (enDate(a.created) || 0))[0] || null;
     const retractation = (recent && retr.docs.map((d) => d.data()).find((x) => x.abonnement === recent.id)) || null;
-    historique = { deja: statuts.length > 0, retard: statuts.some((st) => st === 'past_due' || st === 'unpaid'), recent, retractation };
+    // Essai déjà utilisé : la marque essais/{uid} a plus d'une heure (les règles Firestore refusent alors tout nouvel essai)
+    const essaiPasse = !!essaiLe && Date.now() - essaiLe.getTime() > ESSAI_REPRISE;
+    historique = { deja: statuts.length > 0 || essaiPasse, retard: statuts.some((st) => st === 'past_due' || st === 'unpaid'), recent, retractation };
   }
   async function charger(user) {
     const db = compte().db();
