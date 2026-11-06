@@ -8,7 +8,10 @@ import { doc, setDoc, getDoc, updateDoc, deleteDoc, addDoc, collection, writeBat
 
 const conf = JSON.parse(fs.readFileSync(new URL('../outils/programme/abonnement.json', import.meta.url)));
 const PRIX = conf.prix[0].id;
-const SITE = conf.sites[0];
+// paiementSite=false : seuls Apple et Google encaissent, aucune demande Stripe n'est acceptée
+const WEB = conf.paiementSite !== false;
+const testWeb = (nom, fn) => test(nom, { skip: !WEB && 'paiement sur le site désactivé' }, fn);
+const SITE = conf.sites[0] || 'https://exemple.invalid/';
 let env;
 
 before(async () => {
@@ -32,11 +35,17 @@ function avecEssai(db, uid, extra = {}) {
 }
 const prepare = (fn) => env.withSecurityRulesDisabled((ctx) => fn(ctx.firestore()));
 
-test('paiement normal, avec le premier essai gratuit', async () => {
+testWeb('paiement normal, avec le premier essai gratuit', async () => {
   await assertSucceeds(avecEssai(confirme('ana'), 'ana'));
 });
-test('paiement normal, sans essai', async () => {
+testWeb('paiement normal, sans essai', async () => {
   await assertSucceeds(commande(confirme('ana'), 'ana', session()));
+});
+test('paiement sur le site désactivé : toute demande Stripe est refusée', { skip: WEB && 'paiement sur le site actif' }, async () => {
+  const db = confirme('ana');
+  await assertFails(commande(db, 'ana', session()));
+  await assertFails(avecEssai(db, 'ana'));
+  for (const p of conf.prix) await assertFails(commande(db, 'ana', session({ price: p.id })));
 });
 test('refusé : courriel pas confirmé', async () => {
   await assertFails(commande(nonConfirme('ana'), 'ana', session()));
@@ -51,9 +60,9 @@ test('refusé : deuxième essai, une fois la première heure passée', async () 
   await prepare((db) => setDoc(doc(db, 'essais', 'ana'), { le: Timestamp.fromMillis(Date.now() - 2 * 3600e3) }));
   const db = confirme('ana');
   await assertFails(commande(db, 'ana', session({ trial_period_days: conf.essaiJours })));
-  await assertSucceeds(commande(db, 'ana', session()));
+  if (WEB) await assertSucceeds(commande(db, 'ana', session()));
 });
-test('accepté : paiement repris dans l’heure, avec le même essai', async () => {
+testWeb('accepté : paiement repris dans l’heure, avec le même essai', async () => {
   await prepare((db) => setDoc(doc(db, 'essais', 'ana'), { le: Timestamp.fromMillis(Date.now() - 10 * 60e3) }));
   await assertSucceeds(commande(confirme('ana'), 'ana', session({ trial_period_days: conf.essaiJours })));
 });
@@ -81,7 +90,8 @@ test('refusé : champs Stripe non prévus (remise, mode, métadonnées)', async 
 });
 test('refusé : modifier une demande de paiement déjà créée', async () => {
   const db = confirme('ana');
-  const ref = await commande(db, 'ana', session());
+  const ref = doc(collection(db, 'customers', 'ana', 'checkout_sessions'));
+  await prepare((adm) => setDoc(doc(adm, 'customers', 'ana', 'checkout_sessions', ref.id), session()));
   await assertFails(updateDoc(ref, { trial_period_days: 730 }));
 });
 test('refusé : payer au nom de quelqu’un d’autre', async () => {
@@ -119,6 +129,6 @@ test('rétractation : avec le courriel de son propre compte', async () => {
 
 test('les constantes des règles suivent abonnement.json', () => {
   const regles = fs.readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
-  for (const p of conf.prix) assert.ok(regles.includes(`'${p.id}'`), `prix ${p.id} absent : lance construire.py`);
+  for (const p of conf.prix) assert.strictEqual(regles.includes(`'${p.id}'`), WEB, `prix ${p.id} : lance construire.py`);
   assert.ok(regles.includes(`function essaiJours() { return ${conf.essaiJours}; }`), 'lance construire.py');
 });

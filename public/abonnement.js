@@ -80,6 +80,8 @@
       bilans: etapes.filter((l) => l.review).length,
       dialogues: COURSE.scenarios.filter((sc) => sc.locked).length,
     };
+    // Site Web sans paiement (paiementSite=false) : on s'abonne dans l'app, puis on se connecte ici.
+    if (!M && c.paiementSite === false) return ouvrirSite(c, n, prix);
     let choix = prix.find((p) => p.parDefaut) || prix[0] || null;
     const note = h('p', { class: 'auth-msg', role: 'alert', hidden: true });
     const tell = (text, kind = 'bad') => { note.hidden = !text; note.textContent = text; note.dataset.kind = kind; };
@@ -143,14 +145,15 @@
     const restaurer = M && M.actif() ? h('button', {
       type: 'button', class: 'auth-link paywall-restore',
       onclick: async (e) => {
-        e.currentTarget.disabled = true;
+        const btn = e.currentTarget; // currentTarget redevient null après le premier await
+        btn.disabled = true;
         try {
           if (await M.restaurer()) return activerApresAchat();
           tell(`Aucun abonnement actif trouvé avec ${M.COMPTE}.`);
         } catch {
           tell('Impossible de vérifier tes achats. Vérifie ta connexion, puis réessaie.');
         }
-        e.currentTarget.disabled = false;
+        btn.disabled = false;
       },
     }, 'Restaurer mes achats') : null;
 
@@ -174,6 +177,52 @@
     sheet.hidden = false;
     document.body.classList.add('auth-open');
     cta.focus();
+  }
+
+  // Page « Débloque tout » du site Web quand les abonnements se prennent seulement dans les apps :
+  // Apple et Google encaissent, relancent les paiements refusés et versent les revenus.
+  function ouvrirSite(c, n, prix) {
+    const note = h('p', { class: 'auth-msg', role: 'alert', hidden: true });
+    const tell = (text, kind = 'bad') => { note.hidden = !text; note.textContent = text; note.dataset.kind = kind; };
+    const liens = c.liensMagasins || {};
+    const magasins = [
+      liens.ios ? h('a', { class: 'btn primary', href: liens.ios, target: '_blank', rel: 'noopener' }, '📱 App Store (iPhone, iPad)') : null,
+      liens.android ? h('a', { class: 'btn primary', href: liens.android, target: '_blank', rel: 'noopener' }, '▶ Google Play (Android)') : null,
+    ].filter(Boolean);
+    const user = compte() && compte().user();
+    const verifier = user ? h('button', {
+      type: 'button', class: 'auth-link paywall-restore',
+      onclick: async (e) => {
+        const btn = e.currentTarget; // currentTarget redevient null après le premier await
+        btn.disabled = true;
+        try {
+          if (await estPremium(user, true)) return activerApresAchat();
+          tell('Aucun abonnement actif sur ce compte. Dans l’app, vérifie que tu es connecté avec le même courriel.');
+        } catch {
+          tell('Impossible de vérifier ton abonnement. Vérifie ta connexion, puis réessaie.');
+        }
+        btn.disabled = false;
+      },
+    }, 'Je suis déjà abonné : vérifier') : null;
+    sheet.replaceChildren(h('div', { class: 'account-card card paywall-card' },
+      mascot('happy', 'paywall-buddy'),
+      h('h2', { id: 'paywall-title' }, 'Débloque tout le parcours'),
+      h('p', { class: 'muted paywall-sub' }, 'Pré-A1 est gratuit. Avec Premium, continue jusqu’à la maîtrise.'),
+      h('ul', { class: 'paywall-perks' },
+        h('li', null, `📚 ${n.niveaux} niveaux, de ${n.de} à ${n.a} : ${n.lecons} leçons et ${n.bilans} bilans`),
+        h('li', null, `🎭 ${n.dialogues} dialogues guidés pour pratiquer de vraies situations`),
+        h('li', null, '☁️ Ta progression sur tous tes appareils, même hors connexion')),
+      h('p', null, h('strong', null, 'Abonne-toi dans l’app Prof d’anglais'), ' sur ton iPhone, ton iPad ou ton téléphone Android',
+        prix.length ? ` (${prix.map((p) => `${p.montant} / ${p.periode}`).join(' ou ')}, ou l’équivalent dans ta devise)` : '',
+        '. Ensuite, connecte-toi ici avec le même compte : tout le parcours se débloque aussi sur le site.'),
+      ...magasins,
+      h('p', { class: 'paywall-fine' }, 'Le paiement, les renouvellements et les remboursements sont gérés par Apple ou Google. ',
+        h('a', { href: 'conditions.html#premium', target: '_blank', rel: 'noopener' }, 'Conditions de vente')),
+      note, verifier,
+      h('button', { type: 'button', class: 'btn ghost', onclick: fermer }, 'Plus tard')));
+    sheet.hidden = false;
+    document.body.classList.add('auth-open');
+    (sheet.querySelector('a.btn') || sheet.querySelector('button')).focus();
   }
 
   // Après un achat dans le magasin : RevenueCat prévient Firebase, qui active l'accès en quelques secondes.

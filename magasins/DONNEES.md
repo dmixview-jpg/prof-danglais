@@ -14,7 +14,7 @@ un outil d'analyse, des notifications ou un autre fournisseur.
 | Progression (leçons, étoiles, mots du carnet) | Fonctionnement de l'app (synchronisation) | Oui | Non | Non |
 | Historique d'achats (abonnement) | Fonctionnement de l'app (accès Premium) | Oui | Non | Non |
 
-Les fournisseurs qui traitent ces données pour notre compte (Google Firebase, RevenueCat, Stripe)
+Les fournisseurs qui traitent ces données pour notre compte (Google Firebase, RevenueCat)
 ne sont pas un « partage » au sens des deux magasins.
 
 ## App Store Connect

@@ -159,9 +159,26 @@ Facultatif : **Authentication → Modèles** permet de mettre en français les c
 - Les valeurs de `firebase-config.js` ne sont pas secrètes ; la protection vient des règles Firestore. Le code est dans `public/compte.js` (comptes et synchronisation) et `public/fusion.js` (fusion des progressions, testée par `npm test`).
 - Les courriels de tes utilisateurs sont gardés par Firebase (Google). Si l'app s'ouvre au public, prévois une courte politique de confidentialité.
 
-## Abonnement payant (Stripe)
+## Abonnements : Apple et Google encaissent
 
-Pré-A1 reste gratuit ; les niveaux A1 à C2 et les dialogues guidés demandent un abonnement Premium (mensuel ou annuel, avec essai gratuit). Tant que `actif` vaut `false` dans `outils/programme/abonnement.json`, tout reste gratuit, comme avant.
+Pré-A1 reste gratuit ; les niveaux A1 à C2 et les dialogues guidés demandent un abonnement Premium (mensuel par défaut, ou annuel, avec 7 jours d'essai gratuit). Tant que `actif` vaut `false` dans `outils/programme/abonnement.json`, tout reste gratuit, comme avant.
+
+**On s'abonne seulement dans les apps** (`"paiementSite": false`). Apple et Google :
+- encaissent le paiement et envoient les reçus ;
+- perçoivent et reversent les taxes de chaque pays (TVA, TPS/TVQ…) : tu n'as pas à t'inscrire aux taxes à l'étranger pour ces ventes ;
+- relancent les cartes refusées, gèrent les remboursements et le droit de rétractation ;
+- te versent les revenus chaque mois, moins leur commission de 15 % (petit développeur) : Apple environ 33 jours après la fin de son mois financier, Google vers le 15 du mois suivant.
+
+Sur le site, la page « Débloque tout le parcours » invite à s'abonner dans l'app, puis à se connecter avec le même compte : l'accès Premium suit le compte partout. Ajoute l'adresse des fiches de l'app dans `liensMagasins` (`abonnement.json`) dès qu'elles existent. Les règles Firestore refusent toute demande de paiement Stripe tant que `paiementSite` vaut `false`.
+
+**Paiements refusés : réglages à faire dans les magasins**
+- **App Store Connect → Apps → Abonnements → Période de grâce de facturation** : active-la (6 ou 16 jours). Apple réessaie la carte pendant 60 jours au total ; après la période de grâce, l'accès est coupé.
+- **Play Console → Monétiser → Abonnements → Période de grâce** (jusqu'à 30 jours) **et suspension du compte** (« account hold », jusqu'à 30 jours) : pendant la suspension, l'accès est coupé ; il revient dès que le paiement passe.
+- RevenueCat prévient Firebase à chaque changement : l'extension retire le rôle Premium quand le droit d'accès expire, et l'app efface la copie hors connexion à la fin de la période payée.
+
+## Paiement sur le site avec Stripe (facultatif, désactivé)
+
+Le code reste en place si tu veux un jour vendre aussi sur le site (commission d'environ 3 % au lieu de 15 %, mais taxes, relances et remboursements à ta charge). Pour l'activer, mets `"paiementSite": true` et suis les étapes ci-dessous.
 
 **Comment le contenu est protégé**
 - Avec l'abonnement actif, `construire.py` ne met dans `public/curriculum.json` que le contenu gratuit ; les niveaux payants n'y gardent que leurs titres (avec un cadenas). Le contenu payant va dans `outils/premium/contenu.json` (jamais publié ni enregistré dans Git).
@@ -196,6 +213,8 @@ Pré-A1 reste gratuit ; les niveaux A1 à C2 et les dialogues guidés demandent 
 **Avant d'ouvrir les abonnements :** remplis les politiques (section suivante). Au Québec, l'inscription aux taxes TPS/TVQ est obligatoire au-delà de 30 000 $ de revenus sur 12 mois ; Stripe Tax peut les calculer.
 
 ## Conditions et confidentialité (clientèle internationale)
+
+> Les textes visent maintenant les abonnements achetés dans l'App Store et Google Play (Apple et Google vendent, remboursent et gèrent la rétractation). Le bouton « Me rétracter du contrat », Stripe Tax et les points sur les taxes ci-dessous ne servent que si tu actives le paiement sur le site ; il faudrait alors aussi reprendre les sections 5 à 10 des conditions dans l'historique Git (version du 21 octobre 2026).
 
 L'app vise une clientèle francophone en Europe, dans les Amériques, en Afrique et en Asie. Deux pages publiques, liées depuis l'écran de connexion, le menu « Mon compte » et la page d'abonnement, couvrent ces régions :
 - `public/conditions.html` : conditions d'utilisation et de vente.

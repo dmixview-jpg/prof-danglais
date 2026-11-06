@@ -130,6 +130,8 @@ def split_premium(data, config):
             premium.setdefault(lid, {"lessons": {}, "scenarios": {}})["scenarios"][sc["id"]] = sc.pop("turns")
             sc["locked"] = True
     data["abonnement"] = {k: config[k] for k in ("gratuit", "essaiJours", "region", "fonctionPortail", "taxesAutomatiques", "prix")}
+    data["abonnement"]["paiementSite"] = config.get("paiementSite", True)
+    data["abonnement"]["liensMagasins"] = config.get("liensMagasins", {})
     data["abonnement"]["magasins"] = {k: v for k, v in config.get("magasins", {}).items() if not k.startswith("_")}
     return premium
 
@@ -141,7 +143,8 @@ RULES_FIN = "    // </généré>"
 def bloc_regles(config):
     """Constantes de firestore.rules tirées de abonnement.json : prix acceptés, adresses de retour
     du paiement (le site), durée de l'essai. Une adresse absente bloque tout paiement."""
-    prix = ", ".join(f"'{p['id']}'" for p in config.get("prix", []))
+    # Paiement sur le site désactivé (paiementSite=false) : aucune demande de paiement Stripe acceptée
+    prix = ", ".join(f"'{p['id']}'" for p in config.get("prix", [])) if config.get("paiementSite", True) else ""
     sites = [s for s in config.get("sites", []) if s.startswith("https://") and s.endswith("/")]
     if sites:
         motifs = " || ".join(
@@ -218,7 +221,7 @@ def main():
         print("\n".join(problems))
         sys.exit(1)
 
-    if config.get("actif") and not any(x.startswith("https://") for x in config.get("sites", [])):
+    if config.get("actif") and config.get("paiementSite", True) and not any(x.startswith("https://") for x in config.get("sites", [])):
         print("abonnement.json : indique l'adresse de ton site dans « sites » (ex. https://exemple.netlify.app/)")
         sys.exit(1)
     if not test_dir:

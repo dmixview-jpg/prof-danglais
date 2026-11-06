@@ -85,7 +85,7 @@ Générés par `python3 outils/captures_magasins.py` à partir de captures de l'
 
 | Produit | Identifiant | Durée | Prix suggéré | Essai |
 |---|---|---|---|---|
-| Premium mensuel | `premium_mensuel` | 1 mois | 6,99 $ CA | aucun |
+| Premium mensuel | `premium_mensuel` | 1 mois | 6,99 $ CA | 7 jours gratuits (offre d'introduction) |
 | Premium annuel | `premium_annuel` | 1 an | 49,99 $ CA | 7 jours gratuits (offre d'introduction) |
 
-Les deux produits vont dans le même groupe d'abonnements « Premium ». Les magasins convertissent le prix dans chaque pays ; tu peux l'ajuster pays par pays. Leur commission est de 15 % pour un petit développeur (programmes « Small Business » d'Apple, tarif des abonnements chez Google), contre environ 3 % pour Stripe sur le site : tu peux garder les mêmes prix ou les monter un peu dans les apps.
+Les deux produits vont dans le même groupe d'abonnements « Premium ». Les magasins convertissent le prix dans chaque pays ; tu peux l'ajuster pays par pays. Leur commission est de 15 % pour un petit développeur (programme « Small Business » d'Apple, tarif des abonnements chez Google). En échange, ils encaissent, perçoivent et reversent les taxes de chaque pays, relancent les paiements refusés et te versent les revenus chaque mois.

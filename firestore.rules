@@ -18,7 +18,7 @@ service cloud.firestore {
     }
 
     // <généré : outils/programme/abonnement.json> (construire.py réécrit ce bloc, ne le modifie pas à la main)
-    function prixAutorise(p) { return p in ['price_A_REMPLACER_MENSUEL', 'price_A_REMPLACER_ANNUEL']; }
+    function prixAutorise(p) { return p in []; }
     function adresseAutorisee(u) { return u is string && u.size() <= 300 && (u.matches('https://dmixview\\-jpg\\.github\\.io/prof\\-danglais/.*')); }
     function essaiJours() { return 7; }
     // </généré>

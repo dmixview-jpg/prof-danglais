@@ -13,5 +13,5 @@ window.PD_LEGAL = {
   // Royaume-Uni (UK GDPR). Nom et adresse, ex. : 'EU-Rep SARL, 1 rue X, 75001 Paris, France'.
   representantUE: '',
   representantRU: '',
-  enVigueur: '2026-10-21', // date d'entrée en vigueur (change-la à chaque modification des textes)
+  enVigueur: '2026-11-06', // date d'entrée en vigueur (change-la à chaque modification des textes)
 };
