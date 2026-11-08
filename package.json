@@ -14,7 +14,7 @@
   },
   "license": "UNLICENSED",
   "dependencies": {
-    "@capacitor/android": "^8.5.3",
+    "@capacitor/android": "^8.6.0",
     "@capacitor/core": "^8.5.3",
     "@capacitor/ios": "^8.5.3",
     "@revenuecat/purchases-capacitor": "^13.7.4"
