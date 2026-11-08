@@ -41,19 +41,55 @@
 
     <div id="dash" hidden>
       <p class="admin-updated" id="updated"></p>
-      <div class="kpis" id="kpis"></div>
-      <section class="card admin-section">
-        <h2>À faire</h2>
-        <ul class="todo" id="todo"></ul>
-      </section>
-      <section class="card admin-section">
-        <div class="admin-head">
-          <h2>Abonnements</h2>
-          <div class="filters" id="filters" role="group" aria-label="Filtrer par statut"></div>
-        </div>
-        <div class="subs" id="subs"></div>
-      </section>
-      <p class="admin-foot">Données envoyées à Firebase par Stripe (abonnements du site) et par RevenueCat (App Store et Google Play). Site : remboursements, changements de formule et factures dans la fiche Stripe du client. Magasins : remboursements par Apple ou Google, suivi dans RevenueCat. <a href="https://dashboard.stripe.com" target="_blank" rel="noopener">Stripe ↗</a> · <a href="https://app.revenuecat.com" target="_blank" rel="noopener">RevenueCat ↗</a></p>
+      <nav class="admin-tabs" role="tablist" aria-label="Sections du tableau de bord">
+        <button type="button" role="tab" class="chip on" id="tab-apercu" aria-selected="true" aria-controls="vue-apercu">Vue d’ensemble</button>
+        <button type="button" role="tab" class="chip" id="tab-comptes" aria-selected="false" aria-controls="vue-comptes">Utilisateurs</button>
+        <button type="button" role="tab" class="chip" id="tab-abonnements" aria-selected="false" aria-controls="vue-abonnements">Abonnements</button>
+      </nav>
+
+      <div id="vue-apercu" class="admin-vue" role="tabpanel" aria-labelledby="tab-apercu">
+        <p class="admin-note" id="stats-note" hidden></p>
+        <div class="kpis" id="kpis-app"></div>
+        <section class="card admin-section">
+          <h2>Inscriptions, 30 derniers jours</h2>
+          <div class="barres" id="graph-inscriptions"></div>
+        </section>
+        <section class="card admin-section">
+          <h2>Élèves qui ont pratiqué, par jour</h2>
+          <div class="barres" id="graph-actifs"></div>
+        </section>
+        <section class="card admin-section">
+          <h2>Niveau des élèves</h2>
+          <div class="niveaux" id="graph-niveaux"></div>
+        </section>
+      </div>
+
+      <div id="vue-comptes" class="admin-vue" role="tabpanel" aria-labelledby="tab-comptes" hidden>
+        <section class="card admin-section">
+          <div class="admin-head">
+            <h2>Utilisateurs</h2>
+            <input type="search" id="recherche" class="admin-search" placeholder="Rechercher un courriel ou un nom" aria-label="Rechercher un utilisateur" autocomplete="off">
+          </div>
+          <div class="filters" id="filtres-comptes" role="group" aria-label="Filtrer les utilisateurs"></div>
+          <div class="comptes" id="comptes"></div>
+        </section>
+      </div>
+
+      <div id="vue-abonnements" class="admin-vue" role="tabpanel" aria-labelledby="tab-abonnements" hidden>
+        <div class="kpis" id="kpis"></div>
+        <section class="card admin-section">
+          <h2>À faire</h2>
+          <ul class="todo" id="todo"></ul>
+        </section>
+        <section class="card admin-section">
+          <div class="admin-head">
+            <h2>Abonnements</h2>
+            <div class="filters" id="filters" role="group" aria-label="Filtrer par statut"></div>
+          </div>
+          <div class="subs" id="subs"></div>
+        </section>
+        <p class="admin-foot">Abonnements de l’App Store et de Google Play, reçus par RevenueCat. Remboursements par Apple ou Google, suivi dans <a href="https://app.revenuecat.com" target="_blank" rel="noopener">RevenueCat ↗</a>.</p>
+      </div>
     </div>
   </main>
 

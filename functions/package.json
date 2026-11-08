@@ -5,7 +5,7 @@
   "main": "index.js",
   "engines": { "node": "22" },
   "scripts": {
-    "test": "node --test test/revenuecat.test.js test/index.test.js"
+    "test": "node --test test/revenuecat.test.js test/index.test.js test/stats.test.js"
   },
   "dependencies": {
     "firebase-admin": "^14.5.0",

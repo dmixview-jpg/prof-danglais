@@ -19,6 +19,7 @@ const { initializeApp } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const rc = require('./revenuecat');
+const stats = require('./stats');
 
 initializeApp();
 const SECRET_WEBHOOK = defineSecret('REVENUECAT_WEBHOOK_SECRET');
@@ -92,5 +93,29 @@ exports.synchroniserMagasin = onCall(
       logger.error('Synchronisation demandée par l’app impossible', { message: e && e.message });
       throw new HttpsError('unavailable', 'Vérification impossible pour le moment. Réessaie dans un instant.');
     }
+  },
+);
+
+// Tableau de bord (admin.html) : comptes, activité et abonnés. Réservé aux comptes admin=true
+// au courriel confirmé (même règle que firestore.rules). La liste des comptes Firebase n'est
+// lisible que côté serveur : l'app n'y a jamais accès.
+exports.statsAdmin = onCall(
+  { region: REGION, maxInstances: 2, memory: '512MiB', timeoutSeconds: 120 },
+  async (req) => {
+    const jeton = req.auth && req.auth.token;
+    if (!jeton || jeton.admin !== true || jeton.email_verified !== true) {
+      throw new HttpsError('permission-denied', 'Accès réservé à l’administration.');
+    }
+    const comptes = [];
+    let page;
+    do {
+      const r = await getAuth().listUsers(1000, page);
+      comptes.push(...r.users.map((u) => u.toJSON()));
+      page = r.pageToken;
+    } while (page && comptes.length < 50000);
+    const snap = await getFirestore().collection('users').select('name', 'data.lessons', 'data.level', 'data.pathLevel', 'data.days').get();
+    const docs = snap.docs.map((d) => ({ uid: d.id, data: d.data() }));
+    logger.info('Statistiques consultées', { admin: req.auth.uid, comptes: comptes.length });
+    return stats.calculer(comptes, docs);
   },
 );

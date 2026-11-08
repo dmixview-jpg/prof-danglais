@@ -1,5 +1,8 @@
 'use strict';
-// Tableau de bord des abonnements (admin.html), réservé aux comptes marqués admin=true.
+// Tableau de bord (admin.html), réservé aux comptes marqués admin=true :
+// vue d'ensemble (comptes, activité, niveaux), liste des utilisateurs et abonnements.
+// Les chiffres sur les comptes viennent de la fonction statsAdmin (functions/), qui vérifie
+// elle-même la marque admin : l'app n'a jamais accès à la liste des comptes.
 // Lit en lecture seule les abonnements que l'extension Stripe recopie dans Firestore
 // (customers/{uid}/subscriptions/{id}) ; firestore.rules en interdit l'accès aux autres comptes.
 (function () {
@@ -16,6 +19,10 @@
   const COLLECTION_MAGASINS = 'revenuecat';
   let prixConf = {}; // prix de abonnement.json (centimes CAD), pour estimer le revenu des magasins
   let filter = 'all';
+  let stats = null; // réponse de statsAdmin
+  let filtreComptes = 'tous';
+  let recherche = '';
+  const REGION_FONCTIONS = 'northamerica-northeast1';
 
   function h(tag, attrs, ...children) {
     const el = document.createElement(tag);
@@ -169,6 +176,115 @@
     show('dash');
   }
 
+
+  // ---------------------------------------------------------------- Vue d'ensemble et utilisateurs
+  const nombre = (n) => Number(n || 0).toLocaleString('fr-CA');
+  const pct = (x) => `${(x * 100).toLocaleString('fr-CA', { maximumFractionDigits: 1 })} %`;
+  const jourCourt = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' });
+  const NOMS_NIVEAUX = { pre: 'Pré-A1', a1: 'A1', a2: 'A2', b1: 'B1', b2: 'B2', c1: 'C1', c2: 'C2' };
+  function depuis(t) {
+    if (!t) return 'jamais';
+    const j = Math.floor((Date.now() - t) / DAY);
+    return j <= 0 ? 'aujourd’hui' : j === 1 ? 'hier' : `il y a ${j} jours`;
+  }
+  const kpiCarte = (label, value, sub, tone = '') => h('div', { class: `kpi card ${tone}` },
+    h('span', { class: 'kpi-label' }, label), h('span', { class: 'kpi-value' }, value), h('span', { class: 'kpi-sub' }, sub));
+
+  // Barres d'une seule série, une par jour : bulle au survol ou au clavier, tableau pour les lecteurs d'écran.
+  function barres(el, points, unite) {
+    const max = Math.max(1, ...points.map((p) => p.n));
+    const total = points.reduce((t, p) => t + p.n, 0);
+    el.replaceChildren(
+      h('span', { class: 'barres-max', 'aria-hidden': 'true' }, `max ${nombre(max)}`),
+      ...points.map((p) => {
+        const texte = `${jourCourt(p.jour)} : ${nombre(p.n)} ${unite}`;
+        const b = h('div', { class: `barre${p.n ? '' : ' vide'}`, tabindex: '0', role: 'img', 'aria-label': texte },
+          h('span', { class: 'bulle' }, texte));
+        const i = h('i');
+        i.style.height = `${p.n ? Math.max(4, (p.n / max) * 100) : 2}%`;
+        b.prepend(i);
+        return b;
+      }));
+    const sec = el.parentElement;
+    sec.querySelectorAll('.barres-axe, .graph-tableau').forEach((x) => x.remove());
+    sec.append(
+      h('div', { class: 'barres-axe', 'aria-hidden': 'true' }, h('span', null, jourCourt(points[0].jour)), h('span', null, `Total : ${nombre(total)}`), h('span', null, jourCourt(points[points.length - 1].jour))),
+      h('details', { class: 'graph-tableau' }, h('summary', null, 'Voir en tableau'),
+        h('table', null, h('thead', null, h('tr', null, h('th', null, 'Jour'), h('th', null, unite))),
+          h('tbody', null, ...points.slice().reverse().map((p) => h('tr', null, h('td', null, jourCourt(p.jour)), h('td', null, nombre(p.n))))))));
+  }
+
+  function renderApercu() {
+    const note = $('#stats-note');
+    if (!stats) {
+      note.textContent = 'Les statistiques des comptes ne sont pas disponibles : la fonction statsAdmin n’est pas encore déployée, ou la connexion a échoué. Actualise dans un instant.';
+      note.hidden = false;
+      $('#kpis-app').replaceChildren();
+      return;
+    }
+    note.hidden = true;
+    const u = stats.utilisateurs; const p = stats.premium; const a = stats.apprentissage;
+    $('#kpis-app').replaceChildren(
+      kpiCarte('Comptes', nombre(u.total), `${nombre(u.verifies)} avec courriel confirmé`),
+      kpiCarte('Nouveaux', nombre(u.nouveaux7), `cette semaine · ${nombre(u.nouveaux30)} en 30 jours`),
+      kpiCarte('Actifs', nombre(u.actifs7), `cette semaine · ${nombre(u.actifs1)} aujourd’hui · ${nombre(u.actifs30)} en 30 jours`),
+      kpiCarte('Abonnés Premium', nombre(p.total), `${pct(p.conversion)} des comptes · ${nombre(p.magasin)} par les magasins`),
+      kpiCarte('Leçons terminées', nombre(a.lecons), `≈ ${a.moyenneParActif.toLocaleString('fr-CA', { maximumFractionDigits: 1 })} par élève actif (30 jours)`),
+      kpiCarte('Taux d’activité', u.total ? pct(u.actifs30 / u.total) : '—', 'des comptes ont pratiqué en 30 jours'));
+    barres($('#graph-inscriptions'), stats.inscriptionsParJour, 'inscriptions');
+    barres($('#graph-actifs'), stats.actifsParJour, 'élèves');
+    const niv = Object.entries(a.niveaux);
+    const maxN = Math.max(1, ...niv.map(([, n]) => n));
+    $('#graph-niveaux').replaceChildren(...niv.map(([id, n]) => {
+      const i = h('i');
+      i.style.width = `${(n / maxN) * 100}%`;
+      return h('div', { class: 'niveau', role: 'img', 'aria-label': `${NOMS_NIVEAUX[id]} : ${n} élève${n > 1 ? 's' : ''}` },
+        h('span', { class: 'niveau-nom' }, NOMS_NIVEAUX[id]), h('span', { class: 'niveau-piste' }, i), h('span', { class: 'niveau-n' }, nombre(n)));
+    }));
+  }
+
+  const FILTRES_COMPTES = [
+    ['tous', 'Tous', () => true],
+    ['premium', 'Premium', (c) => !!c.premium],
+    ['actifs', 'Actifs (7 jours)', (c) => c.actif && Date.now() - c.actif < 7 * DAY],
+    ['inactifs', 'Inactifs (30 jours +)', (c) => !c.actif || Date.now() - c.actif >= 30 * DAY],
+    ['nonverifies', 'Courriel non confirmé', (c) => !c.verifie],
+  ];
+  function renderComptes() {
+    const liste = (stats && stats.comptes) || [];
+    $('#filtres-comptes').replaceChildren(...FILTRES_COMPTES.map(([id, label, test]) => h('button', {
+      type: 'button', class: `chip${filtreComptes === id ? ' on' : ''}`, 'aria-pressed': String(filtreComptes === id),
+      onclick: () => { filtreComptes = id; renderComptes(); },
+    }, `${label} · ${liste.filter(test).length}`)));
+    const q = recherche.trim().toLowerCase();
+    const vus = liste.filter(FILTRES_COMPTES.find(([id]) => id === filtreComptes)[2])
+      .filter((c) => !q || c.courriel.toLowerCase().includes(q) || (c.nom || '').toLowerCase().includes(q));
+    const AFFICHES = 200;
+    $('#comptes').replaceChildren(...(vus.length ? vus.slice(0, AFFICHES).map((c) => h('article', { class: 'compte' },
+      h('div', { class: 'compte-qui' }, h('strong', null, c.courriel || '(sans courriel)'), c.nom ? h('span', { class: 'muted' }, c.nom) : null),
+      h('div', { class: 'compte-infos' },
+        h('span', null, `Inscrit le ${date(c.inscrit)}`), h('span', null, `Actif ${depuis(c.actif)}`),
+        h('span', null, `${nombre(c.lecons)} leçon${c.lecons > 1 ? 's' : ''}`), h('span', null, `${nombre(c.joursPratique)} jour${c.joursPratique > 1 ? 's' : ''} de pratique`),
+        c.niveau && NOMS_NIVEAUX[c.niveau] ? h('span', null, `Niveau ${NOMS_NIVEAUX[c.niveau]}`) : null),
+      h('div', { class: 'compte-pills' },
+        c.premium ? h('span', { class: 'pill good' }, c.premium === 'magasin' ? 'Premium · magasin' : 'Premium · site') : h('span', { class: 'pill off' }, 'Gratuit'),
+        c.verifie ? null : h('span', { class: 'pill warn' }, 'Non confirmé'),
+        c.desactive ? h('span', { class: 'pill bad' }, 'Désactivé') : null,
+        c.admin ? h('span', { class: 'pill info' }, 'Admin') : null)))
+      : [h('p', { class: 'muted subs-empty' }, stats ? 'Aucun utilisateur ne correspond.' : 'Liste indisponible pour le moment.')]),
+      vus.length > AFFICHES ? h('p', { class: 'muted subs-empty' }, `${nombre(vus.length - AFFICHES)} autres : précise la recherche.`) : '',
+      stats && stats.tronque ? h('p', { class: 'muted subs-empty' }, 'Seuls les 500 comptes les plus récents sont listés ; les chiffres de la vue d’ensemble comptent tout le monde.') : '');
+  }
+
+  function ouvrirOnglet(id) {
+    ['apercu', 'comptes', 'abonnements'].forEach((x) => {
+      const on = x === id;
+      $(`#tab-${x}`).classList.toggle('on', on);
+      $(`#tab-${x}`).setAttribute('aria-selected', String(on));
+      $(`#vue-${x}`).hidden = !on;
+    });
+  }
+
   // Rétractation réglée dans Stripe : on la retire de « À faire ».
   async function traiter(x, btn) {
     btn.disabled = true;
@@ -186,6 +302,8 @@
   async function load() {
     $('#refresh').disabled = true;
     try {
+      const demandeStats = firebase.app().functions(REGION_FONCTIONS).httpsCallable('statsAdmin')()
+        .then((r) => r.data).catch(() => null);
       const [snap, retr, rc, cur] = await Promise.all([
         db.collectionGroup('subscriptions').get(), db.collectionGroup('retractations').get(),
         db.collection(COLLECTION_MAGASINS).get().catch(() => ({ docs: [] })), // fonctions RevenueCat pas encore déployées
@@ -202,11 +320,14 @@
         const c = await db.collection('customers').doc(uid).get();
         return [uid, c.exists ? c.data() : {}];
       })));
+      stats = await demandeStats;
       render();
+      renderApercu();
+      renderComptes();
     } catch (err) {
       state(err && err.code === 'permission-denied'
         ? 'Accès refusé par les règles Firebase. Vérifie que firestore.rules est publié et que ton compte est administrateur.'
-        : 'Impossible de charger les abonnements. Vérifie ta connexion Internet, puis actualise.');
+        : 'Impossible de charger le tableau de bord. Vérifie ta connexion Internet, puis actualise.');
     } finally {
       $('#refresh').disabled = false;
     }
@@ -223,7 +344,7 @@
     document.head.append(s);
   });
   // App Check : même réglage que l'app (firebase-config.js, clé « appCheck »)
-  ['firebase-app-compat.js', ...(CONFIG.appCheck ? ['firebase-app-check-compat.js'] : []), 'firebase-auth-compat.js', 'firebase-firestore-compat.js']
+  ['firebase-app-compat.js', ...(CONFIG.appCheck ? ['firebase-app-check-compat.js'] : []), 'firebase-auth-compat.js', 'firebase-firestore-compat.js', 'firebase-functions-compat.js']
     .reduce((p, f) => p.then(() => loadScript(SDK + f)), Promise.resolve())
     .then(() => {
       firebase.initializeApp(CONFIG);
@@ -232,6 +353,8 @@
       auth.languageCode = 'fr';
       db = firebase.firestore();
       $('#refresh').addEventListener('click', load);
+      ['apercu', 'comptes', 'abonnements'].forEach((x) => $(`#tab-${x}`).addEventListener('click', () => ouvrirOnglet(x)));
+      $('#recherche').addEventListener('input', (e) => { recherche = e.target.value; renderComptes(); });
       $('#login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const msg = $('#login-msg');
@@ -254,7 +377,7 @@
           return state(`Accès réservé à l’administration : le compte ${u.email} n’est pas administrateur.`,
             h('button', { type: 'button', class: 'btn ghost', onclick: () => auth.signOut() }, 'Changer de compte'));
         }
-        state('Chargement des abonnements…');
+        state('Chargement du tableau de bord…');
         load();
       });
     })
