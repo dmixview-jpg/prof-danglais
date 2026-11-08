@@ -1,6 +1,6 @@
 {
   "_aide": "Abonnement Premium. actif=false : tout le contenu est gratuit, comme avant. Voir le README, section « Abonnement payant ». taxesAutomatiques=true : Stripe Tax calcule les taxes selon le pays du client (TVA, TPS/TVQ…).",
-  "actif": false,
+  "actif": true,
   "_aidePaiement": "paiementSite=false : on ne peut s'abonner que dans les apps (App Store, Google Play), qui encaissent, relancent et te versent les revenus. Le site n'accepte aucun paiement (Stripe désactivé, bloqué aussi par firestore.rules) ; un abonné s'y connecte avec le même compte. liensMagasins : adresses des fiches de l'app, affichées sur le site.",
   "paiementSite": false,
   "liensMagasins": {
