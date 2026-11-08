@@ -14,10 +14,13 @@
 const { onRequest, onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const logger = require('firebase-functions/logger');
-const admin = require('firebase-admin');
+// API modulaire de firebase-admin (la v14 n'a plus getAuth() ni getFirestore()).
+const { initializeApp } = require('firebase-admin/app');
+const { getAuth } = require('firebase-admin/auth');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const rc = require('./revenuecat');
 
-admin.initializeApp();
+initializeApp();
 const SECRET_WEBHOOK = defineSecret('REVENUECAT_WEBHOOK_SECRET');
 const CLE_API = defineSecret('REVENUECAT_API_KEY');
 const REGION = 'northamerica-northeast1';
@@ -28,7 +31,7 @@ const DELAI_APPEL = 10 * 1000; // l'app ne peut pas forcer une resynchronisation
 async function synchroniser(uid) {
   let utilisateur;
   try {
-    utilisateur = await admin.auth().getUser(uid);
+    utilisateur = await getAuth().getUser(uid);
   } catch (e) {
     // Compte inconnu de Firebase (événement de test, compte supprimé) : rien à faire.
     if (e && (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-uid')) return { ignore: true };
@@ -38,11 +41,11 @@ async function synchroniser(uid) {
   const actifs = rc.droitsActifs(abonne);
   const avant = (utilisateur.customClaims || {}).revenueCatEntitlements;
   if (!rc.memes(avant, actifs)) {
-    await admin.auth().setCustomUserClaims(uid, rc.nouveauxAttributs(utilisateur.customClaims, actifs));
+    await getAuth().setCustomUserClaims(uid, rc.nouveauxAttributs(utilisateur.customClaims, actifs));
   }
-  await admin.firestore().collection(COLLECTION).doc(uid).set({
+  await getFirestore().collection(COLLECTION).doc(uid).set({
     ...rc.copiePourFirestore(abonne),
-    majLe: admin.firestore.FieldValue.serverTimestamp(),
+    majLe: FieldValue.serverTimestamp(),
   });
   return { actifs };
 }
@@ -78,7 +81,7 @@ exports.synchroniserMagasin = onCall(
   async (req) => {
     if (!req.auth) throw new HttpsError('unauthenticated', 'Connexion requise.');
     const uid = req.auth.uid;
-    const ref = admin.firestore().collection(COLLECTION).doc(uid);
+    const ref = getFirestore().collection(COLLECTION).doc(uid);
     const doc = await ref.get();
     const maj = doc.exists && doc.get('majLe');
     if (maj && Date.now() - maj.toMillis() < DELAI_APPEL) return { actifs: rc.droitsActifs(doc.data()) };
