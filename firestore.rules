@@ -44,10 +44,10 @@ service cloud.firestore {
         || ('revenueCatEntitlements' in request.auth.token && 'premium' in request.auth.token.revenueCatEntitlements));
     }
 
-    // Contenu payant (A1 à C2) : lisible seulement par les abonnés.
+    // Contenu payant (A1 à C2) : lisible seulement par les abonnés et l'administrateur.
     // Écrit uniquement par outils/programme/publier_premium.mjs (compte de service).
     match /contenu/{niveau} {
-      allow read: if abonne();
+      allow read: if abonne() || admin();
       allow write: if false;
     }
 
