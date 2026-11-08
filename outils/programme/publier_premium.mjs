@@ -3,6 +3,8 @@
 //
 //   FIREBASE_SERVICE_ACCOUNT="$(cat cle.json)" node outils/programme/publier_premium.mjs
 //   node outils/programme/publier_premium.mjs --essai     (vérifie sans rien envoyer)
+//   JETON_GOOGLE="$(gcloud auth application-default print-access-token)" PROJET=mon-projet \
+//     node outils/programme/publier_premium.mjs            (avec ton compte Google, sans clé de service)
 //
 // La clé est un « compte de service » Firebase (Paramètres du projet → Comptes de service →
 // Générer une nouvelle clé privée). Elle est secrète : ne la mets jamais dans le dépôt ;
@@ -37,11 +39,15 @@ for (const d of docs) {
 console.log(`Version ${contenu.build} : ${docs.map((d) => `${d.niveau} (${d.ko} Ko)`).join(', ')}`);
 if (essai) process.exit(0);
 
-const cle = cleDeService();
-const token = await jetonGoogle(cle, 'https://www.googleapis.com/auth/datastore');
+// Jeton de ton compte Google (JETON_GOOGLE + PROJET), sinon clé de compte de service.
+const parJeton = process.env.JETON_GOOGLE && process.env.PROJET;
+const cle = parJeton ? null : cleDeService();
+const projet = parJeton ? process.env.PROJET : cle.project_id;
+const token = parJeton ? process.env.JETON_GOOGLE : await jetonGoogle(cle, 'https://www.googleapis.com/auth/datastore');
+const entetes = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...(parJeton ? { 'x-goog-user-project': projet } : {}) };
 for (const d of docs) {
-  const url = `https://firestore.googleapis.com/v1/projects/${cle.project_id}/databases/(default)/documents/contenu/${d.niveau}`;
-  const res = await fetch(url, { method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: d.body });
+  const url = `https://firestore.googleapis.com/v1/projects/${projet}/databases/(default)/documents/contenu/${d.niveau}`;
+  const res = await fetch(url, { method: 'PATCH', headers: entetes, body: d.body });
   if (!res.ok) throw new Error(`contenu/${d.niveau} : échec ${res.status} : ${await res.text()}`);
   console.log(`✓ contenu/${d.niveau}`);
 }
