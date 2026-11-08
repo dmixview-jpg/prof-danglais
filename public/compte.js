@@ -242,7 +242,7 @@
       h('p', { class: 'account-sync' }, syncLabel()),
       verify,
       window.PDAbonnement ? window.PDAbonnement.ligneCompte(tell) : null,
-      isAdmin ? h('a', { class: 'btn ghost', href: 'admin.html' }, '📊 Tableau de bord des abonnements') : null,
+      isAdmin ? h('a', { class: 'btn ghost', href: 'admin.html' }, '📊 Tableau de bord') : null,
       note,
       h('button', { type: 'button', class: 'btn primary', onclick: signOut }, 'Se déconnecter'),
       del,
@@ -263,6 +263,23 @@
       location.reload();
     }
   }
+  // Administrateur : à la connexion, choisir entre suivre les cours et le tableau de bord.
+  // Une fois par session de l'onglet, pour ne pas le redemander au retour du tableau de bord.
+  function choixAdmin() {
+    try { if (sessionStorage.getItem('pd.choixAdmin')) return; sessionStorage.setItem('pd.choixAdmin', '1'); } catch { /* stockage bloqué : on demande quand même */ }
+    if (!sheet.hidden || !screen.hidden) return;
+    const cours = h('button', { type: 'button', class: 'btn primary', onclick: closeSheet }, '📚 Suivre les cours');
+    sheet.replaceChildren(h('div', { class: 'account-card card' },
+      h('h2', { id: 'account-title' }, `Bonjour${displayName() ? ` ${displayName()}` : ''}!`),
+      h('p', { class: 'muted' }, 'Tu es connecté avec le compte administrateur. Où veux-tu aller?'),
+      cours,
+      h('a', { class: 'btn ghost', href: 'admin.html' }, '📊 Tableau de bord'),
+      h('p', { class: 'muted' }, 'Tu pourras changer plus tard dans « Mon compte ».')));
+    sheet.hidden = false;
+    document.body.classList.add('auth-open');
+    cours.focus();
+  }
+
   function closeSheet() {
     sheet.hidden = true;
     if (screen.hidden) document.body.classList.remove('auth-open');
@@ -397,7 +414,7 @@
           renderAccount();
           hideScreen();
           document.dispatchEvent(new CustomEvent('pd:connecte', { detail: { user: u } }));
-          u.getIdTokenResult().then((r) => { isAdmin = !!r.claims.admin; }).catch(() => {});
+          u.getIdTokenResult().then((r) => { isAdmin = r.claims.admin === true; if (isAdmin) choixAdmin(); }).catch(() => {});
         }
       });
     })
