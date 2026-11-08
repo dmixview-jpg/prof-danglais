@@ -30,7 +30,8 @@ async function synchroniser(uid) {
   try {
     utilisateur = await admin.auth().getUser(uid);
   } catch (e) {
-    if (e && e.code === 'auth/user-not-found') return { ignore: true };
+    // Compte inconnu de Firebase (événement de test, compte supprimé) : rien à faire.
+    if (e && (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-uid')) return { ignore: true };
     throw e;
   }
   const abonne = await rc.lireAbonne(uid, CLE_API.value());
@@ -56,13 +57,15 @@ exports.revenuecatWebhook = onRequest(
       res.status(401).send('');
       return;
     }
+    // Événement de test du tableau de bord RevenueCat : le mot de passe est bon, rien d'autre à faire.
+    if (req.body && req.body.event && req.body.event.type === 'TEST') { res.status(200).json({ ok: true, test: true }); return; }
     const uids = rc.comptesTouches(req.body);
     try {
       for (const uid of uids) await synchroniser(uid);
       res.status(200).json({ ok: true, comptes: uids.length });
     } catch (e) {
       // 500 : RevenueCat renvoie l'événement plus tard (plusieurs essais).
-      logger.error('Synchronisation RevenueCat impossible', { message: e && e.message });
+      logger.error('Synchronisation RevenueCat impossible', { message: e && e.message, code: e && e.code });
       res.status(500).send('');
     }
   },
