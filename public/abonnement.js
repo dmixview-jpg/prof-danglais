@@ -436,7 +436,7 @@
     const web = claims.stripeRole === 'premium';
     const app = Array.isArray(claims.revenueCatEntitlements) && claims.revenueCatEntitlements.includes(droit);
     // Administrateur (marque admin=true) : tout le parcours, sans abonnement. Les règles Firestore font la même vérification.
-    const admin = claims.admin === true;
+    const admin = claims.admin === true && claims.email_verified === true;
     source = web ? 'web' : app ? 'magasin' : admin ? 'admin' : null;
     return web || app || admin;
   }

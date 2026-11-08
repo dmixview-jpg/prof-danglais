@@ -414,7 +414,7 @@
           renderAccount();
           hideScreen();
           document.dispatchEvent(new CustomEvent('pd:connecte', { detail: { user: u } }));
-          u.getIdTokenResult().then((r) => { isAdmin = r.claims.admin === true; if (isAdmin) choixAdmin(); }).catch(() => {});
+          u.getIdTokenResult().then((r) => { isAdmin = r.claims.admin === true && r.claims.email_verified === true; if (isAdmin) choixAdmin(); }).catch(() => {});
         }
       });
     })
