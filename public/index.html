@@ -2,6 +2,9 @@
 <html lang="fr-CA">
 <head>
   <meta charset="utf-8">
+  <!-- Sécurité : seuls les fichiers de l'app, Firebase et reCAPTCHA peuvent être chargés (voir public/_headers) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self' blob: data:; connect-src 'self' https://*.googleapis.com https://*.cloudfunctions.net https://www.google.com/recaptcha/; frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://*.firebaseapp.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Prof d'anglais</title>
   <meta name="description" content="Ton coach d'anglais personnel : leçons, conversation et vocabulaire.">
@@ -19,9 +22,7 @@
   <link rel="icon" type="image/png" href="icons/favicon-64.png">
   <link rel="manifest" href="manifest.webmanifest">
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="fonts/fonts.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -42,6 +43,7 @@
         <option value="C2">C2 · Maîtrise</option>
       </select>
     </label>
+    <button type="button" id="account-btn" class="account-btn" hidden aria-label="Mon compte"></button>
     <nav class="tabs" role="tablist" aria-label="Sections">
       <button class="tab" role="tab" data-tab="lesson" aria-selected="true">
         <span class="tab-icon" aria-hidden="true">📘</span><span>Leçon</span>
@@ -145,6 +147,12 @@
 
   <div id="toast" class="toast" role="status" hidden></div>
 
+  <script src="firebase-config.js"></script>
+  <script src="legal-config.js"></script>
+  <script src="fusion.js"></script>
   <script src="app.js"></script>
+  <script src="compte.js"></script>
+  <script src="magasin.js"></script>
+  <script src="abonnement.js"></script>
 </body>
 </html>

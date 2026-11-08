@@ -6,10 +6,25 @@
   "private": true,
   "scripts": {
     "start": "node server.js",
-    "test": "node --test test/server.test.js"
+    "test": "node --test test/server.test.js test/fusion.test.js test/abonnement.test.js",
+    "test:regles": "npx -y firebase-tools@13 emulators:exec --only firestore --project demo-prof-danglais \"node --test test/regles.test.mjs\""
   },
   "engines": {
     "node": ">=18"
   },
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/ios": "^8.5.3",
+    "@revenuecat/purchases-capacitor": "^13.7.4"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.3",
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "firebase": "^12.19.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.7"
+  }
 }

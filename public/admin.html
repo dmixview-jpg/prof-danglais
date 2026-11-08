@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+  <meta charset="utf-8">
+  <!-- Sécurité : seuls les fichiers de l'app, Firebase et reCAPTCHA peuvent être chargés (voir public/_headers) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self' blob: data:; connect-src 'self' https://*.googleapis.com https://*.cloudfunctions.net https://www.google.com/recaptcha/; frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://*.firebaseapp.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Tableau de bord · Prof d'anglais</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" type="image/png" href="icons/favicon-64.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="fonts/fonts.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin">
+  <header class="topbar">
+    <a class="brand" href="./">
+      <img src="icons/icon-192.png" alt="" width="32" height="32">
+      <span>Tableau de bord</span>
+    </a>
+    <span class="admin-who" id="who"></span>
+    <button type="button" class="btn ghost small" id="refresh" aria-label="Actualiser" hidden>↻<span class="refresh-text"> Actualiser</span></button>
+  </header>
+
+  <main class="admin-main">
+    <section id="state" class="card admin-state" role="status">Chargement…</section>
+
+    <section id="login" class="card admin-login" hidden>
+      <h1>Administration</h1>
+      <p class="muted">Connecte-toi avec ton compte administrateur de Prof d'anglais.</p>
+      <form id="login-form" class="auth-form" novalidate>
+        <label class="field"><span>Courriel</span><input id="login-email" type="email" autocomplete="email" autocapitalize="none" required></label>
+        <label class="field"><span>Mot de passe</span><input id="login-pass" type="password" autocomplete="current-password" required></label>
+        <p class="auth-msg" id="login-msg" role="alert" hidden></p>
+        <button type="submit" class="btn primary auth-submit">Se connecter</button>
+      </form>
+    </section>
+
+    <div id="dash" hidden>
+      <p class="admin-updated" id="updated"></p>
+      <nav class="admin-tabs" role="tablist" aria-label="Sections du tableau de bord">
+        <button type="button" role="tab" class="chip on" id="tab-apercu" aria-selected="true" aria-controls="vue-apercu">Vue d’ensemble</button>
+        <button type="button" role="tab" class="chip" id="tab-comptes" aria-selected="false" aria-controls="vue-comptes">Utilisateurs</button>
+        <button type="button" role="tab" class="chip" id="tab-abonnements" aria-selected="false" aria-controls="vue-abonnements">Abonnements</button>
+      </nav>
+
+      <div id="vue-apercu" class="admin-vue" role="tabpanel" aria-labelledby="tab-apercu">
+        <p class="admin-note" id="stats-note" hidden></p>
+        <div class="kpis" id="kpis-app"></div>
+        <section class="card admin-section">
+          <h2>Inscriptions, 30 derniers jours</h2>
+          <div class="barres" id="graph-inscriptions"></div>
+        </section>
+        <section class="card admin-section">
+          <h2>Élèves qui ont pratiqué, par jour</h2>
+          <div class="barres" id="graph-actifs"></div>
+        </section>
+        <section class="card admin-section">
+          <h2>Niveau des élèves</h2>
+          <div class="niveaux" id="graph-niveaux"></div>
+        </section>
+      </div>
+
+      <div id="vue-comptes" class="admin-vue" role="tabpanel" aria-labelledby="tab-comptes" hidden>
+        <section class="card admin-section">
+          <div class="admin-head">
+            <h2>Utilisateurs</h2>
+            <input type="search" id="recherche" class="admin-search" placeholder="Rechercher un courriel ou un nom" aria-label="Rechercher un utilisateur" autocomplete="off">
+          </div>
+          <div class="filters" id="filtres-comptes" role="group" aria-label="Filtrer les utilisateurs"></div>
+          <div class="comptes" id="comptes"></div>
+        </section>
+      </div>
+
+      <div id="vue-abonnements" class="admin-vue" role="tabpanel" aria-labelledby="tab-abonnements" hidden>
+        <div class="kpis" id="kpis"></div>
+        <section class="card admin-section">
+          <h2>À faire</h2>
+          <ul class="todo" id="todo"></ul>
+        </section>
+        <section class="card admin-section">
+          <div class="admin-head">
+            <h2>Abonnements</h2>
+            <div class="filters" id="filters" role="group" aria-label="Filtrer par statut"></div>
+          </div>
+          <div class="subs" id="subs"></div>
+        </section>
+        <p class="admin-foot">Abonnements de l’App Store et de Google Play, reçus par RevenueCat. Remboursements par Apple ou Google, suivi dans <a href="https://app.revenuecat.com" target="_blank" rel="noopener">RevenueCat ↗</a>.</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="firebase-config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

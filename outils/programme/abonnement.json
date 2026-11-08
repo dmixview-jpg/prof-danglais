@@ -1,0 +1,45 @@
+{
+  "_aide": "Abonnement Premium. actif=false : tout le contenu est gratuit, comme avant. Voir le README, section « Abonnement payant ». taxesAutomatiques=true : Stripe Tax calcule les taxes selon le pays du client (TVA, TPS/TVQ…).",
+  "actif": true,
+  "_aidePaiement": "paiementSite=false : on ne peut s'abonner que dans les apps (App Store, Google Play), qui encaissent, relancent et te versent les revenus. Le site n'accepte aucun paiement (Stripe désactivé, bloqué aussi par firestore.rules) ; un abonné s'y connecte avec le même compte. liensMagasins : adresses des fiches de l'app, affichées sur le site.",
+  "paiementSite": false,
+  "liensMagasins": {
+    "ios": "",
+    "android": ""
+  },
+  "gratuit": [
+    "pre"
+  ],
+  "essaiJours": 7,
+  "_aideSites": "Adresses de ton site (https, finissant par /). Le paiement Stripe ne peut revenir que vers ces adresses ; vide = paiement bloqué. Change-la si tu passes à Netlify ou Cloudflare Pages.",
+  "sites": [
+    "https://dmixview-jpg.github.io/prof-danglais/"
+  ],
+  "region": "us-central1",
+  "fonctionPortail": "ext-firestore-stripe-payments-createPortalLink",
+  "prix": [
+    {
+      "id": "price_A_REMPLACER_MENSUEL",
+      "nom": "Mensuel",
+      "montant": "6,99 $ CA",
+      "periode": "mois",
+      "parDefaut": true
+    },
+    {
+      "id": "price_A_REMPLACER_ANNUEL",
+      "nom": "Annuel",
+      "montant": "49,99 $ CA",
+      "periode": "an",
+      "badge": "≈ 40 % de rabais"
+    }
+  ],
+  "taxesAutomatiques": false,
+  "magasins": {
+    "_aide": "Apps App Store et Google Play : clés publiques des SDK RevenueCat (appl_…, goog_…). Vides : achats intégrés désactivés. droit = identifiant du droit d'accès dans RevenueCat. region et fonction : fonction Firebase qui relit l'abonnement après un achat (dossier functions/).",
+    "ios": "",
+    "android": "",
+    "droit": "premium",
+    "region": "northamerica-northeast1",
+    "fonction": "synchroniserMagasin"
+  }
+}

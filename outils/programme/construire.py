@@ -1,5 +1,11 @@
 # Construit public/curriculum.json à partir du programme rédigé (aucune IA).
 #   python3 outils/programme/construire.py
+# Si l'abonnement est actif (abonnement.json), seuls les niveaux gratuits gardent leur contenu
+# dans public/ ; le contenu payant va dans outils/premium/contenu.json, envoyé à Firebase
+# par publier_premium.mjs et lisible seulement par les abonnés.
+#   python3 outils/programme/construire.py --essai DOSSIER   (tests : abonnement forcé, sorties dans DOSSIER)
+#   python3 outils/programme/construire.py --tout DOSSIER    (tests : tout le contenu, sans abonnement)
+import hashlib
 import importlib
 import json
 import os
@@ -104,7 +110,78 @@ def load_scenarios():
     return scenarios
 
 
+def split_premium(data, config):
+    """Retire le contenu des niveaux payants de data (en place) et le renvoie à part."""
+    free = set(config["gratuit"])
+    code_to_id = {lv["code"]: lv["id"] for lv in data["levels"]}
+    premium = {}
+    for lv in data["levels"]:
+        if lv["id"] in free:
+            continue
+        bucket = premium.setdefault(lv["id"], {"lessons": {}, "scenarios": {}})
+        for u in lv["units"]:
+            for l in u["lessons"]:
+                if "content" in l:
+                    bucket["lessons"][l["id"]] = l.pop("content")
+                    l["locked"] = True
+    for sc in data["scenarios"]:
+        lid = code_to_id.get(sc["level"])
+        if lid and lid not in free:
+            premium.setdefault(lid, {"lessons": {}, "scenarios": {}})["scenarios"][sc["id"]] = sc.pop("turns")
+            sc["locked"] = True
+    data["abonnement"] = {k: config[k] for k in ("gratuit", "essaiJours", "region", "fonctionPortail", "taxesAutomatiques", "prix")}
+    data["abonnement"]["paiementSite"] = config.get("paiementSite", True)
+    data["abonnement"]["liensMagasins"] = config.get("liensMagasins", {})
+    data["abonnement"]["magasins"] = {k: v for k, v in config.get("magasins", {}).items() if not k.startswith("_")}
+    return premium
+
+
+RULES_DEBUT = "    // <généré : outils/programme/abonnement.json>"
+RULES_FIN = "    // </généré>"
+
+
+def bloc_regles(config):
+    """Constantes de firestore.rules tirées de abonnement.json : prix acceptés, adresses de retour
+    du paiement (le site), durée de l'essai. Une adresse absente bloque tout paiement."""
+    # Paiement sur le site désactivé (paiementSite=false) : aucune demande de paiement Stripe acceptée
+    prix = ", ".join(f"'{p['id']}'" for p in config.get("prix", [])) if config.get("paiementSite", True) else ""
+    sites = [s for s in config.get("sites", []) if s.startswith("https://") and s.endswith("/")]
+    if sites:
+        motifs = " || ".join(
+            "u.matches('" + re.escape(s).replace("\\", "\\\\").replace("'", "") + ".*')" for s in sites)
+    else:
+        motifs = "false"
+    return "\n".join([
+        RULES_DEBUT + " (construire.py réécrit ce bloc, ne le modifie pas à la main)",
+        f"    function prixAutorise(p) {{ return p in [{prix}]; }}",
+        f"    function adresseAutorisee(u) {{ return u is string && u.size() <= 300 && ({motifs}); }}",
+        f"    function essaiJours() {{ return {int(config.get('essaiJours', 0))}; }}",
+        RULES_FIN,
+    ])
+
+
+def ecrire_regles(config):
+    path = os.path.join(ROOT, "firestore.rules")
+    with open(path, encoding="utf-8") as f:
+        texte = f.read()
+    debut = texte.index(RULES_DEBUT)
+    fin = texte.index(RULES_FIN, debut) + len(RULES_FIN)
+    nouveau = texte[:debut] + bloc_regles(config) + texte[fin:]
+    if nouveau != texte:
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(nouveau)
+        print("firestore.rules mis à jour : republie-le dans la console Firebase (Firestore → Règles).")
+
+
 def main():
+    args = sys.argv[1:]
+    test_dir = None
+    with open(os.path.join(HERE, "abonnement.json"), encoding="utf-8") as f:
+        config = json.load(f)
+    for flag, actif in (("--essai", True), ("--tout", False)):
+        if flag in args:
+            test_dir = args[args.index(flag) + 1]
+            config["actif"] = actif
     scenarios = load_scenarios()
     levels = [build_level(PRE[0], PRE[1], PRE[2], PRE[3], PRE[5],
                           [(t, em, g, [(le, lt, c) for le, lt, c in ls]) for t, em, g, ls in PRE[6]])]
@@ -144,10 +221,28 @@ def main():
         print("\n".join(problems))
         sys.exit(1)
 
+    if config.get("actif") and config.get("paiementSite", True) and not any(x.startswith("https://") for x in config.get("sites", [])):
+        print("abonnement.json : indique l'adresse de ton site dans « sites » (ex. https://exemple.netlify.app/)")
+        sys.exit(1)
+    if not test_dir:
+        ecrire_regles(config)
+
     data = {"version": 2, "levels": levels, "scenarios": scenarios}
-    path = os.path.join(ROOT, "public", "curriculum.json")
+    premium = split_premium(data, config) if config.get("actif") else None
+    out_dir = test_dir or os.path.join(ROOT, "public")
+    path = os.path.join(out_dir, "curriculum.json")
+    os.makedirs(out_dir, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
+    if premium is not None:
+        blob = json.dumps(premium, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        build = hashlib.sha256(blob.encode()).hexdigest()[:12]
+        prem_dir = test_dir or os.path.join(ROOT, "outils", "premium")
+        os.makedirs(prem_dir, exist_ok=True)
+        with open(os.path.join(prem_dir, "contenu.json"), "w", encoding="utf-8") as f:
+            json.dump({"build": build, "levels": premium}, f, ensure_ascii=False, separators=(",", ":"))
+        print(f"Abonnement actif : {sum(len(p['lessons']) for p in premium.values())} leçons et "
+              f"{sum(len(p['scenarios']) for p in premium.values())} dialogues réservés aux abonnés (version {build})")
     total = sum(1 for i in ids if not i.endswith((".review", ".dialogue")))
     print(f"{path} : {len(levels)} niveaux, {sum(len(lv['units']) for lv in levels)} unités, "
           f"{total} leçons + bilans, {len(scenarios)} dialogues, {os.path.getsize(path) // 1024} Ko")

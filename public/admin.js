@@ -1,0 +1,385 @@
+'use strict';
+// Tableau de bord (admin.html), réservé aux comptes marqués admin=true :
+// vue d'ensemble (comptes, activité, niveaux), liste des utilisateurs et abonnements.
+// Les chiffres sur les comptes viennent de la fonction statsAdmin (functions/), qui vérifie
+// elle-même la marque admin : l'app n'a jamais accès à la liste des comptes.
+// Lit en lecture seule les abonnements que l'extension Stripe recopie dans Firestore
+// (customers/{uid}/subscriptions/{id}) ; firestore.rules en interdit l'accès aux autres comptes.
+(function () {
+  const SDK = 'vendor/firebase/'; // SDK Firebase 12.19.0 (compat), inclus dans l'app
+  const CONFIG = window.PD_FIREBASE;
+  const $ = (sel) => document.querySelector(sel);
+  let auth = null;
+  let db = null;
+  let lignes = []; // tous les abonnements : site (Stripe) et magasins (RevenueCat)
+  let customers = {};
+  let retractations = [];
+  // Abonnements App Store et Google Play : documents revenuecat/{uid} écrits par la fonction
+  // revenuecatWebhook (functions/), au format des abonnés RevenueCat.
+  const COLLECTION_MAGASINS = 'revenuecat';
+  let prixConf = {}; // prix de abonnement.json (centimes CAD), pour estimer le revenu des magasins
+  let filter = 'all';
+  let stats = null; // réponse de statsAdmin
+  let filtreComptes = 'tous';
+  let recherche = '';
+  const REGION_FONCTIONS = 'northamerica-northeast1';
+
+  function h(tag, attrs, ...children) {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v === false || v == null) continue;
+      if (k === 'class') el.className = v;
+      else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? '' : v);
+    }
+    for (const c of children.flat()) if (c != null && c !== false) el.append(c instanceof Node ? c : String(c));
+    return el;
+  }
+  const show = (id) => ['state', 'login', 'dash'].forEach((x) => { $(`#${x}`).hidden = x !== id; });
+  function state(text, ...extra) {
+    $('#state').replaceChildren(h('p', null, text), ...extra);
+    show('state');
+  }
+
+  // ---------------------------------------------------------------- Mise en forme
+  const DAY = 86400000;
+  function toDate(v) {
+    if (!v) return null;
+    if (typeof v.toDate === 'function') return v.toDate();
+    if (typeof v.seconds === 'number') return new Date(v.seconds * 1000);
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const date = (v) => { const d = toDate(v); return d ? d.toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'; };
+  const money = (cents, cur = 'cad') => (cents / 100).toLocaleString('fr-CA', { style: 'currency', currency: cur.toUpperCase() });
+  function plan(r) {
+    const pr = (r.items && r.items[0] && r.items[0].price) || {};
+    const interval = pr.recurring && pr.recurring.interval;
+    const cents = typeof pr.unit_amount === 'number' ? pr.unit_amount : null;
+    return {
+      nom: interval === 'year' ? 'Annuel' : interval === 'month' ? 'Mensuel' : 'Formule',
+      cents, interval, cur: pr.currency || 'cad',
+      mensuel: cents == null ? 0 : interval === 'year' ? cents / 12 : interval === 'month' ? cents : 0,
+      texte: cents == null ? '' : `${money(cents, pr.currency)} / ${interval === 'year' ? 'an' : 'mois'}`,
+    };
+  }
+  const STATUS = {
+    active: ['Actif', 'good'], trialing: ['En essai', 'info'], past_due: ['Paiement en retard', 'warn'],
+    unpaid: ['Impayé', 'bad'], canceled: ['Annulé', 'off'], incomplete: ['Paiement incomplet', 'warn'],
+    incomplete_expired: ['Expiré', 'off'], paused: ['En pause', 'off'],
+  };
+  // Abonnement d'un magasin (format RevenueCat) → même forme qu'un abonnement Stripe.
+  function depuisRevenueCat(uid, c) {
+    const subs = c.subscriptions || {};
+    const ids = Object.keys(subs);
+    if (!ids.length) return [];
+    const droit = (c.entitlements || {}).premium;
+    const id = droit && subs[droit.product_identifier] ? droit.product_identifier
+      : ids.sort((a, b) => (toDate(subs[b].expires_date) || 0) - (toDate(subs[a].expires_date) || 0))[0];
+    const x = subs[id];
+    const fin = toDate(x.expires_date);
+    const grace = toDate(x.grace_period_expires_date);
+    const now = Date.now();
+    const actif = !fin || fin > now || (grace && grace > now);
+    const status = !actif ? 'canceled' : x.billing_issues_detected_at ? 'past_due' : x.period_type === 'trial' ? 'trialing' : 'active';
+    const interval = /ann|year|yearly|P1Y/i.test(id) ? 'year' : 'month';
+    const enCad = x.price && typeof x.price.amount === 'number' && String(x.price.currency).toLowerCase() === 'cad';
+    const cents = enCad ? Math.round(x.price.amount * 100) : prixConf[interval] ?? null;
+    return [{
+      id, uid, source: x.store === 'play_store' ? 'Google Play' : x.store === 'app_store' ? 'App Store' : 'Magasin',
+      test: !!x.is_sandbox, status,
+      created: x.original_purchase_date || x.purchase_date, current_period_start: x.purchase_date,
+      current_period_end: x.expires_date, trial_end: status === 'trialing' ? x.expires_date : null,
+      cancel_at_period_end: actif && !!x.unsubscribe_detected_at, cancel_at: x.expires_date,
+      ended_at: actif ? null : x.expires_date,
+      items: [{ price: { unit_amount: cents, currency: 'cad', recurring: { interval } } }],
+      courriel: (((c.subscriber_attributes || {}).$email) || {}).value,
+    }];
+  }
+  // « 6,99 $ CA » → 699
+  const centimes = (texte) => { const m = String(texte || '').match(/(\d+)[,.](\d{2})/); return m ? Number(m[1]) * 100 + Number(m[2]) : null; };
+
+  const late = (r) => r.status === 'past_due' || r.status === 'unpaid';
+  const ending = (r) => (r.status === 'active' || r.status === 'trialing') && r.cancel_at_period_end;
+  const email = (r) => (customers[r.uid] && customers[r.uid].email) || r.courriel || `Compte ${r.uid.slice(0, 8)}…`;
+  function stripeLink(r) {
+    if (r.source && r.source !== 'Site') return null; // magasins : pas de fiche Stripe
+    const c = customers[r.uid] || {};
+    return c.stripeLink || (c.stripeId ? `https://dashboard.stripe.com/customers/${c.stripeId}` : null);
+  }
+  function nextLine(r) {
+    if (r.status === 'trialing') return `${r.cancel_at_period_end ? 'Essai sans suite, se termine' : 'Fin de l’essai'} le ${date(r.trial_end)}`;
+    if (r.status === 'canceled' || r.status === 'incomplete_expired') return `Terminé le ${date(r.ended_at || r.canceled_at)}`;
+    if (late(r)) return `En retard depuis le ${date(r.current_period_start)}`;
+    if (r.cancel_at_period_end) return `Se termine le ${date(r.cancel_at || r.current_period_end)}`;
+    return `Prochain paiement le ${date(r.current_period_end)}`;
+  }
+
+  // ---------------------------------------------------------------- Affichage
+  function render() {
+    const now = Date.now();
+    const tous = lignes;
+    const rows = tous.filter((r) => !r.test); // achats de test (sandbox) : listés, mais pas comptés
+    const active = rows.filter((r) => r.status === 'active');
+    const trials = rows.filter((r) => r.status === 'trialing');
+    const soon = trials.filter((r) => { const d = toDate(r.trial_end); return d && d - now < 3 * DAY && !r.cancel_at_period_end; });
+    const mrr = active.reduce((s, r) => s + plan(r).mensuel, 0);
+    const recent = rows.filter((r) => r.status === 'canceled' && now - (toDate(r.ended_at || r.canceled_at) || 0) < 30 * DAY);
+    const kpi = (label, value, sub, tone = '') => h('div', { class: `kpi card ${tone}` },
+      h('span', { class: 'kpi-label' }, label), h('span', { class: 'kpi-value' }, value), h('span', { class: 'kpi-sub' }, sub));
+    $('#kpis').replaceChildren(
+      kpi('Abonnés payants', String(active.length), ((n, m) => `dont ${n} annuel${n > 1 ? 's' : ''} · ${m} par les magasins`)(active.filter((r) => plan(r).interval === 'year').length, active.filter((r) => r.source !== 'Site').length)),
+      kpi('Essais en cours', String(trials.length), soon.length ? `${soon.length} ${soon.length > 1 ? 'se terminent' : 'se termine'} d’ici 3 jours` : 'aucun ne se termine d’ici 3 jours'),
+      kpi('Revenu mensuel récurrent', money(Math.round(mrr)), `≈ ${money(Math.round(mrr * 12))} par an, avant frais et commissions`),
+      kpi('Paiements en retard', String(rows.filter(late).length), 'le service de paiement réessaie automatiquement', rows.some(late) ? 'alert' : ''),
+      kpi('Annulations prévues', String(rows.filter(ending).length), 'accès gardé jusqu’à la fin de la période'),
+      kpi('Départs (30 jours)', String(recent.length), 'abonnements terminés'));
+
+    const todo = [
+      ...retractations.filter((x) => !x.traiteLe).map((x) => ({
+        r: x, icon: '↩️', fait: x,
+        text: `Rétractation demandée le ${date(x.demandeLe)} (${x.pays}). ${x.pays === 'Autre pays' ? 'Vérifie si la loi de son pays l’impose. ' : ''}Dans Stripe : annule l’abonnement et rembourse, puis confirme par courriel.`,
+      })),
+      ...rows.filter(late).map((r) => ({ r, icon: '⚠️', text: r.source === 'Site'
+        ? `Paiement en retard (${plan(r).texte || plan(r).nom}). Stripe réessaie ; écris à la personne si ça dure.`
+        : `Problème de paiement chez ${r.source} : le magasin réessaie et prévient la personne.` })),
+      ...soon.map((r) => ({ r, icon: '⏳', text: `Fin de l’essai le ${date(r.trial_end)} : premier paiement de ${plan(r).texte || plan(r).nom}.` })),
+      ...rows.filter(ending).map((r) => ({ r, icon: '👋', text: `A demandé l’annulation : accès jusqu’au ${date(r.cancel_at || r.current_period_end || r.trial_end)}.` })),
+    ];
+    $('#todo').replaceChildren(...(todo.length ? todo.map(({ r, icon, text, fait }) => h('li', null,
+      h('span', { class: 'todo-icon', 'aria-hidden': 'true' }, icon),
+      h('span', { class: 'todo-text' }, h('strong', null, email(r)), ' ', text),
+      stripeLink(r) ? h('a', { href: stripeLink(r), target: '_blank', rel: 'noopener', class: 'todo-link' }, 'Stripe ↗') : null,
+      fait ? h('button', { type: 'button', class: 'todo-link todo-done', onclick: (e) => traiter(fait, e.currentTarget) }, 'Marquer comme traitée') : null))
+      : [h('li', { class: 'todo-empty' }, 'Rien à signaler. 🎉')]));
+
+    const FILTERS = [['all', 'Tous', () => true], ['magasins', 'App Store / Google Play', (r) => r.source !== 'Site'], ['active', 'Actifs', (r) => r.status === 'active'], ['trialing', 'Essais', (r) => r.status === 'trialing'],
+      ['late', 'En retard', late], ['canceled', 'Terminés', (r) => r.status === 'canceled' || r.status === 'incomplete_expired']];
+    $('#filters').replaceChildren(...FILTERS.map(([id, label, test]) => h('button', {
+      type: 'button', class: `chip${filter === id ? ' on' : ''}`, 'aria-pressed': String(filter === id),
+      onclick: () => { filter = id; render(); },
+    }, `${label} · ${tous.filter(test).length}`)));
+    const list = tous.filter(FILTERS.find(([id]) => id === filter)[2])
+      .sort((a, b) => (toDate(b.created) || 0) - (toDate(a.created) || 0));
+    $('#subs').replaceChildren(...(list.length ? list.map((r) => {
+      const [label, tone] = STATUS[r.status] || [r.status, 'off'];
+      const p = plan(r);
+      return h('article', { class: 'sub' },
+        h('div', { class: 'sub-main' }, h('strong', { class: 'sub-email' }, email(r)), h('span', { class: 'muted' }, `Depuis le ${date(r.created)}`)),
+        h('div', { class: 'sub-plan' }, h('span', null, p.nom), h('span', { class: 'muted' }, p.texte)),
+        h('div', { class: 'sub-status' }, h('span', { class: `pill ${tone}` }, label), ending(r) ? h('span', { class: 'pill off' }, 'Annulation demandée') : null,
+          h('span', { class: 'pill src' }, r.source), r.test ? h('span', { class: 'pill warn' }, 'Test') : null),
+        h('div', { class: 'sub-next muted' }, nextLine(r)),
+        stripeLink(r) ? h('a', { class: 'btn ghost small sub-link', href: stripeLink(r), target: '_blank', rel: 'noopener' }, 'Stripe ↗') : h('span'));
+    }) : [h('p', { class: 'muted subs-empty' }, rows.length ? 'Aucun abonnement dans cette catégorie.' : 'Aucun abonnement pour l’instant. Ils apparaîtront ici dès le premier essai.')]));
+    $('#updated').textContent = `Mis à jour le ${new Date().toLocaleString('fr-CA', { dateStyle: 'long', timeStyle: 'short' })}`;
+    show('dash');
+  }
+
+
+  // ---------------------------------------------------------------- Vue d'ensemble et utilisateurs
+  const nombre = (n) => Number(n || 0).toLocaleString('fr-CA');
+  const pct = (x) => `${(x * 100).toLocaleString('fr-CA', { maximumFractionDigits: 1 })} %`;
+  const jourCourt = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' });
+  const NOMS_NIVEAUX = { pre: 'Pré-A1', a1: 'A1', a2: 'A2', b1: 'B1', b2: 'B2', c1: 'C1', c2: 'C2' };
+  function depuis(t) {
+    if (!t) return 'jamais';
+    const j = Math.floor((Date.now() - t) / DAY);
+    return j <= 0 ? 'aujourd’hui' : j === 1 ? 'hier' : `il y a ${j} jours`;
+  }
+  const kpiCarte = (label, value, sub, tone = '') => h('div', { class: `kpi card ${tone}` },
+    h('span', { class: 'kpi-label' }, label), h('span', { class: 'kpi-value' }, value), h('span', { class: 'kpi-sub' }, sub));
+
+  // Barres d'une seule série, une par jour : bulle au survol ou au clavier, tableau pour les lecteurs d'écran.
+  function barres(el, points, unite) {
+    const max = Math.max(1, ...points.map((p) => p.n));
+    const total = points.reduce((t, p) => t + p.n, 0);
+    el.replaceChildren(
+      h('span', { class: 'barres-max', 'aria-hidden': 'true' }, `max ${nombre(max)}`),
+      ...points.map((p) => {
+        const texte = `${jourCourt(p.jour)} : ${nombre(p.n)} ${unite}`;
+        const b = h('div', { class: `barre${p.n ? '' : ' vide'}`, tabindex: '0', role: 'img', 'aria-label': texte },
+          h('span', { class: 'bulle' }, texte));
+        const i = h('i');
+        i.style.height = `${p.n ? Math.max(4, (p.n / max) * 100) : 2}%`;
+        b.prepend(i);
+        return b;
+      }));
+    const sec = el.parentElement;
+    sec.querySelectorAll('.barres-axe, .graph-tableau').forEach((x) => x.remove());
+    sec.append(
+      h('div', { class: 'barres-axe', 'aria-hidden': 'true' }, h('span', null, jourCourt(points[0].jour)), h('span', null, `Total : ${nombre(total)}`), h('span', null, jourCourt(points[points.length - 1].jour))),
+      h('details', { class: 'graph-tableau' }, h('summary', null, 'Voir en tableau'),
+        h('table', null, h('thead', null, h('tr', null, h('th', null, 'Jour'), h('th', null, unite))),
+          h('tbody', null, ...points.slice().reverse().map((p) => h('tr', null, h('td', null, jourCourt(p.jour)), h('td', null, nombre(p.n))))))));
+  }
+
+  function renderApercu() {
+    const note = $('#stats-note');
+    if (!stats) {
+      note.textContent = 'Les statistiques des comptes ne sont pas disponibles : la fonction statsAdmin n’est pas encore déployée, ou la connexion a échoué. Actualise dans un instant.';
+      note.hidden = false;
+      $('#kpis-app').replaceChildren();
+      return;
+    }
+    note.hidden = true;
+    const u = stats.utilisateurs; const p = stats.premium; const a = stats.apprentissage;
+    $('#kpis-app').replaceChildren(
+      kpiCarte('Comptes', nombre(u.total), `${nombre(u.verifies)} avec courriel confirmé`),
+      kpiCarte('Nouveaux', nombre(u.nouveaux7), `cette semaine · ${nombre(u.nouveaux30)} en 30 jours`),
+      kpiCarte('Actifs', nombre(u.actifs7), `cette semaine · ${nombre(u.actifs1)} aujourd’hui · ${nombre(u.actifs30)} en 30 jours`),
+      kpiCarte('Abonnés Premium', nombre(p.total), `${pct(p.conversion)} des comptes · ${nombre(p.magasin)} par les magasins`),
+      kpiCarte('Leçons terminées', nombre(a.lecons), `≈ ${a.moyenneParActif.toLocaleString('fr-CA', { maximumFractionDigits: 1 })} par élève actif (30 jours)`),
+      kpiCarte('Taux d’activité', u.total ? pct(u.actifs30 / u.total) : '—', 'des comptes ont pratiqué en 30 jours'));
+    barres($('#graph-inscriptions'), stats.inscriptionsParJour, 'inscriptions');
+    barres($('#graph-actifs'), stats.actifsParJour, 'élèves');
+    const niv = Object.entries(a.niveaux);
+    const maxN = Math.max(1, ...niv.map(([, n]) => n));
+    $('#graph-niveaux').replaceChildren(...niv.map(([id, n]) => {
+      const i = h('i');
+      i.style.width = `${(n / maxN) * 100}%`;
+      return h('div', { class: 'niveau', role: 'img', 'aria-label': `${NOMS_NIVEAUX[id]} : ${n} élève${n > 1 ? 's' : ''}` },
+        h('span', { class: 'niveau-nom' }, NOMS_NIVEAUX[id]), h('span', { class: 'niveau-piste' }, i), h('span', { class: 'niveau-n' }, nombre(n)));
+    }));
+  }
+
+  const FILTRES_COMPTES = [
+    ['tous', 'Tous', () => true],
+    ['premium', 'Premium', (c) => !!c.premium],
+    ['actifs', 'Actifs (7 jours)', (c) => c.actif && Date.now() - c.actif < 7 * DAY],
+    ['inactifs', 'Inactifs (30 jours +)', (c) => !c.actif || Date.now() - c.actif >= 30 * DAY],
+    ['nonverifies', 'Courriel non confirmé', (c) => !c.verifie],
+  ];
+  function renderComptes() {
+    const liste = (stats && stats.comptes) || [];
+    $('#filtres-comptes').replaceChildren(...FILTRES_COMPTES.map(([id, label, test]) => h('button', {
+      type: 'button', class: `chip${filtreComptes === id ? ' on' : ''}`, 'aria-pressed': String(filtreComptes === id),
+      onclick: () => { filtreComptes = id; renderComptes(); },
+    }, `${label} · ${liste.filter(test).length}`)));
+    const q = recherche.trim().toLowerCase();
+    const vus = liste.filter(FILTRES_COMPTES.find(([id]) => id === filtreComptes)[2])
+      .filter((c) => !q || c.courriel.toLowerCase().includes(q) || (c.nom || '').toLowerCase().includes(q));
+    const AFFICHES = 200;
+    $('#comptes').replaceChildren(...(vus.length ? vus.slice(0, AFFICHES).map((c) => h('article', { class: 'compte' },
+      h('div', { class: 'compte-qui' }, h('strong', null, c.courriel || '(sans courriel)'), c.nom ? h('span', { class: 'muted' }, c.nom) : null),
+      h('div', { class: 'compte-infos' },
+        h('span', null, `Inscrit le ${date(c.inscrit)}`), h('span', null, `Actif ${depuis(c.actif)}`),
+        h('span', null, `${nombre(c.lecons)} leçon${c.lecons > 1 ? 's' : ''}`), h('span', null, `${nombre(c.joursPratique)} jour${c.joursPratique > 1 ? 's' : ''} de pratique`),
+        c.niveau && NOMS_NIVEAUX[c.niveau] ? h('span', null, `Niveau ${NOMS_NIVEAUX[c.niveau]}`) : null),
+      h('div', { class: 'compte-pills' },
+        c.premium ? h('span', { class: 'pill good' }, c.premium === 'magasin' ? 'Premium · magasin' : 'Premium · site') : h('span', { class: 'pill off' }, 'Gratuit'),
+        c.verifie ? null : h('span', { class: 'pill warn' }, 'Non confirmé'),
+        c.desactive ? h('span', { class: 'pill bad' }, 'Désactivé') : null,
+        c.admin ? h('span', { class: 'pill info' }, 'Admin') : null)))
+      : [h('p', { class: 'muted subs-empty' }, stats ? 'Aucun utilisateur ne correspond.' : 'Liste indisponible pour le moment.')]),
+      vus.length > AFFICHES ? h('p', { class: 'muted subs-empty' }, `${nombre(vus.length - AFFICHES)} autres : précise la recherche.`) : '',
+      stats && stats.tronque ? h('p', { class: 'muted subs-empty' }, 'Seuls les 500 comptes les plus récents sont listés ; les chiffres de la vue d’ensemble comptent tout le monde.') : '');
+  }
+
+  function ouvrirOnglet(id) {
+    ['apercu', 'comptes', 'abonnements'].forEach((x) => {
+      const on = x === id;
+      $(`#tab-${x}`).classList.toggle('on', on);
+      $(`#tab-${x}`).setAttribute('aria-selected', String(on));
+      $(`#vue-${x}`).hidden = !on;
+    });
+  }
+
+  // Rétractation réglée dans Stripe : on la retire de « À faire ».
+  async function traiter(x, btn) {
+    btn.disabled = true;
+    try {
+      await db.collection('customers').doc(x.uid).collection('retractations').doc(x.id)
+        .set({ traiteLe: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      x.traiteLe = new Date();
+      render();
+    } catch {
+      btn.disabled = false;
+      alert('Impossible d’enregistrer. Vérifie ta connexion, puis réessaie.');
+    }
+  }
+
+  async function load() {
+    $('#refresh').disabled = true;
+    try {
+      const demandeStats = firebase.app().functions(REGION_FONCTIONS).httpsCallable('statsAdmin')()
+        .then((r) => r.data).catch(() => null);
+      const [snap, retr, rc, cur] = await Promise.all([
+        db.collectionGroup('subscriptions').get(), db.collectionGroup('retractations').get(),
+        db.collection(COLLECTION_MAGASINS).get().catch(() => ({ docs: [] })), // fonctions RevenueCat pas encore déployées
+        fetch('curriculum.json').then((r) => r.json()).catch(() => ({})),
+      ]);
+      for (const p of ((cur.abonnement || {}).prix || [])) prixConf[p.periode === 'an' ? 'year' : 'month'] = centimes(p.montant);
+      lignes = [
+        ...snap.docs.map((d) => ({ id: d.id, uid: d.ref.parent.parent.id, source: 'Site', ...d.data() })),
+        ...rc.docs.flatMap((d) => depuisRevenueCat(d.id, d.data())),
+      ];
+      retractations = retr.docs.map((d) => ({ id: d.id, uid: d.ref.parent.parent.id, ...d.data() }));
+      const uids = [...new Set([...lignes, ...retractations].map((r) => r.uid))];
+      customers = Object.fromEntries(await Promise.all(uids.map(async (uid) => {
+        const c = await db.collection('customers').doc(uid).get();
+        return [uid, c.exists ? c.data() : {}];
+      })));
+      stats = await demandeStats;
+      render();
+      renderApercu();
+      renderComptes();
+    } catch (err) {
+      state(err && err.code === 'permission-denied'
+        ? 'Accès refusé par les règles Firebase. Vérifie que firestore.rules est publié et que ton compte est administrateur.'
+        : 'Impossible de charger le tableau de bord. Vérifie ta connexion Internet, puis actualise.');
+    } finally {
+      $('#refresh').disabled = false;
+    }
+  }
+
+  // ---------------------------------------------------------------- Connexion
+  if (!CONFIG || !CONFIG.apiKey) {
+    state('Les comptes ne sont pas encore configurés : remplis public/firebase-config.js (voir le README).');
+    return;
+  }
+  const loadScript = (src) => new Promise((ok, fail) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = ok; s.onerror = fail;
+    document.head.append(s);
+  });
+  // App Check : même réglage que l'app (firebase-config.js, clé « appCheck »)
+  ['firebase-app-compat.js', ...(CONFIG.appCheck ? ['firebase-app-check-compat.js'] : []), 'firebase-auth-compat.js', 'firebase-firestore-compat.js', 'firebase-functions-compat.js']
+    .reduce((p, f) => p.then(() => loadScript(SDK + f)), Promise.resolve())
+    .then(() => {
+      firebase.initializeApp(CONFIG);
+      if (CONFIG.appCheck) firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(CONFIG.appCheck), true);
+      auth = firebase.auth();
+      auth.languageCode = 'fr';
+      db = firebase.firestore();
+      $('#refresh').addEventListener('click', load);
+      ['apercu', 'comptes', 'abonnements'].forEach((x) => $(`#tab-${x}`).addEventListener('click', () => ouvrirOnglet(x)));
+      $('#recherche').addEventListener('input', (e) => { recherche = e.target.value; renderComptes(); });
+      $('#login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const msg = $('#login-msg');
+        msg.hidden = true;
+        try {
+          await auth.signInWithEmailAndPassword($('#login-email').value.trim(), $('#login-pass').value);
+        } catch {
+          msg.textContent = 'Courriel ou mot de passe incorrect.';
+          msg.hidden = false;
+        }
+      });
+      auth.onAuthStateChanged(async (u) => {
+        $('#refresh').hidden = !u;
+        $('#who').textContent = u ? u.email : '';
+        if (!u) return show('login');
+        state('Vérification de ton accès…');
+        const { claims } = await u.getIdTokenResult(true).catch(() => ({ claims: {} }));
+        if (!claims.admin) {
+          $('#refresh').hidden = true;
+          return state(`Accès réservé à l’administration : le compte ${u.email} n’est pas administrateur.`,
+            h('button', { type: 'button', class: 'btn ghost', onclick: () => auth.signOut() }, 'Changer de compte'));
+        }
+        state('Chargement du tableau de bord…');
+        load();
+      });
+    })
+    .catch(() => state('Impossible de joindre Firebase. Vérifie ta connexion Internet, puis actualise la page.'));
+})();

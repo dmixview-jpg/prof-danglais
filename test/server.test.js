@@ -8,7 +8,11 @@ const path = require('path');
 const zlib = require('zlib');
 const { createServer } = require('../server.js');
 
-const COURSE = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'public', 'curriculum.json'), 'utf8'));
+// Programme complet (gratuit + payant), construit à part : public/curriculum.json n'a plus
+// le contenu payant quand l'abonnement est actif.
+const FULL_DIR = fs.mkdtempSync(path.join(require('os').tmpdir(), 'pd-tout-'));
+require('child_process').execFileSync('python3', [path.join(__dirname, '..', 'outils', 'programme', 'construire.py'), '--tout', FULL_DIR]);
+const COURSE = JSON.parse(fs.readFileSync(path.join(FULL_DIR, 'curriculum.json'), 'utf8'));
 
 let server;
 let base;
