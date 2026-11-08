@@ -14,7 +14,7 @@
   const base = () => location.origin + location.pathname;
   const compte = () => window.PDCompte || null;
   let premium = false;
-  let source = null; // 'web' (Stripe) ou 'magasin' (App Store, Google Play)
+  let source = null; // 'web' (Stripe), 'magasin' (App Store, Google Play) ou 'admin' (accès complet sans abonnement)
   // Historique Stripe de la personne : un ancien abonné n'a pas droit à un nouvel essai gratuit,
   // et un paiement en retard se règle en mettant la carte à jour (portail Stripe).
   let historique = { deja: false, retard: false, recent: null, retractation: null };
@@ -312,7 +312,9 @@
   // Ligne affichée dans le menu « Mon compte »
   function ligneCompte(tell) {
     if (!conf()) return null;
-    const ligne = premium
+    const ligne = premium && source === 'admin'
+      ? h('div', { class: 'account-premium' }, h('p', null, '🔑 Accès complet : compte administrateur.'))
+      : premium
       ? h('div', { class: 'account-premium' },
         h('p', null, '⭐ Premium actif. Merci de ton soutien!'),
         h('button', { type: 'button', class: 'btn ghost', onclick: () => gerer(tell) }, 'Gérer mon abonnement'),
@@ -433,8 +435,10 @@
     const droit = (conf().magasins || {}).droit || 'premium';
     const web = claims.stripeRole === 'premium';
     const app = Array.isArray(claims.revenueCatEntitlements) && claims.revenueCatEntitlements.includes(droit);
-    source = web ? 'web' : app ? 'magasin' : null;
-    return web || app;
+    // Administrateur (marque admin=true) : tout le parcours, sans abonnement. Les règles Firestore font la même vérification.
+    const admin = claims.admin === true;
+    source = web ? 'web' : app ? 'magasin' : admin ? 'admin' : null;
+    return web || app || admin;
   }
   async function lireHistorique(user) {
     const db = compte().db();

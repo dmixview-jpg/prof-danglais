@@ -117,6 +117,10 @@ test('contenu Premium : abonnés seulement', async () => {
   await prepare((db) => setDoc(doc(db, 'contenu', 'b1'), { lessons: {} }));
   await assertFails(getDoc(doc(confirme('ana'), 'contenu', 'b1')));
   await assertSucceeds(getDoc(doc(confirme('ana', { stripeRole: 'premium' }), 'contenu', 'b1')));
+  await assertSucceeds(getDoc(doc(confirme('ana', { revenueCatEntitlements: ['premium'] }), 'contenu', 'b1')));
+  await assertSucceeds(getDoc(doc(confirme('ana', { admin: true }), 'contenu', 'b1')));
+  await assertFails(getDoc(doc(confirme('ana', { admin: 'oui' }), 'contenu', 'b1')));
+  await assertFails(setDoc(doc(confirme('ana', { admin: true }), 'contenu', 'b1'), { lessons: {} }));
   await assertFails(setDoc(doc(confirme('ana', { stripeRole: 'premium' }), 'contenu', 'b1'), { lessons: {} }));
 });
 
