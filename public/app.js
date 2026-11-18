@@ -12,6 +12,7 @@ const KEYS = {
   dialogues: 'pd.dialogues', // meilleures étoiles par dialogue guidé
   voice: 'pd.voice',
   rate: 'pd.rate',
+  fx: 'pd.fx', // sons de réussite et vibrations
 };
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 const MASTERED = 3;
@@ -74,6 +75,7 @@ function shuffled(list) {
 }
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+document.addEventListener('visibilitychange', () => document.documentElement.classList.toggle('app-hidden', document.hidden));
 
 // Glisser à gauche / à droite (iPhone, iPad).
 function onSwipe(el, onLeft, onRight) {
@@ -100,9 +102,11 @@ function markActive() {
   const today = dayKey();
   if (!days.includes(today)) {
     store.set(KEYS.days, [...days, today].slice(-400));
+    streakToShow = streak(); // fêtée à la fin de la leçon
     renderStats();
   }
 }
+let streakToShow = 0;
 
 function streak() {
   const days = new Set(store.get(KEYS.days, []));
@@ -123,7 +127,7 @@ function renderStats() {
   const mastered = getVocab().filter((w) => w.known >= MASTERED).length;
   const lessons = Math.max(store.get(KEYS.lessons, 0), Object.keys(store.get(KEYS.progress, {})).length);
   const stat = (icon, value, label) => h('div', { class: 'stat' },
-    h('span', { class: 'stat-icon', 'aria-hidden': 'true' }, icon),
+    h('span', { class: `stat-icon${icon === '🔥' && value > 0 ? ' flame' : ''}`, 'aria-hidden': 'true' }, icon),
     h('span', { class: 'stat-value' }, String(value)),
     h('span', { class: 'stat-label' }, label));
   box.replaceChildren(
@@ -194,11 +198,11 @@ function setMood(el, mood, ms) {
 }
 
 // Pluie de confettis pour fêter une réussite.
-function confetti() {
-  if (reducedMotion()) return;
+function confetti(count = 70) {
+  if (reducedMotion() || !count) return;
   const colors = ['#2b59c3', '#ffe166', '#ff8fa3', '#5fd08f', '#7d9cf0', '#ffb347'];
   const box = h('div', { class: 'confetti', 'aria-hidden': 'true' });
-  for (let i = 0; i < 70; i++) {
+  for (let i = 0; i < count; i++) {
     const piece = h('i');
     piece.style.left = `${Math.random() * 100}%`;
     piece.style.background = colors[i % colors.length];
@@ -210,6 +214,50 @@ function confetti() {
   }
   document.body.append(box);
   setTimeout(() => box.remove(), 4000);
+}
+
+// ---------- Effets sonores et vibrations (réussite, erreur, étoiles, série) ----------
+// Sons synthétisés (aucun fichier audio). Réglage « Sons de réussite » dans la carte Voix.
+const fxPrefs = () => ({ sound: false, haptic: true, ...store.get(KEYS.fx, {}) });
+let actx = null;
+function tone(freq, ms = 120, type = 'sine', vol = 0.06, delay = 0) {
+  if (!fxPrefs().sound) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    const t = actx.currentTime + delay;
+    const o = actx.createOscillator();
+    const g = actx.createGain();
+    o.type = type;
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + ms / 1000);
+    o.connect(g).connect(actx.destination);
+    o.start(t);
+    o.stop(t + ms / 1000 + 0.03);
+  } catch { /* audio indisponible : on continue sans */ }
+}
+const buzz = (pattern) => { if (fxPrefs().haptic) navigator.vibrate?.(pattern); };
+const FX = {
+  good() { tone(659, 90); tone(988, 150, 'sine', 0.06, 0.09); buzz(15); },
+  bad() { tone(196, 200, 'triangle', 0.07); buzz([25, 40, 25]); },
+  star(k) { tone([523, 659, 784][k] || 784, 160, 'sine', 0.07); buzz(12); },
+  streak() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 130, 'sine', 0.06, i * 0.08)); buzz([20, 30, 20]); },
+};
+
+// Célébration de fin (leçon ou dialogue) : étoiles qui sonnent, confettis selon le score, série de jours.
+function celebrate(stars) {
+  for (let k = 0; k < stars; k++) setTimeout(() => FX.star(k), 200 + k * 200);
+  let pieces = stars === 3 ? 70 : stars === 2 ? 25 : 0;
+  if ([3, 7, 30, 100].includes(streakToShow)) pieces = Math.max(pieces, 40);
+  confetti(pieces);
+  if (streakToShow) setTimeout(FX.streak, 900);
+}
+function streakChip() {
+  const n = streakToShow;
+  streakToShow = 0;
+  return n > 1 ? h('div', { class: 'streak-chip', role: 'status' }, `🔥 ${n} jours de suite!`) : null;
 }
 
 // ---------- Prononciation : voix américaine (en-US) ----------
@@ -301,6 +349,17 @@ function renderVoiceCard() {
         type: 'button', class: `rate-btn${Math.abs(rate - r) < 0.01 ? ' on' : ''}`, 'aria-pressed': String(Math.abs(rate - r) < 0.01),
         onclick: () => { store.set(KEYS.rate, r); renderVoiceCard(); speak('This is my speaking speed.'); },
       }, label))),
+    h('label', { class: 'fx-toggle' },
+      (() => {
+        const box = h('input', { type: 'checkbox' });
+        box.checked = fxPrefs().sound;
+        box.addEventListener('change', () => {
+          store.set(KEYS.fx, { ...fxPrefs(), sound: box.checked });
+          if (box.checked) FX.good();
+        });
+        return box;
+      })(),
+      h('span', null, '🎵 Sons de réussite')),
     h('details', { class: 'voice-help' },
       h('summary', null, '📱 Une voix plus naturelle sur iPhone ou iPad'),
       h('p', null, 'Réglages → Accessibilité → Contenu énoncé → Voix → Anglais → choisis une voix « États-Unis » marquée « Améliorée » ou « Premium » (ex. : Ava, Evan, Zoe) et télécharge-la. Reviens ensuite ici et choisis-la dans la liste.')));
@@ -519,7 +578,7 @@ function renderPath() {
       const state = prog ? 'done' : isNext ? 'next' : 'todo';
       const locked = isLocked(lesson) || (lesson.dialogue && scenarioLocked(COURSE.scenarios.find((x) => x.id === lesson.dialogue)));
       const off = OFFSETS[i % OFFSETS.length];
-      return h('div', { class: `node-row ${state}${off > 0 ? ' buddy-left' : ''}`, style: `--off:${off}px` },
+      return h('div', { class: `node-row ${state}${off > 0 ? ' buddy-left' : ''}${lesson.id === lastDone ? ' stamp' : ''}${isNext && lastDone ? ' arrive' : ''}`, style: `--off:${off}px` },
         h('button', {
           type: 'button', class: `node ${state}${lesson.review ? ' review' : ''}${lesson.dialogue ? ' dialogue' : ''}${locked ? ' locked' : ''}`,
           'aria-label': `${lesson.title}${prog ? ', terminée' : ''}${locked ? ', réservée aux abonnés' : ''}`,
@@ -535,6 +594,12 @@ function renderPath() {
   });
 
   $('#path').replaceChildren(header, ...units);
+  if (lastDone) {
+    lastDone = null;
+    if (!$('#home').hidden) {
+      requestAnimationFrame(() => $('.node-row.next')?.scrollIntoView({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' }));
+    }
+  }
 }
 
 // ---------- Vue « leçon » ----------
@@ -551,10 +616,10 @@ function showHome() {
   if ('speechSynthesis' in window) speechSynthesis.cancel();
   $('#lesson-view').hidden = true;
   $('#home').hidden = false;
+  window.scrollTo({ top: 0 });
   renderPath();
   renderContinue();
   renderStats();
-  window.scrollTo({ top: 0 });
 }
 $('#back-home').addEventListener('click', showHome);
 
@@ -602,7 +667,9 @@ function searchLessons(query) {
 $('#search').addEventListener('input', (ev) => searchLessons(ev.target.value));
 
 // Leçon du parcours terminée : étoiles selon le score.
+let lastDone = null; // dernière leçon terminée : son nœud est « tamponné » au retour au parcours
 function completeCourseLesson(id, correct, total) {
+  lastDone = id;
   const stars = correct === total ? 3 : correct / total >= 0.6 ? 2 : 1;
   const progress = getProgress();
   const first = !progress[id];
@@ -753,6 +820,7 @@ function quizCard(exercises, onComplete) {
           buttons.forEach((b) => (b.disabled = true));
           buttons[ex.answer].classList.add('correct');
           if (j !== ex.answer) buttons[j].classList.add('wrong');
+          FX[j === ex.answer ? 'good' : 'bad']();
           answered(j === ex.answer, explain, next, ex.explain);
         },
       }, h('span', { class: 'opt-letter', 'aria-hidden': 'true' }, 'ABC'[pos]), h('span', null, ex.options[j]));
@@ -789,6 +857,7 @@ function quizCard(exercises, onComplete) {
       done = true;
       const good = picked.map((t) => t.w.toLowerCase()).join(' ') === words.map((w) => w.toLowerCase()).join(' ');
       line.classList.add(good ? 'good' : 'bad');
+      FX[good ? 'good' : 'bad']();
       draw();
       speak(ex.sentence);
       answered(good, explain, next, good ? ex.explain : `Réponse : « ${ex.sentence} ». ${ex.explain || ''}`);
@@ -833,6 +902,10 @@ function quizCard(exercises, onComplete) {
       body,
       explain,
       next);
+    if (idx > 0 && !reducedMotion() && card.animate) {
+      card.animate([{ opacity: 0, transform: 'translateX(24px)' }, { opacity: 1, transform: 'none' }],
+        { duration: 220, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    }
   }
 
   function renderScore() {
@@ -848,12 +921,13 @@ function quizCard(exercises, onComplete) {
           [0, 1, 2].map((k) => h('span', { class: k < stars ? 'star on' : 'star', style: `animation-delay:${0.2 + k * 0.2}s` }, '★'))),
         h('div', { class: 'score-text' }, `${correct} / ${n} · ${msg}`),
         result ? h('div', { class: 'done-chip' }, '✅ Leçon terminée') : null,
+        streakChip(),
         h('div', { class: 'score-actions' },
           h('button', { type: 'button', class: 'btn ghost', onclick: () => { idx = 0; correct = 0; renderQuestion(); } }, '🔁 Recommencer'),
           result && result.nextId
             ? h('button', { type: 'button', class: 'btn primary', onclick: () => openCourseLesson(result.nextId) }, 'Leçon suivante →')
             : h('button', { type: 'button', class: 'btn primary', onclick: showHome }, '🧭 Mon parcours'))));
-    if (correct === n) confetti();
+    celebrate(stars);
   }
 
   renderQuestion();
@@ -946,7 +1020,8 @@ function renderScenarios() {
       h('span', { class: 'scenario-meta' },
         stars ? h('span', { class: 'scenario-stars', 'aria-label': `${stars} étoiles sur 3` }, '★'.repeat(stars) + '☆'.repeat(3 - stars))
           : scenarioLocked(sc) ? h('span', { class: 'scenario-new' }, '🔒 Premium')
-            : h('span', { class: 'scenario-new' }, 'À faire')));
+            : (COURSE.abonnement?.dialoguesGratuits || []).includes(sc.id) ? h('span', { class: 'scenario-new' }, '🎁 Offert')
+              : h('span', { class: 'scenario-new' }, 'À faire')));
   }));
 }
 
@@ -1037,6 +1112,7 @@ function showChoices(turn) {
 
 function answer(turn, k) {
   const good = k === turn.answer;
+  FX[good ? 'good' : 'bad']();
   if (good) dialogue.correct++;
   markActive();
   $('#dlg-choices').replaceChildren();
@@ -1071,12 +1147,13 @@ function endDialogue() {
     h('div', { class: 'stars', 'aria-label': `${stars} étoiles sur 3` },
       [0, 1, 2].map((n) => h('span', { class: n < stars ? 'star on' : 'star', style: `animation-delay:${0.2 + n * 0.2}s` }, '★'))),
     h('div', { class: 'score-text' }, `${correct} / ${asked} bonnes réponses`),
+    streakChip(),
     h('div', { class: 'score-actions' },
       h('button', { type: 'button', class: 'btn ghost', onclick: () => startDialogue(scenario.id) }, '🔁 Recommencer'),
       result && result.nextId
         ? h('button', { type: 'button', class: 'btn primary', onclick: () => { showDialogueHome(); openCourseLesson(result.nextId); } }, 'Suite du parcours →')
         : h('button', { type: 'button', class: 'btn primary', onclick: showDialogueHome }, '🎭 Autre situation'))));
-  if (correct === asked) confetti();
+  celebrate(stars);
   scrollChat();
 }
 
