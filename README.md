@@ -17,7 +17,7 @@ Ton coach d'anglais personnel, pensé pour les francophones et utilisé sur **iP
   - une astuce sur les pièges des francophones ;
   - des exercices de 3 types : choix de réponse, écoute (« Qu'as-tu entendu? ») et remise des mots en ordre.
 - **Recherche** : trouve une leçon par mot-clé (ex. : « present perfect », « e-mail »).
-- **Conversation : 35 dialogues guidés**, de A1 à C2, un par unité du parcours, plus un dialogue bonus. Exemples : café, famille, médecin, entrevue d'embauche, mystère au bureau, discours de retraite, soirée de hockey, débat public.
+- **Conversation : 35 dialogues guidés**, de A1 à C2, un par unité du parcours, plus un dialogue bonus. Exemples : café, famille, médecin, entretien d'embauche, mystère au bureau, discours de retraite, soirée basketball, débat public.
   - Des onglets de niveau (A1 à C2) affichent les situations de ton niveau, avec ta progression.
   - Le petit chat te parle avec la voix ; tu choisis ta réponse parmi 3.
   - Une erreur? Une correction en français apparaît dans l'encadré jaune « Correction ».
@@ -41,14 +41,14 @@ Le programme suit le **Cadre européen commun de référence (CECR)**, comme les
 | 🌱 **Pré-A1 · Premiers pas** | Prononcer l'alphabet et les sons anglais, compter, saluer | L'alphabet (interactif), épeler, TH / H / R / W, nombres, couleurs, jours et mois |
 | 🐣 **A1 · Débutant** | Te présenter, parler de ton quotidien | to be, présent simple, famille et maison, nourriture, présent continu, passé simple |
 | 🌿 **A2 · Élémentaire** | Raconter, comparer, faire des projets | passé continu, comparatifs, futur, present perfect, conseils, vie pratique |
-| 🌳 **B1 · Intermédiaire** | Te débrouiller partout, travailler en anglais | conditionnels, voix passive, discours indirect, relatives, entrevue d'embauche |
+| 🌳 **B1 · Intermédiaire** | Te débrouiller partout, travailler en anglais | conditionnels, voix passive, discours indirect, relatives, entretien d'embauche |
 | 🌲 **B2 · Intermédiaire avancé** | Argumenter et nuancer avec aisance | 3ᵉ conditionnel, déduction, phrases complexes, collocations, faux amis |
 | 🏔️ **C1 · Avancé** | T'exprimer avec précision dans tous les contextes | inversion, subjonctif, écriture professionnelle, idiomes, accents |
 | 🏆 **C2 · Maîtrise** | Comprendre et t'exprimer comme un natif instruit | connotations, figures de style, culture anglophone, écriture experte, art oratoire |
 
 Le niveau choisi dans l'en-tête et celui du parcours vont ensemble : changer l'un change l'autre. Il sélectionne aussi les dialogues de ton niveau dans l'onglet Conversation.
 
-Chaque unité de A1 à C2 se termine par un **dialogue guidé** (nœud 🎭 dans le chemin) qui met en pratique la grammaire et le vocabulaire de l'unité : passé simple pour « Ta fin de semaine », conditionnels pour « Et si on déménageait? », déduction pour « Le mystère du bureau », inversion pour « Un discours pour une collègue »… Réussir le dialogue fait avancer le parcours, que tu l'ouvres depuis le chemin ou depuis l'onglet Conversation.
+Chaque unité de A1 à C2 se termine par un **dialogue guidé** (nœud 🎭 dans le chemin) qui met en pratique la grammaire et le vocabulaire de l'unité : passé simple pour « Ton week-end », conditionnels pour « Et si on déménageait? », déduction pour « Le mystère du bureau », inversion pour « Un discours pour une collègue »… Réussir le dialogue fait avancer le parcours, que tu l'ouvres depuis le chemin ou depuis l'onglet Conversation.
 
 ### Modifier ou ajouter du contenu
 
