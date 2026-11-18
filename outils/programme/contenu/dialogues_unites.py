@@ -226,7 +226,7 @@ S("dinner", "🍷", "Souper entre amis", "C1", "Au souper, tes amis anglophones 
   coach("Totally. Anyway, did you hear Sam quit out of the blue?", "Totalement. En passant, as-tu su que Sam a démissionné sans prévenir?"),
   rep(["No way! I thought he was gonna stick around.", "No way! I thought he was going stick around.", "No way! I thought he was gonna stick around him."], 0, "gonna = going to (familier); stick around = rester."),
   coach("Yeah, he said the job wasn’t his cup of tea.", "Ouais, il a dit que l’emploi n’était pas son genre."),
-  rep(["Fair enough. Better late than never, I guess.", "Fair enough. Better later than never, I guess.", "Fair enough. Better late than nothing, I guess."], 0, "Expression figée : better late than never."),
+  rep(["Fair enough. Good for him, I guess.", "Fair enough. Good for he, I guess.", "Fair enough. Well for him, I guess."], 0, "Good for him! = tant mieux pour lui!"),
   coach("Want more wine?", "Encore du vin?"),
   rep(["I’m good, thanks. I’m driving.", "I’m well, thanks. I’m driving.", "I’m fine with, thanks. I drive."], 0, "I’m good = non merci (familier, très courant)."),
   coach("Smart move!", "Bonne décision!"),

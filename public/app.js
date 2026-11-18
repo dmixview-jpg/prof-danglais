@@ -63,6 +63,15 @@ function toast(text) {
   toastTimer = setTimeout(() => (el.hidden = true), 2200);
 }
 
+// Mélange de Fisher-Yates (copie).
+function shuffled(list) {
+  const a = list.slice();
+  for (let k = a.length - 1; k > 0; k--) {
+    const r = Math.floor(Math.random() * (k + 1));
+    [a[k], a[r]] = [a[r], a[k]];
+  }
+  return a;
+}
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -656,8 +665,8 @@ function stepsCard(steps) {
 // Alphabet interactif : toucher une lettre pour l'entendre.
 const ALPHABET = [
   ['A', 'é-i', 1], ['B', 'bi'], ['C', 'si'], ['D', 'di'], ['E', 'i', 1], ['F', 'èf'], ['G', 'dji', 1],
-  ['H', 'éitch'], ['I', 'aï', 1], ['J', 'djé-i', 1], ['K', 'ké-i'], ['L', 'èl'], ['M', 'èm'], ['N', 'èn'],
-  ['O', 'ô-ou'], ['P', 'pi'], ['Q', 'kiou'], ['R', 'ar', 1], ['S', 'èss'], ['T', 'ti'], ['U', 'iou'],
+  ['H', 'éitch', 1], ['I', 'aï', 1], ['J', 'djé-i', 1], ['K', 'ké-i'], ['L', 'èl'], ['M', 'èm'], ['N', 'èn'],
+  ['O', 'ô-ou'], ['P', 'pi'], ['Q', 'kiou', 1], ['R', 'ar', 1], ['S', 'èss'], ['T', 'ti'], ['U', 'iou', 1],
   ['V', 'vi'], ['W', 'dobeul-iou', 1], ['X', 'èks'], ['Y', 'ouaï', 1], ['Z', 'zi (zèd au Canada)'],
 ];
 function alphabetCard() {
@@ -733,9 +742,12 @@ function quizCard(exercises, onComplete) {
     nextEl.hidden = false;
   }
 
+  // Les options sont mélangées à chaque affichage : la bonne réponse ne tombe pas toujours au même endroit.
   function optionsFor(ex, explain, next) {
-    const buttons = ex.options.map((opt, j) =>
-      h('button', {
+    const order = shuffled(ex.options.map((_, j) => j));
+    const buttons = [];
+    order.forEach((j, pos) => {
+      buttons[j] = h('button', {
         type: 'button', class: 'option', lang: 'en',
         onclick: () => {
           buttons.forEach((b) => (b.disabled = true));
@@ -743,8 +755,9 @@ function quizCard(exercises, onComplete) {
           if (j !== ex.answer) buttons[j].classList.add('wrong');
           answered(j === ex.answer, explain, next, ex.explain);
         },
-      }, h('span', { class: 'opt-letter', 'aria-hidden': 'true' }, 'ABC'[j]), h('span', null, opt)));
-    return h('div', { class: 'options' }, buttons);
+      }, h('span', { class: 'opt-letter', 'aria-hidden': 'true' }, 'ABC'[pos]), h('span', null, ex.options[j]));
+    });
+    return h('div', { class: 'options' }, order.map((j) => buttons[j]));
   }
 
   // Remettre les mots dans l'ordre : toucher les tuiles pour construire la phrase.
@@ -1012,7 +1025,7 @@ function nextTurn() {
 
 function showChoices(turn) {
   // ordre mélangé pour éviter que la bonne réponse soit toujours au même endroit
-  const order = [0, 1, 2].sort(() => Math.random() - 0.5);
+  const order = shuffled([0, 1, 2]);
   const box = $('#dlg-choices');
   box.replaceChildren(
     h('div', { class: 'choices-label' }, '💬 Choisis ta réponse'),

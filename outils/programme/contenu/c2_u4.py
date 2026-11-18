@@ -63,7 +63,7 @@ L("🛡️", "Répliquer dans un débat",
 
 L("🎶", "Intonation et accent tonique",
   "Changer le sens d’une phrase par l’accent et l’intonation.",
-  [st("🎶", "L’accent de phrase change le sens. « I didn’t say she stole it » a 7 sens selon le mot accentué!"),
+  [st("🎶", "L’accent de phrase change le sens. « I didn’t say she stole it » a 6 sens selon le mot accentué!"),
    st("🔊", "« I didn’t say SHE stole it » (quelqu’un d’autre l’a volé). « I didn’t say she STOLE it » (peut-être emprunté)."),
    st("📈", "Intonation montante = question oui/non ou incertitude. Descendante = affirmation, question avec what/where."),
    st("🔤", "Accent de mot : PRESent (nom, cadeau) / preSENT (verbe, présenter). REcord / reCORD, OBject / obJECT.")],
