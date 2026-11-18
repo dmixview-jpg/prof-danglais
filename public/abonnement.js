@@ -198,7 +198,7 @@
         try {
           await synchroniserMagasin();
           if (await estPremium(user, true)) return activerApresAchat();
-          tell('Aucun abonnement actif sur ce compte. Dans l’app, vérifie que tu es connecté avec le même courriel.');
+          tell('Aucun abonnement actif sur ce compte. Dans l’app, vérifie que tu es connecté avec la même adresse e-mail.');
         } catch {
           tell('Impossible de vérifier ton abonnement. Vérifie ta connexion, puis réessaie.');
         }
@@ -259,7 +259,7 @@
     await user.reload();
     if (!user.emailVerified) {
       user.sendEmailVerification().catch(() => {});
-      throw new Error(`Confirme d’abord ton courriel : clique sur le lien envoyé à ${user.email}, puis réessaie.`);
+      throw new Error(`Confirme d’abord ton adresse e-mail : clique sur le lien envoyé à ${user.email}, puis réessaie.`);
     }
     await user.getIdToken(true);
     const session = {
@@ -323,7 +323,7 @@
     const r = historique.retractation;
     const recu = r && enDate(r.demandeLe);
     const retract = r
-      ? h('p', { class: 'account-retract muted' }, `Demande de rétractation reçue${recu ? ` le ${jourLong(recu)}` : ''}. Nous te répondons par courriel.`)
+      ? h('p', { class: 'account-retract muted' }, `Demande de rétractation reçue${recu ? ` le ${jourLong(recu)}` : ''}. Nous te répondons par e-mail.`)
       : finRetractation()
         ? h('button', { type: 'button', class: 'auth-link account-retract', onclick: () => { $('.account-sheet:not(.paywall)').hidden = true; retracter(); } }, 'Me rétracter du contrat')
         : null;
@@ -381,8 +381,8 @@
         h('h2', { id: 'paywall-title' }, 'Demande de rétractation reçue'),
         h('p', null, `Reçue le ${jourLong(maintenant)} à ${maintenant.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' })}.`),
         h('p', { class: 'muted' }, autre
-          ? `Nous l’examinons selon la loi de ton pays et te répondons par courriel à ${user.email}.`
-          : `Nous te confirmons la rétractation par courriel à ${user.email}. Ton abonnement sera arrêté${essai ? ' sans aucun prélèvement' : ' et les montants payés te seront remboursés dans les 14 jours, sur ton moyen de paiement'}.`),
+          ? `Nous l’examinons selon la loi de ton pays et te répondons par e-mail à ${user.email}.`
+          : `Nous te confirmons la rétractation par e-mail à ${user.email}. Ton abonnement sera arrêté${essai ? ' sans aucun prélèvement' : ' et les montants payés te seront remboursés dans les 14 jours, sur ton moyen de paiement'}.`),
         h('button', { type: 'button', class: 'btn primary', onclick: fermer }, 'Fermer')));
     });
     sheet.replaceChildren(h('div', { class: 'account-card card paywall-card' },

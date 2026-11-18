@@ -9,7 +9,7 @@
     document.querySelectorAll('a[target="_blank"]').forEach((a) => a.removeAttribute('target'));
   }
   const LABELS = {
-    nom: 'nom du commerçant', courriel: 'courriel de contact', adresse: 'adresse postale',
+    nom: 'nom du commerçant', courriel: 'e-mail de contact', adresse: 'adresse postale',
     telephone: 'téléphone', responsable: 'nom du responsable',
     representantUE: 'représentant dans l’Union européenne', representantRU: 'représentant au Royaume-Uni',
   };

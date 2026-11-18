@@ -41,7 +41,7 @@ UN PARCOURS COMPLET
 • Des astuces de prof pour éviter les pièges des francophones
 
 PARLE DANS DE VRAIES SITUATIONS
-• 35 dialogues guidés : au café, à l’hôtel, en entrevue d’embauche, chez le médecin…
+• 35 dialogues guidés : au café, à l’hôtel, en entretien d’embauche, chez le médecin…
 • Choisis ta réponse, reçois une correction claire et la bonne formulation
 • Voix anglaise pour chaque phrase, à la vitesse de ton choix
 

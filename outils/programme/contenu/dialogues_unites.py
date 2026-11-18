@@ -20,20 +20,20 @@ S("family", "👨‍👩‍👧", "Ma famille", "A1", "Une collègue regarde la 
   coach("Do you have a house or an apartment?", "As-tu une maison ou un appartement?"),
   rep(["We have a house. There is three bedrooms.", "We have a house. There are three bedrooms.", "We have a house. It has three bedroom."], 1, "Pluriel : there are three bedrooms."),
   coach("Nice! Where is it?", "Bien! Où est-elle?"),
-  rep(["It’s in Laval, next to a big park.", "It’s in Laval, next of a big park.", "It’s at Laval, beside of a big park."], 0, "next to = à côté de, et in + ville."),
+  rep(["It’s in Boston, next to a big park.", "It’s in Boston, next of a big park.", "It’s at Boston, beside of a big park."], 0, "next to = à côté de, et in + ville."),
   coach("Sounds perfect for the kids!", "Ça a l’air parfait pour les enfants!"),
 ]),
 
-S("weekend", "🏕️", "Ta fin de semaine", "A1", "Lundi matin, un collègue te parle de ta fin de semaine.", [
-  coach("Good morning! How was your weekend?", "Bonjour! Comment s’est passée ta fin de semaine?"),
+S("weekend", "🏕️", "Ton week-end", "A1", "Lundi matin, un collègue te parle de ton week-end.", [
+  coach("Good morning! How was your weekend?", "Bonjour! Comment s’est passé ton week-end?"),
   rep(["It was great, thanks!", "It were great, thanks!", "It is great, thanks!"], 0, "Au passé : it was."),
   coach("What did you do?", "Qu’as-tu fait?"),
-  rep(["I goed to a sugar shack with my family.", "I went to a sugar shack with my family.", "I go to a sugar shack with my family."], 1, "go → went (irrégulier)."),
+  rep(["I goed to the beach with my family.", "I went to the beach with my family.", "I go to the beach with my family."], 1, "go → went (irrégulier)."),
   coach("Fun! Did you eat a lot?", "Amusant! As-tu beaucoup mangé?"),
   rep(["Yes, I ate too much!", "Yes, I eated too much!", "Yes, I did ate too much!"], 0, "eat → ate. Pas de did dans une phrase affirmative."),
   coach("Ha ha! And on Sunday?", "Ha ha! Et dimanche?"),
   rep(["I didn’t did anything. I relaxed at home.", "I didn’t do anything. I relaxed at home.", "I don’t did anything. I relaxed at home."], 1, "didn’t + verbe de base : didn’t do."),
-  coach("Sounds like a perfect weekend!", "Ça ressemble à une fin de semaine parfaite!"),
+  coach("Sounds like a perfect weekend!", "Ça ressemble à un week-end parfait!"),
 ]),
 
 # ----------------------------- A2 -----------------------------
@@ -49,14 +49,14 @@ S("memory", "📖", "Un souvenir de voyage", "A2", "Tu racontes une anecdote de 
   coach("What a great story!", "Quelle belle histoire!"),
 ]),
 
-S("phoneshop", "📱", "Choisir un cellulaire", "A2", "Tu compares deux téléphones dans un magasin.", [
+S("phoneshop", "📱", "Choisir un téléphone portable", "A2", "Tu compares deux téléphones dans un magasin.", [
   coach("Hi! Are you looking for a new phone?", "Bonjour! Cherchez-vous un nouveau téléphone?"),
   rep(["Yes. What’s the difference between these two?", "Yes. What is the difference between this two?", "Yes. Which is the difference of these two?"], 0, "these two (pluriel) et the difference between."),
-  coach("This one is cheaper, but that one has a better camera.", "Celui-ci est moins cher, mais celui-là a une meilleure caméra."),
+  coach("This one is cheaper, but that one has a better camera.", "Celui-ci est moins cher, mais celui-là a un meilleur appareil photo."),
   rep(["Is the battery more good?", "Is the battery better too?", "Is the battery gooder too?"], 1, "good → better."),
   coach("Yes, and it’s the fastest phone in the store.", "Oui, et c’est le téléphone le plus rapide du magasin."),
   rep(["It’s more expensive than I thought.", "It’s expensiver than I thought.", "It’s more expensive that I thought."], 0, "Adjectif long : more expensive than."),
-  coach("It’s on sale this week: two hundred dollars off.", "Il est en solde cette semaine : deux cents dollars de rabais."),
+  coach("It’s on sale this week: two hundred dollars off.", "Il est en solde cette semaine : deux cents dollars de réduction."),
   rep(["Oh! That’s a good deal. I’ll take it.", "Oh! That’s a rip-off. I’ll take it.", "Oh! That’s a good deal. I take it tomorrow."], 0, "a good deal = une bonne affaire; I’ll take it = je le prends (décision)."),
   coach("Great choice!", "Excellent choix!"),
 ]),
@@ -74,20 +74,20 @@ S("plans", "🗓️", "Planifier une sortie", "A2", "Tu organises une sortie ave
 ]),
 
 # ----------------------------- B1 -----------------------------
-S("oldfriend", "🤗", "Retrouver un vieil ami", "B1", "Tu croises un ami du secondaire que tu n’as pas vu depuis longtemps.", [
+S("oldfriend", "🤗", "Retrouver un vieil ami", "B1", "Tu croises un ami du lycée que tu n’as pas vu depuis longtemps.", [
   coach("No way! Is that you? I haven’t seen you in years!", "Pas vrai! C’est toi? Ça fait des années que je ne t’ai pas vu!"),
   rep(["I know! Since when did we see each other?", "I know! It’s been at least ten years!", "I know! It is ten years that we don’t see us!"], 1, "It’s been ten years = ça fait dix ans."),
   coach("So, what have you been doing all this time?", "Alors, qu’est-ce que tu deviens?"),
-  rep(["I’ve been working as a nurse in Sherbrooke.", "I work as a nurse in Sherbrooke since years.", "I’m working as a nurse in Sherbrooke since years."], 0, "Activité qui dure : present perfect continu."),
+  rep(["I’ve been working as a nurse in Seattle.", "I work as a nurse in Seattle since years.", "I’m working as a nurse in Seattle since years."], 0, "Activité qui dure : present perfect continu."),
   coach("You used to want to be a pilot, right?", "Tu voulais devenir pilote, non?"),
   rep(["Yes! I used to dream about it every day.", "Yes! I was used to dream about it every day.", "Yes! I use to dream about it every day."], 0, "Habitude passée : used to + verbe."),
-  coach("And do you like living in the Eastern Townships?", "Et aimes-tu vivre en Estrie?"),
+  coach("And do you like living in Seattle?", "Et aimes-tu vivre à Seattle?"),
   rep(["I love it, but I’m still not used to driving everywhere.", "I love it, but I’m still not used to drive everywhere.", "I love it, but I don’t still use to drive everywhere."], 0, "be used to + -ing."),
   coach("Let’s grab a coffee soon and catch up!", "Prenons un café bientôt pour se raconter tout ça!"),
 ]),
 
-S("whatif", "🤔", "Et si on déménageait?", "B1", "Ton conjoint ou ta conjointe a reçu une offre d’emploi à Vancouver.", [
-  coach("If I accept the job in Vancouver, would you come with me?", "Si j’accepte l’emploi à Vancouver, viendrais-tu avec moi?"),
+S("whatif", "🤔", "Et si on déménageait?", "B1", "Ton conjoint ou ta conjointe a reçu une offre d’emploi à San Francisco.", [
+  coach("If I accept the job in San Francisco, would you come with me?", "Si j’accepte l’emploi à San Francisco, viendrais-tu avec moi?"),
   rep(["If you accept it, I’ll think about it seriously.", "If you will accept it, I’ll think about it seriously.", "If you accepted it, I’ll think about it seriously."], 0, "Premier conditionnel : if + présent, will."),
   coach("What would you miss the most?", "Qu’est-ce qui te manquerait le plus?"),
   rep(["If we moved, I would miss my family.", "If we would move, I would miss my family.", "If we move, I would miss my family."], 0, "Deuxième conditionnel : if + passé, would."),
@@ -98,15 +98,15 @@ S("whatif", "🤔", "Et si on déménageait?", "B1", "Ton conjoint ou ta conjoin
   coach("Okay. Let’s talk about it tonight.", "D’accord. On en reparle ce soir."),
 ]),
 
-S("tour", "🏰", "Visite guidée du Vieux-Québec", "B1", "Tu es guide et tu fais visiter Québec à des touristes.", [
-  coach("This place is amazing. When was the city founded?", "Cet endroit est magnifique. Quand la ville a-t-elle été fondée?"),
-  rep(["It was founded in 1608 by Samuel de Champlain.", "It founded in 1608 by Samuel de Champlain.", "It was found in 1608 by Samuel de Champlain."], 0, "Passif passé : was founded (fonder = found, founded)."),
-  coach("And the big castle on the hill?", "Et le gros château sur la colline?"),
-  rep(["The Château Frontenac was built in 1893. It’s a hotel.", "The Château Frontenac built in 1893. It’s a hotel.", "The Château Frontenac has built in 1893. It’s a hotel."], 0, "Passif : was built."),
-  coach("Is French spoken everywhere here?", "Parle-t-on français partout ici?"),
-  rep(["Yes, French is spoken by almost everyone.", "Yes, French is speaking by almost everyone.", "Yes, French speaks by almost everyone."], 0, "is spoken = on parle."),
-  coach("Can we visit the walls?", "Peut-on visiter les remparts?"),
-  rep(["Yes, but the north part is being repaired right now.", "Yes, but the north part is repairing right now.", "Yes, but the north part is been repaired right now."], 0, "En ce moment : is being repaired."),
+S("tour", "🗽", "Visite guidée de New York", "B1", "Tu es guide et tu fais visiter New York à des touristes.", [
+  coach("This place is amazing. When was the Statue of Liberty dedicated?", "Cet endroit est magnifique. Quand la statue de la Liberté a-t-elle été inaugurée?"),
+  rep(["It was dedicated in 1886. It was a gift from France.", "It dedicated in 1886. It was a gift from France.", "It was dedicate in 1886. It was a gift from France."], 0, "Passif passé : was dedicated."),
+  coach("And the famous bridge over there?", "Et le célèbre pont là-bas?"),
+  rep(["The Brooklyn Bridge was opened in 1883.", "The Brooklyn Bridge is opened in 1883.", "The Brooklyn Bridge has opened in 1883."], 0, "Passif passé avec une date : was opened."),
+  coach("Are other languages spoken here?", "Parle-t-on d’autres langues ici?"),
+  rep(["Yes, many languages are spoken by New Yorkers.", "Yes, many languages are speaking by New Yorkers.", "Yes, many languages speak by New Yorkers."], 0, "are spoken = on parle."),
+  coach("Can we walk to the museum from here?", "Peut-on aller au musée à pied depuis ici?"),
+  rep(["Yes, but the main road is being repaired right now.", "Yes, but the main road is repairing right now.", "Yes, but the main road is been repaired right now."], 0, "En ce moment : is being repaired."),
   coach("Thanks, you’re a great guide!", "Merci, vous êtes un excellent guide!"),
 ]),
 
@@ -123,7 +123,7 @@ S("message", "📨", "Transmettre un message", "B1", "Ta collègue revient de va
 ]),
 
 # ----------------------------- B2 -----------------------------
-S("missed", "⏰", "Un rendez-vous manqué", "B2", "Tu as raté un souper important. Tu t’expliques avec une amie.", [
+S("missed", "⏰", "Un rendez-vous manqué", "B2", "Tu as raté un dîner important. Tu t’expliques avec une amie.", [
   coach("We waited for you for an hour! What happened?", "On t’a attendu une heure! Que s’est-il passé?"),
   rep(["I’m so sorry. I had been working all day and I fell asleep.", "I’m so sorry. I have worked all day and I fell asleep.", "I’m so sorry. I was work all day and I fell asleep."], 0, "Durée avant un moment passé : had been working."),
   coach("You should have called me.", "Tu aurais dû m’appeler."),
@@ -135,8 +135,8 @@ S("missed", "⏰", "Un rendez-vous manqué", "B2", "Tu as raté un souper import
   coach("Ha ha. Bring her a cake and all will be forgiven.", "Ha ha. Apporte-lui un gâteau et tout sera pardonné."),
 ]),
 
-S("mystery", "🕵️", "Le mystère du bureau", "B2", "Quelqu’un a mangé le lunch de ta collègue dans le frigo.", [
-  coach("Someone ate my lunch! Who could it be?", "Quelqu’un a mangé mon lunch! Qui ça peut bien être?"),
+S("mystery", "🕵️", "Le mystère du bureau", "B2", "Quelqu’un a mangé le déjeuner de ta collègue dans le frigo.", [
+  coach("Someone ate my lunch! Who could it be?", "Quelqu’un a mangé mon déjeuner! Qui ça peut bien être?"),
   rep(["It can’t have been Tom. He’s on vacation.", "It mustn’t be Tom. He was on vacation.", "It can’t be been Tom. He’s on vacation."], 0, "Impossibilité au passé : can’t have been."),
   coach("What about Julie? She was here all morning.", "Et Julie? Elle était ici toute la matinée."),
   rep(["She might have taken it by mistake.", "She might took it by mistake.", "She may has taken it by mistake."], 0, "Possibilité au passé : might have + participe."),
@@ -159,7 +159,7 @@ S("movie", "🎬", "Recommander un film", "B2", "Un ami te demande quoi regarder
   coach("Perfect, I’ll watch « Prisoners » tonight!", "Parfait, je regarde « Prisoners » ce soir!"),
 ]),
 
-S("news", "📰", "Les nouvelles du jour", "B2", "Tu discutes de l’actualité au dîner avec des collègues.", [
+S("news", "📰", "Les nouvelles du jour", "B2", "Tu discutes de l’actualité au déjeuner avec des collègues.", [
   coach("Did you hear about the new metro line?", "As-tu entendu parler de la nouvelle ligne de métro?"),
   rep(["Yes. It is said to be ready by 2030.", "Yes. It is said that to be ready by 2030.", "Yes. They say it to be ready by 2030."], 0, "Passif de rapport : It is said to be…"),
   coach("I doubt it. These projects are always late.", "J’en doute. Ces projets sont toujours en retard."),
@@ -167,7 +167,7 @@ S("news", "📰", "Les nouvelles du jour", "B2", "Tu discutes de l’actualité 
   coach("Did she say anything else?", "A-t-elle dit autre chose?"),
   rep(["She suggested building a second line.", "She suggested to build a second line.", "She suggested us to build a second line."], 0, "suggest + -ing (ou suggest that…)."),
   coach("Who’s going to pay for that?", "Qui va payer pour ça?"),
-  rep(["Taxpayers, I suppose. The city will get the province to help.", "Taxpayers, I suppose. The city will get the province help.", "Taxpayers, I suppose. The city will make the province to help."], 0, "get someone to do something."),
+  rep(["Taxpayers, I suppose. The city will get the state to help.", "Taxpayers, I suppose. The city will get the state help.", "Taxpayers, I suppose. The city will make the state to help."], 0, "get someone to do something."),
   coach("Let’s hope so!", "Espérons-le!"),
 ]),
 
@@ -196,7 +196,7 @@ S("toast", "🥂", "Un discours pour une collègue", "C1", "Tu portes un toast a
   coach("Cheers to Linda!", "À Linda!"),
 ]),
 
-S("launch", "🚀", "Planifier un lancement", "C1", "Tu prépares le lancement d’un produit avec ta gestionnaire.", [
+S("launch", "🚀", "Planifier un lancement", "C1", "Tu prépares le lancement d’un produit avec ta responsable.", [
   coach("Where will we be with the project by the end of June?", "Où en serons-nous dans le projet à la fin juin?"),
   rep(["By then, we’ll have finished the testing phase.", "By then, we’ll finish the testing phase since a month.", "By then, we’re finishing the testing phase already."], 0, "Futur antérieur : will have finished."),
   coach("And what will the team be doing in July?", "Et que fera l’équipe en juillet?"),
@@ -208,7 +208,7 @@ S("launch", "🚀", "Planifier un lancement", "C1", "Tu prépares le lancement d
   coach("Perfect. Let’s make it happen.", "Parfait. Allons-y."),
 ]),
 
-S("email", "✉️", "Un courriel délicat", "C1", "Ta gestionnaire t’aide à réviser un courriel à un client mécontent.", [
+S("email", "✉️", "Un e-mail délicat", "C1", "Ta responsable t’aide à réviser un e-mail à un client mécontent.", [
   coach("Your draft says « You’re wrong about the invoice ». Too direct?", "Ton brouillon dit « Vous vous trompez sur la facture ». Trop direct?"),
   rep(["Yes. « There seems to be a misunderstanding regarding the invoice » is better.", "Yes. « There is seeming a misunderstanding about the invoice » is better.", "Yes. « You are a bit wrong about the invoice » is better."], 0, "Formule diplomatique : There seems to be a misunderstanding."),
   coach("Good. How do you explain the delay?", "Bien. Comment expliques-tu le retard?"),
@@ -220,13 +220,13 @@ S("email", "✉️", "Un courriel délicat", "C1", "Ta gestionnaire t’aide à 
   coach("Excellent. Send it!", "Excellent. Envoie-le!"),
 ]),
 
-S("dinner", "🍷", "Souper entre amis", "C1", "Au souper, tes amis anglophones parlent de façon très familière.", [
+S("dinner", "🍷", "Dîner entre amis", "C1", "Au dîner, tes amis anglophones parlent de façon très familière.", [
   coach("Man, this week was rough. My boss kept me on my toes.", "Mon vieux, quelle semaine difficile. Mon patron m’a tenu sur le qui-vive."),
   rep(["Sounds like you need a break. Hang in there!", "Sounds like you need a break. Hang on there!", "Sounds like you need a pause. Hang there in!"], 0, "Hang in there! = tiens bon!"),
-  coach("Totally. Anyway, did you hear Sam quit out of the blue?", "Totalement. En passant, as-tu su que Sam a démissionné sans prévenir?"),
+  coach("Totally. Anyway, did you hear Sam quit out of the blue?", "Totalement. Au fait, as-tu su que Sam a démissionné sans prévenir?"),
   rep(["No way! I thought he was gonna stick around.", "No way! I thought he was going stick around.", "No way! I thought he was gonna stick around him."], 0, "gonna = going to (familier); stick around = rester."),
   coach("Yeah, he said the job wasn’t his cup of tea.", "Ouais, il a dit que l’emploi n’était pas son genre."),
-  rep(["Fair enough. Better late than never, I guess.", "Fair enough. Better later than never, I guess.", "Fair enough. Better late than nothing, I guess."], 0, "Expression figée : better late than never."),
+  rep(["Fair enough. Good for him, I guess.", "Fair enough. Good for he, I guess.", "Fair enough. Well for him, I guess."], 0, "Good for him! = tant mieux pour lui!"),
   coach("Want more wine?", "Encore du vin?"),
   rep(["I’m good, thanks. I’m driving.", "I’m well, thanks. I’m driving.", "I’m fine with, thanks. I drive."], 0, "I’m good = non merci (familier, très courant)."),
   coach("Smart move!", "Bonne décision!"),
@@ -257,14 +257,14 @@ S("words", "🔬", "Choisir le mot juste", "C2", "Tu révises le texte d’un co
   coach("You have a great eye for nuance.", "Tu as l’œil pour les nuances."),
 ]),
 
-S("hockey", "🏒", "Soirée de hockey", "C2", "Tu regardes une partie avec des collègues de Toronto.", [
-  coach("If the Leafs win tonight, it’ll be a slam dunk for the playoffs.", "Si les Leafs gagnent ce soir, les séries seront dans la poche."),
+S("hockey", "🏀", "Soirée basketball", "C2", "Tu regardes un match avec des collègues de Chicago.", [
+  coach("If the Bulls win tonight, it’ll be a slam dunk for the playoffs.", "Si les Bulls gagnent ce soir, les séries seront dans la poche."),
   rep(["Sure, but let’s not count our chickens before they hatch.", "Sure, but let’s not count our chicken before it hatches eggs.", "Sure, but let’s not sell the bear’s skin."], 0, "Équivalent anglais de « vendre la peau de l’ours » : don’t count your chickens before they hatch."),
-  coach("Ha! Spoken like a true Habs fan.", "Ha! On reconnaît bien le partisan du Canadien."),
-  rep(["Guilty as charged. Montreal has twenty-four Stanley Cups, after all.", "Guilty like charged. Montreal has twenty-four Stanley Cup, after all.", "Guilty of charge. Montreal has twenty-four Stanley Cups, after all."], 0, "Expression figée : guilty as charged."),
-  coach("Your boss really dropped the ball on that project, eh?", "Ton patron a vraiment échappé la balle sur ce projet, hein?"),
+  coach("Ha! Spoken like a true Bulls fan.", "Ha! On reconnaît bien le vrai supporter des Bulls."),
+  rep(["Guilty as charged. I’ve been a fan since I was a kid, after all.", "Guilty like charged. I’ve been a fan since I was a kid, after all.", "Guilty of charge. I’ve been a fan since I was a kid, after all."], 0, "Expression figée : guilty as charged."),
+  coach("Your boss really dropped the ball on that project, right?", "Ton patron a vraiment laissé tomber la balle sur ce projet, non?"),
   rep(["He did, but he stepped up to the plate and fixed it.", "He did, but he stepped on the plate and fixed it.", "He did, but he made a hat trick of errors and fixed it."], 0, "step up to the plate = prendre ses responsabilités."),
-  coach("Another double-double before the third period?", "Un autre double-double avant la troisième période?"),
+  coach("Another soda before the third quarter?", "Un autre soda avant le troisième quart-temps?"),
   rep(["Sure, it’s on me this time.", "Sure, it’s on my charge this time.", "Sure, I invite you this time."], 0, "It’s on me = c’est moi qui paie."),
   coach("Deal!", "Marché conclu!"),
 ]),
@@ -285,7 +285,7 @@ S("rebuttal", "🛡️", "Répliquer en débat public", "C2", "Lors d’un déba
   coach("Bike lanes only benefit a tiny minority.", "Les pistes cyclables ne profitent qu’à une infime minorité."),
   rep(["That may be true today, but usage tends to grow once safe lanes exist.", "That is false and you know it.", "That may be true today, but usage tend to growing when lanes exist."], 0, "Concession puis contre-argument : That may be true, but…"),
   coach("They also hurt local businesses.", "Elles nuisent aussi aux commerces locaux."),
-  rep(["Actually, studies from Toronto suggest the opposite: cyclists shop more often.", "Actually, studies from Toronto suggest the opposite: cyclists shops more often.", "Currently, studies from Toronto suggest the opposite: cyclists shop more often."], 0, "Actually = en fait (pas « actuellement »)."),
+  rep(["Actually, studies from several cities suggest the opposite: cyclists shop more often.", "Actually, studies from several cities suggest the opposite: cyclists shops more often.", "Currently, studies from several cities suggest the opposite: cyclists shop more often."], 0, "Actually = en fait (pas « actuellement »)."),
   coach("You’re ignoring the cost for taxpayers.", "Vous ignorez le coût pour les contribuables."),
   rep(["I’m not ignoring it. Let me reframe the question: what does congestion cost us?", "I’m not ignoring nothing. Let me reframe the question: what does congestion costs us?", "I don’t ignore. Let me reframe: what congestion costs us?"], 0, "Recadrer le débat (reframe) plutôt que se défendre."),
   coach("So, you admit it’s expensive?", "Donc, vous admettez que c’est cher?"),
