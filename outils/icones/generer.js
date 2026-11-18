@@ -29,7 +29,7 @@ const targets = [
 function page(size, shape) {
   const body = shape === 'foreground' ? foreground : svg;
   // maskable / foreground : zone de sécurité, le dessin est réduit au centre
-  const inner = shape === 'maskable' ? 0.8 : shape === 'foreground' ? 0.62 : 1;
+  const inner = shape === 'maskable' ? 0.8 : shape === 'foreground' ? 0.58 : 1;
   const radius = shape === 'round' ? '50%' : shape === 'rounded' ? '22%' : '0';
   return `<!doctype html><html><head><style>
 @font-face { font-family: 'Bricolage Grotesque'; src: url(data:font/woff2;base64,${font}) format('woff2'); font-weight: 200 800; }
