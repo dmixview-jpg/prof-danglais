@@ -1,33 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <!-- Icône de l'app : la mascotte (chat bleu de l'app) sur fond jaune, bulle « EN ».
+  <!-- Icône de l'app : la mascotte (chat bleu de l'app), version épurée, sur fond jaune, bulle « EN ».
        Régénérer les PNG : node outils/icones/generer.js -->
   <defs>
     <linearGradient id="fond" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ffe27a"/><stop offset="1" stop-color="#ffb938"/>
+      <stop offset="0" stop-color="#ffd64a"/><stop offset="1" stop-color="#ffb21e"/>
     </linearGradient>
     <linearGradient id="chat" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#86acff"/><stop offset="1" stop-color="#3f6ff0"/>
     </linearGradient>
-    <radialGradient id="halo" cx=".5" cy=".42" r=".55">
-      <stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
-    </radialGradient>
   </defs>
   <rect id="fond-rect" width="1024" height="1024" fill="url(#fond)"/>
-  <circle cx="512" cy="470" r="470" fill="url(#halo)"/>
   <!-- tête du chat (mêmes formes que la mascotte de app.js, agrandies) -->
-  <g transform="translate(512 560) scale(7.2) translate(-60 -58)">
-    <ellipse cx="60" cy="96" rx="36" ry="5" fill="#b86a00" opacity=".22"/>
+  <g transform="translate(512 545) scale(7.4) translate(-60 -58)">
     <path d="M24 46 L27 8 L55 28 Z" fill="#6f98fb" stroke="#6f98fb" stroke-width="7" stroke-linejoin="round"/>
     <path d="M31 38 L32.5 17 L48 29 Z" fill="#ff9fb8" stroke="#ff9fb8" stroke-width="3" stroke-linejoin="round"/>
     <path d="M96 46 L93 8 L65 28 Z" fill="#6f98fb" stroke="#6f98fb" stroke-width="7" stroke-linejoin="round"/>
     <path d="M89 38 L87.5 17 L72 29 Z" fill="#ff9fb8" stroke="#ff9fb8" stroke-width="3" stroke-linejoin="round"/>
     <ellipse cx="60" cy="58" rx="41" ry="34" fill="url(#chat)"/>
-    <ellipse cx="38" cy="38" rx="13" ry="5.5" transform="rotate(-22 38 38)" fill="#fff" opacity=".3"/>
     <ellipse cx="44" cy="59" rx="9" ry="10.5" fill="#fff"/><circle cx="45.5" cy="61" r="5.8" fill="#18203a"/><circle cx="48" cy="58" r="2.1" fill="#fff"/>
     <ellipse cx="76" cy="59" rx="9" ry="10.5" fill="#fff"/><circle cx="77.5" cy="61" r="5.8" fill="#18203a"/><circle cx="80" cy="58" r="2.1" fill="#fff"/>
-    <ellipse cx="32" cy="73" rx="6.5" ry="3.8" fill="#ff9fb8" opacity=".8"/>
-    <ellipse cx="88" cy="73" rx="6.5" ry="3.8" fill="#ff9fb8" opacity=".8"/>
-    <path d="M27 69 l-17 -4 M27 75 l-17 1 M93 69 l17 -4 M93 75 l17 1" fill="none" stroke="#1b2550" stroke-width="1.8" stroke-linecap="round" opacity=".45"/>
     <path d="M55.5 69 h9 l-4.5 5 z" fill="#ff7f9b" stroke="#ff7f9b" stroke-width="1.5" stroke-linejoin="round"/>
     <path d="M52 76 q4 4.5 8 0 q4 4.5 8 0" fill="none" stroke="#1b2550" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
   </g>

@@ -35,7 +35,7 @@ function page(size, shape) {
 @font-face { font-family: 'Bricolage Grotesque'; src: url(data:font/woff2;base64,${font}) format('woff2'); font-weight: 200 800; }
 html, body { margin: 0; background: transparent; }
 .box { width: ${size}px; height: ${size}px; border-radius: ${radius}; overflow: hidden; display: grid; place-items: center;
-  background: ${shape === 'foreground' ? 'transparent' : 'linear-gradient(135deg, #ffe27a, #ffb938)'}; }
+  background: ${shape === 'foreground' ? 'transparent' : 'linear-gradient(135deg, #ffd64a, #ffb21e)'}; }
 .box svg { width: ${size * inner}px; height: ${size * inner}px; display: block; }
 </style></head><body><div class="box">${body}</div></body></html>`;
 }
