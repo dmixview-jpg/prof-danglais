@@ -8,7 +8,7 @@ window.PD_LEGAL = {
   courriel: 'profdanglaisapp@gmail.com',    // courriel de contact (aide, abonnement, vie privée)
   adresse: '8360, boulevard Saint-Laurent, Montréal (Québec) H2P 2M3, Canada',    // adresse postale complète
   telephone: '',    // facultatif
-  responsable: 'Vianney, responsable de la protection des renseignements personnels de KLOVIA',  // responsable de la protection des renseignements personnels (souvent toi)
+  responsable: 'Responsable de la protection des renseignements personnels de KLOVIA',  // responsable de la protection des renseignements personnels (souvent toi)
   // Clients en Europe (RGPD, article 27) : représentant établi dans l'Union européenne, et au
   // Royaume-Uni (UK GDPR). Nom et adresse, ex. : 'EU-Rep SARL, 1 rue X, 75001 Paris, France'.
   representantUE: '',
