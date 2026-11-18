@@ -236,8 +236,12 @@ function otherVoice() {
   return usVoices.find((v) => v !== voice && voiceScore(v) >= 0) || voice;
 }
 
+// Lettres épelées (« A », « J, A, C, K. ») : en majuscule, certaines voix disent « capital A ».
+// En minuscule, elles disent seulement le nom de la lettre.
+const SPELLED = /^[A-Z](\s*,\s*[A-Z])*\.?$/;
+const forVoice = (text) => (SPELLED.test(text.trim()) ? text.toLowerCase() : text);
 function utterance(text, rate, v = voice) {
-  const u = new SpeechSynthesisUtterance(text);
+  const u = new SpeechSynthesisUtterance(forVoice(text));
   u.lang = 'en-US'; // sans voix choisie, l'appareil prend sa voix américaine par défaut
   u.rate = rate || speechRate();
   if (v) u.voice = v;
