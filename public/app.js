@@ -220,30 +220,57 @@ function confetti(count = 70) {
 // Sons synthétisés (aucun fichier audio). Réglage « Sons de réussite » dans la carte Voix.
 const fxPrefs = () => ({ sound: false, haptic: true, ...store.get(KEYS.fx, {}) });
 let actx = null;
-function tone(freq, ms = 120, type = 'sine', vol = 0.06, delay = 0) {
+// iPhone : le son Web Audio est coupé par l'interrupteur silencieux, sauf en mode « lecture ».
+try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* ancien Safari */ }
+function audio() {
+  if (!actx) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    actx = new Ctx();
+  }
+  if (actx.state !== 'running') actx.resume().catch(() => {});
+  return actx;
+}
+// Déverrouillage : iOS n'autorise le son qu'après un toucher ; on joue un son muet au premier geste.
+function unlockAudio() {
+  if (!fxPrefs().sound) return;
+  const ctx = audio();
+  if (!ctx) return;
+  try {
+    const src = ctx.createBufferSource();
+    src.buffer = ctx.createBuffer(1, 1, 22050);
+    src.connect(ctx.destination);
+    src.start(0);
+  } catch { /* rien */ }
+}
+['touchend', 'pointerdown', 'keydown'].forEach((ev) => document.addEventListener(ev, unlockAudio, { passive: true }));
+function tone(freq, ms = 120, type = 'sine', vol = 0.25, delay = 0) {
   if (!fxPrefs().sound) return;
   try {
-    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-    if (actx.state === 'suspended') actx.resume();
-    const t = actx.currentTime + delay;
-    const o = actx.createOscillator();
-    const g = actx.createGain();
-    o.type = type;
-    o.frequency.value = freq;
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + ms / 1000);
-    o.connect(g).connect(actx.destination);
-    o.start(t);
-    o.stop(t + ms / 1000 + 0.03);
+    const ctx = audio();
+    if (!ctx) return;
+    const play = () => {
+      const t = ctx.currentTime + 0.01 + delay;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = type;
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + ms / 1000);
+      o.connect(g).connect(ctx.destination);
+      o.start(t);
+      o.stop(t + ms / 1000 + 0.03);
+    };
+    if (ctx.state === 'running') play(); else ctx.resume().then(play).catch(() => {});
   } catch { /* audio indisponible : on continue sans */ }
 }
 const buzz = (pattern) => { if (fxPrefs().haptic) navigator.vibrate?.(pattern); };
 const FX = {
-  good() { tone(659, 90); tone(988, 150, 'sine', 0.06, 0.09); buzz(15); },
-  bad() { tone(196, 200, 'triangle', 0.07); buzz([25, 40, 25]); },
-  star(k) { tone([523, 659, 784][k] || 784, 160, 'sine', 0.07); buzz(12); },
-  streak() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 130, 'sine', 0.06, i * 0.08)); buzz([20, 30, 20]); },
+  good() { tone(659, 110); tone(988, 180, 'sine', 0.25, 0.1); buzz(15); },
+  bad() { tone(220, 120, 'triangle', 0.3); tone(165, 220, 'triangle', 0.3, 0.12); buzz([25, 40, 25]); },
+  star(k) { tone([523, 659, 784][k] || 784, 180, 'sine', 0.28); buzz(12); },
+  streak() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 140, 'sine', 0.25, i * 0.09)); buzz([20, 30, 20]); },
 };
 
 // Célébration de fin (leçon ou dialogue) : étoiles qui sonnent, confettis selon le score, série de jours.
