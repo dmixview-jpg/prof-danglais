@@ -1,6 +1,6 @@
 # Prof d'anglais 🇬🇧💬
 
-Ton coach d'anglais personnel, pensé pour un francophone du Québec et utilisé sur **iPhone et iPad** comme une vraie app (PWA).
+Ton coach d'anglais personnel, pensé pour les francophones et utilisé sur **iPhone et iPad** comme une vraie app (PWA).
 
 **100 % gratuit, sans IA, sans compte et sans clé.** Toutes les leçons et tous les dialogues sont rédigés d'avance et intégrés à l'app. Rien n'est envoyé sur Internet. Une fois chargée, l'app fonctionne **entièrement hors ligne**.
 
@@ -16,7 +16,7 @@ Ton coach d'anglais personnel, pensé pour un francophone du Québec et utilisé
   - des mots utiles à ajouter à ton carnet ;
   - une astuce sur les pièges des francophones ;
   - des exercices de 3 types : choix de réponse, écoute (« Qu'as-tu entendu? ») et remise des mots en ordre.
-- **Recherche** : trouve une leçon par mot-clé (ex. : « present perfect », « courriel »).
+- **Recherche** : trouve une leçon par mot-clé (ex. : « present perfect », « e-mail »).
 - **Conversation : 35 dialogues guidés**, de A1 à C2, un par unité du parcours, plus un dialogue bonus. Exemples : café, famille, médecin, entrevue d'embauche, mystère au bureau, discours de retraite, soirée de hockey, débat public.
   - Des onglets de niveau (A1 à C2) affichent les situations de ton niveau, avec ta progression.
   - Le petit chat te parle avec la voix ; tu choisis ta réponse parmi 3.
@@ -34,7 +34,7 @@ Ton coach d'anglais personnel, pensé pour un francophone du Québec et utilisé
 
 ## Le parcours
 
-Le programme suit le **Cadre européen commun de référence (CECR)**, comme les grands cours en ligne (Cambridge English, British Council, BBC Learning English) et la progression des grammaires de référence. Chaque leçon aborde les pièges typiques des francophones du Québec : faux amis, « I have 30 years », « depuis » → present perfect, etc.
+Le programme suit le **Cadre européen commun de référence (CECR)**, comme les grands cours en ligne (Cambridge English, British Council, BBC Learning English) et la progression des grammaires de référence. Chaque leçon aborde les pièges typiques des francophones : faux amis, « I have 30 years », « depuis » → present perfect, etc.
 
 | Niveau | Ce que tu sauras faire | Exemples d'unités |
 |---|---|---|

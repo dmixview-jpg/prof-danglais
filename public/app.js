@@ -667,7 +667,7 @@ const ALPHABET = [
   ['A', 'é-i', 1], ['B', 'bi'], ['C', 'si'], ['D', 'di'], ['E', 'i', 1], ['F', 'èf'], ['G', 'dji', 1],
   ['H', 'éitch', 1], ['I', 'aï', 1], ['J', 'djé-i', 1], ['K', 'ké-i'], ['L', 'èl'], ['M', 'èm'], ['N', 'èn'],
   ['O', 'ô-ou'], ['P', 'pi'], ['Q', 'kiou', 1], ['R', 'ar', 1], ['S', 'èss'], ['T', 'ti'], ['U', 'iou', 1],
-  ['V', 'vi'], ['W', 'dobeul-iou', 1], ['X', 'èks'], ['Y', 'ouaï', 1], ['Z', 'zi (zèd au Canada)'],
+  ['V', 'vi'], ['W', 'dobeul-iou', 1], ['X', 'èks'], ['Y', 'ouaï', 1], ['Z', 'zi (zèd au Royaume-Uni)'],
 ];
 function alphabetCard() {
   return h('div', { class: 'card lesson-alphabet' },

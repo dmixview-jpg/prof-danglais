@@ -28,16 +28,16 @@
   const displayName = () => (user && user.displayName) || pendingName || '';
 
   const MESSAGES = {
-    'auth/invalid-email': 'Ce courriel n’est pas valide.',
-    'auth/missing-email': 'Écris ton courriel.',
+    'auth/invalid-email': 'Cette adresse e-mail n’est pas valide.',
+    'auth/missing-email': 'Écris ton adresse e-mail.',
     'auth/missing-password': 'Écris ton mot de passe.',
     'auth/weak-password': 'Le mot de passe doit contenir au moins 8 caractères, dont au moins une lettre et un chiffre.',
     'auth/password-does-not-meet-requirements': 'Le mot de passe doit contenir au moins 8 caractères, dont au moins une lettre et un chiffre.',
-    'auth/email-already-in-use': 'Un compte existe déjà avec ce courriel. Connecte-toi plutôt.',
-    'auth/invalid-credential': 'Courriel ou mot de passe incorrect.',
-    'auth/invalid-login-credentials': 'Courriel ou mot de passe incorrect.',
-    'auth/wrong-password': 'Courriel ou mot de passe incorrect.',
-    'auth/user-not-found': 'Courriel ou mot de passe incorrect.',
+    'auth/email-already-in-use': 'Un compte existe déjà avec cette adresse e-mail. Connecte-toi plutôt.',
+    'auth/invalid-credential': 'E-mail ou mot de passe incorrect.',
+    'auth/invalid-login-credentials': 'E-mail ou mot de passe incorrect.',
+    'auth/wrong-password': 'E-mail ou mot de passe incorrect.',
+    'auth/user-not-found': 'E-mail ou mot de passe incorrect.',
     'auth/user-disabled': 'Ce compte a été désactivé.',
     'auth/too-many-requests': 'Trop d’essais. Attends quelques minutes, puis réessaie.',
     'auth/network-request-failed': 'Pas de connexion Internet. Connecte-toi au Wi-Fi ou aux données, puis réessaie.',
@@ -65,7 +65,7 @@
   const hint = h('p', { class: 'auth-hint', 'data-only': 'signup' }, 'Au moins 6 caractères. Ta progression sera sauvegardée dans ton compte et te suivra sur tous tes appareils.');
   const form = h('form', { class: 'auth-form', novalidate: true },
     nameField,
-    h('label', { class: 'field' }, h('span', null, 'Courriel'), emailInput),
+    h('label', { class: 'field' }, h('span', null, 'E-mail'), emailInput),
     h('label', { class: 'field' }, h('span', null, 'Mot de passe'), h('div', { class: 'pw' }, passInput, eye)),
     hint,
     h('label', { class: 'consent', 'data-only': 'signup' },
@@ -164,13 +164,13 @@
 
   forgot.addEventListener('click', async () => {
     const email = emailInput.value.trim();
-    if (!email) return say('Écris ton courriel ci-dessus, puis touche « Mot de passe oublié? ».');
+    if (!email) return say('Écris ton adresse e-mail ci-dessus, puis touche « Mot de passe oublié? ».');
     try {
       await auth.sendPasswordResetEmail(email);
-      say('Si un compte existe pour ce courriel, un lien pour choisir un nouveau mot de passe vient d’être envoyé.', 'good');
+      say('Si un compte existe pour cette adresse e-mail, un lien pour choisir un nouveau mot de passe vient d’être envoyé.', 'good');
     } catch (err) {
       say(err.code === 'auth/user-not-found'
-        ? 'Si un compte existe pour ce courriel, un lien pour choisir un nouveau mot de passe vient d’être envoyé.'
+        ? 'Si un compte existe pour cette adresse e-mail, un lien pour choisir un nouveau mot de passe vient d’être envoyé.'
         : message(err), err.code === 'auth/user-not-found' ? 'good' : 'bad');
     }
   });
@@ -225,7 +225,7 @@
       }
     });
     const verify = !user.emailVerified
-      ? h('p', { class: 'account-verify' }, 'Courriel pas encore confirmé. ',
+      ? h('p', { class: 'account-verify' }, 'E-mail pas encore confirmé. ',
         h('button', {
           type: 'button', class: 'auth-link',
           onclick: () => user.sendEmailVerification()
