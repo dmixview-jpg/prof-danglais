@@ -262,7 +262,7 @@ S("hockey", "🏀", "Soirée basketball", "C2", "Tu regardes un match avec des c
   rep(["Sure, but let’s not count our chickens before they hatch.", "Sure, but let’s not count our chicken before it hatches eggs.", "Sure, but let’s not sell the bear’s skin."], 0, "Équivalent anglais de « vendre la peau de l’ours » : don’t count your chickens before they hatch."),
   coach("Ha! Spoken like a true Bulls fan.", "Ha! On reconnaît bien le vrai supporter des Bulls."),
   rep(["Guilty as charged. I’ve been a fan since I was a kid, after all.", "Guilty like charged. I’ve been a fan since I was a kid, after all.", "Guilty of charge. I’ve been a fan since I was a kid, after all."], 0, "Expression figée : guilty as charged."),
-  coach("Your boss really dropped the ball on that project, right?", "Ton patron a vraiment laissé tomber la balle sur ce projet, non?"),
+  coach("Your boss really dropped the ball on that project, right?", "Ton patron a vraiment raté son coup sur ce projet, non?"),
   rep(["He did, but he stepped up to the plate and fixed it.", "He did, but he stepped on the plate and fixed it.", "He did, but he made a hat trick of errors and fixed it."], 0, "step up to the plate = prendre ses responsabilités."),
   coach("Another soda before the third quarter?", "Un autre soda avant le troisième quart-temps?"),
   rep(["Sure, it’s on me this time.", "Sure, it’s on my charge this time.", "Sure, I invite you this time."], 0, "It’s on me = c’est moi qui paie."),
