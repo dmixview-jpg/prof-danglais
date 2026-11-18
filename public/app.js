@@ -1020,7 +1020,8 @@ function renderScenarios() {
       h('span', { class: 'scenario-meta' },
         stars ? h('span', { class: 'scenario-stars', 'aria-label': `${stars} étoiles sur 3` }, '★'.repeat(stars) + '☆'.repeat(3 - stars))
           : scenarioLocked(sc) ? h('span', { class: 'scenario-new' }, '🔒 Premium')
-            : h('span', { class: 'scenario-new' }, 'À faire')));
+            : (COURSE.abonnement?.dialoguesGratuits || []).includes(sc.id) ? h('span', { class: 'scenario-new' }, '🎁 Offert')
+              : h('span', { class: 'scenario-new' }, 'À faire')));
   }));
 }
 

@@ -124,12 +124,14 @@ def split_premium(data, config):
                 if "content" in l:
                     bucket["lessons"][l["id"]] = l.pop("content")
                     l["locked"] = True
+    free_dialogues = set(config.get("dialoguesGratuits", []))
     for sc in data["scenarios"]:
         lid = code_to_id.get(sc["level"])
-        if lid and lid not in free:
+        if lid and lid not in free and sc["id"] not in free_dialogues:
             premium.setdefault(lid, {"lessons": {}, "scenarios": {}})["scenarios"][sc["id"]] = sc.pop("turns")
             sc["locked"] = True
     data["abonnement"] = {k: config[k] for k in ("gratuit", "essaiJours", "region", "fonctionPortail", "taxesAutomatiques", "prix")}
+    data["abonnement"]["dialoguesGratuits"] = sorted(free_dialogues)
     data["abonnement"]["paiementSite"] = config.get("paiementSite", True)
     data["abonnement"]["liensMagasins"] = config.get("liensMagasins", {})
     data["abonnement"]["magasins"] = {k: v for k, v in config.get("magasins", {}).items() if not k.startswith("_")}

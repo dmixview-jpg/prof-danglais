@@ -29,17 +29,29 @@ test('les niveaux A1 à C2 sont verrouillés, sans aucun contenu public', () => 
     assert.strictEqual(l.locked, true, l.id);
     assert.ok(l.title && l.emoji, `${l.id} garde son titre pour le parcours`);
   }
-  for (const sc of pub.scenarios) {
+  const offered = new Set(config.dialoguesGratuits || []);
+  for (const sc of pub.scenarios.filter((x) => !offered.has(x.id))) {
     assert.strictEqual(sc.turns, undefined, sc.id);
     assert.ok(sc.locked && sc.title, sc.id);
   }
+});
+
+test('les dialogues offerts sont complets et non verrouillés', () => {
+  const offered = config.dialoguesGratuits || [];
+  for (const id of offered) {
+    const sc = pub.scenarios.find((x) => x.id === id);
+    assert.ok(sc, `dialogue offert inconnu : ${id}`);
+    assert.ok(sc.turns && sc.turns.length, id);
+    assert.ok(!sc.locked, id);
+  }
+  assert.ok(offered.length <= 2, 'pas plus de 2 dialogues offerts');
 });
 
 test('tout le contenu retiré se retrouve dans le fichier Premium', () => {
   for (const { lv, l } of lessons(full).filter((x) => x.lv !== 'pre' && x.l.content)) {
     assert.deepStrictEqual(prem.levels[lv].lessons[l.id], l.content, l.id);
   }
-  for (const sc of full.scenarios) {
+  for (const sc of full.scenarios.filter((x) => !(config.dialoguesGratuits || []).includes(x.id))) {
     const lv = full.levels.find((x) => x.code === sc.level).id;
     assert.deepStrictEqual(prem.levels[lv].scenarios[sc.id], sc.turns, sc.id);
   }

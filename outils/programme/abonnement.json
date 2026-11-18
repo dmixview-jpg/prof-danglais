@@ -10,6 +10,10 @@
   "gratuit": [
     "pre"
   ],
+  "_aideDialogues": "dialoguesGratuits : dialogues offerts à tous (identifiants), pour faire découvrir la conversation avant l'abonnement.",
+  "dialoguesGratuits": [
+    "intro"
+  ],
   "essaiJours": 7,
   "_aideSites": "Adresses de ton site (https, finissant par /). Le paiement Stripe ne peut revenir que vers ces adresses ; vide = paiement bloqué. Change-la si tu passes à Netlify ou Cloudflare Pages.",
   "sites": [
