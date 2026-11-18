@@ -255,7 +255,7 @@ PRE = ("pre", "Pré-A1", "Premiers pas", "🌱", "A1",
       ex("🎂", "My mother is fifty-two.", "Ma mère a cinquante-deux ans."),
       ex("💲", "It’s thirty dollars.", "C’est trente dollars."),
       ex("🏠", "I live at forty-four Maple Street.", "J’habite au 44, rue Maple."),
-      ex("🌡️", "It’s thirty degrees outside!", "Il fait trente degrés dehors!"),
+      ex("🌡️", "It’s thirty degrees Celsius outside!", "Il fait trente degrés Celsius dehors!"),
       ex("💯", "One hundred percent!", "Cent pour cent!"),
     ],
     "vocab": [

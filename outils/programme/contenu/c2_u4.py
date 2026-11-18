@@ -89,7 +89,7 @@ L("🎶", "Intonation et accent tonique",
    ch("A yes/no question usually has a ___ intonation.", ["rising", "falling", "flat"], 0, "Montante."),
    ch("« I didn’t say SHE stole it » means ___.", ["someone else stole it", "she borrowed it", "I said it"], 0, "Accent sur SHE : quelqu’un d’autre."),
    li("I’d like to present our new product.", ["I’d like to present our new product.", "I’d like a present for our new product.", "I like to present our new product."], 0, "preSENT (verbe)."),
-   od("I did not say she stole it", "Je n’ai pas dit qu’elle l’avait volé", "Une phrase, sept sens possibles.")]),
+   od("I did not say she stole it", "Je n’ai pas dit qu’elle l’avait volé", "Une phrase, six sens possibles.")]),
 
 L("🎤", "Parler en public",
   "Prononcer un discours avec assurance et impact.",
