@@ -1,5 +1,5 @@
 // Cache hors ligne de Prof d'anglais. Les appels /api/ ne sont jamais mis en cache.
-const CACHE = 'prof-danglais-v49';
+const CACHE = 'prof-danglais-v50';
 // Chemins relatifs au service worker : l'app marche à la racine d'un site
 // comme dans un sous-dossier (ex. : GitHub Pages, /prof-danglais/).
 const ASSETS = [
@@ -59,8 +59,10 @@ self.addEventListener('fetch', (event) => {
   if (url.origin === self.location.origin) {
     if (url.pathname.includes('/api/')) return;
     // Réseau d'abord (pour recevoir les mises à jour), cache si hors ligne.
+    // « no-cache » : on revalide auprès du serveur au lieu de reprendre la copie du navigateur
+    // (GitHub Pages la garde 10 minutes), pour qu'une mise à jour soit visible dès sa publication.
     event.respondWith(
-      fetch(request)
+      fetch(request, { cache: 'no-cache' })
         .then((response) => {
           if (response.ok) {
             const copy = response.clone();
