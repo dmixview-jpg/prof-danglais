@@ -46,7 +46,7 @@
     const d = new Date(v);
     return Number.isNaN(d.getTime()) ? null : d;
   };
-  const jourLong = (d) => d.toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' });
+  const jourLong = (d) => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
   // ---------------------------------------------------------------- Page « Débloque tout »
   const sheet = h('div', { class: 'account-sheet paywall', hidden: true, role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'paywall-title' });
@@ -104,8 +104,8 @@
       cta.textContent = essai ? `Commencer mes ${essai} jours gratuits` : `S’abonner : ${choix.montant} / ${choix.periode}`;
       const debut = `${essai ? `Gratuit pendant ${essai} jours, puis ` : ''}${choix.montant} par ${choix.periode}`;
       fine.textContent = M
-        ? `${debut}, renouvelé automatiquement. Paiement par ${M.NOM}, avec ${M.COMPTE}. Annule en tout temps dans les réglages d’abonnement de ${M.NOM}, au moins 24 heures avant le renouvellement.`
-        : `${debut}, taxes comprises, renouvelé automatiquement. Annule en tout temps dans « Mon compte ». Paiement sécurisé par Stripe.`;
+        ? `${debut}, renouvelé automatiquement. Paiement par ${M.NOM}, avec ${M.COMPTE}. Annule à tout moment dans les réglages d’abonnement de ${M.NOM}, au moins 24 heures avant le renouvellement.`
+        : `${debut}, taxes comprises, renouvelé automatiquement. Annule à tout moment dans « Mon compte ». Paiement sécurisé par Stripe.`;
     }
     maj();
 
@@ -137,15 +137,17 @@
         cta.disabled = false; // achat annulé par la personne
         maj();
       } catch (err) {
-        tell(err.message || 'Le paiement n’a pas pu s’ouvrir. Réessaie dans un instant.');
+        tell(err.message || 'Le paiement n’a pas pu s’ouvrir. Vérifie ta connexion, puis réessaie.');
         cta.disabled = false;
         maj();
       }
     });
-    const restaurer = M && M.actif() ? h('button', {
+    // Toujours visible dans l'app des magasins (exigé par Apple et Google), même avant l'ouverture des ventes.
+    const restaurer = M ? h('button', {
       type: 'button', class: 'auth-link paywall-restore',
       onclick: async (e) => {
         const btn = e.currentTarget; // currentTarget redevient null après le premier await
+        if (!M.actif()) return tell('Les abonnements ouvrent bientôt. Merci de ta patience!', 'good');
         btn.disabled = true;
         try {
           if (await M.restaurer()) return activerApresAchat();
@@ -379,7 +381,7 @@
       const autre = pays.value === 'Autre pays';
       sheet.replaceChildren(h('div', { class: 'account-card card paywall-card' },
         h('h2', { id: 'paywall-title' }, 'Demande de rétractation reçue'),
-        h('p', null, `Reçue le ${jourLong(maintenant)} à ${maintenant.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' })}.`),
+        h('p', null, `Reçue le ${jourLong(maintenant)} à ${maintenant.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}.`),
         h('p', { class: 'muted' }, autre
           ? `Nous l’examinons selon la loi de ton pays et te répondons par e-mail à ${user.email}.`
           : `Nous te confirmons la rétractation par e-mail à ${user.email}. Ton abonnement sera arrêté${essai ? ' sans aucun prélèvement' : ' et les montants payés te seront remboursés dans les 14 jours, sur ton moyen de paiement'}.`),

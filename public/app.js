@@ -217,33 +217,60 @@ function confetti(count = 70) {
 }
 
 // ---------- Effets sonores et vibrations (réussite, erreur, étoiles, série) ----------
-// Sons synthétisés (aucun fichier audio). Réglage « Sons de réussite » dans la carte Voix.
-const fxPrefs = () => ({ sound: false, haptic: true, ...store.get(KEYS.fx, {}) });
+// Sons synthétisés (aucun fichier audio), toujours actifs (décision du fondateur).
+const fxPrefs = () => ({ sound: true, haptic: true });
 let actx = null;
-function tone(freq, ms = 120, type = 'sine', vol = 0.06, delay = 0) {
+// iPhone : le son Web Audio est coupé par l'interrupteur silencieux, sauf en mode « lecture ».
+try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* ancien Safari */ }
+function audio() {
+  if (!actx) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    actx = new Ctx();
+  }
+  if (actx.state !== 'running') actx.resume().catch(() => {});
+  return actx;
+}
+// Déverrouillage : iOS n'autorise le son qu'après un toucher ; on joue un son muet au premier geste.
+function unlockAudio() {
+  if (!fxPrefs().sound) return;
+  const ctx = audio();
+  if (!ctx) return;
+  try {
+    const src = ctx.createBufferSource();
+    src.buffer = ctx.createBuffer(1, 1, 22050);
+    src.connect(ctx.destination);
+    src.start(0);
+  } catch { /* rien */ }
+}
+['touchend', 'pointerdown', 'keydown'].forEach((ev) => document.addEventListener(ev, unlockAudio, { passive: true }));
+function tone(freq, ms = 120, type = 'sine', vol = 0.25, delay = 0) {
   if (!fxPrefs().sound) return;
   try {
-    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-    if (actx.state === 'suspended') actx.resume();
-    const t = actx.currentTime + delay;
-    const o = actx.createOscillator();
-    const g = actx.createGain();
-    o.type = type;
-    o.frequency.value = freq;
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + ms / 1000);
-    o.connect(g).connect(actx.destination);
-    o.start(t);
-    o.stop(t + ms / 1000 + 0.03);
+    const ctx = audio();
+    if (!ctx) return;
+    const play = () => {
+      const t = ctx.currentTime + 0.01 + delay;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = type;
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + ms / 1000);
+      o.connect(g).connect(ctx.destination);
+      o.start(t);
+      o.stop(t + ms / 1000 + 0.03);
+    };
+    if (ctx.state === 'running') play(); else ctx.resume().then(play).catch(() => {});
   } catch { /* audio indisponible : on continue sans */ }
 }
 const buzz = (pattern) => { if (fxPrefs().haptic) navigator.vibrate?.(pattern); };
 const FX = {
-  good() { tone(659, 90); tone(988, 150, 'sine', 0.06, 0.09); buzz(15); },
-  bad() { tone(196, 200, 'triangle', 0.07); buzz([25, 40, 25]); },
-  star(k) { tone([523, 659, 784][k] || 784, 160, 'sine', 0.07); buzz(12); },
-  streak() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 130, 'sine', 0.06, i * 0.08)); buzz([20, 30, 20]); },
+  good() { tone(659, 110); tone(988, 180, 'sine', 0.25, 0.1); buzz(15); },
+  bad() { tone(220, 120, 'triangle', 0.3); tone(165, 220, 'triangle', 0.3, 0.12); buzz([25, 40, 25]); },
+  star(k) { tone([523, 659, 784][k] || 784, 180, 'sine', 0.28); buzz(12); },
+  streak() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 140, 'sine', 0.25, i * 0.09)); buzz([20, 30, 20]); },
 };
 
 // Célébration de fin (leçon ou dialogue) : étoiles qui sonnent, confettis selon le score, série de jours.
@@ -293,10 +320,29 @@ function otherVoice() {
   return usVoices.find((v) => v !== voice && voiceScore(v) >= 0) || voice;
 }
 
-// Lettres épelées (« A », « J, A, C, K. ») : en majuscule, certaines voix disent « capital A ».
-// En minuscule, elles disent seulement le nom de la lettre.
+// Lettres épelées (« J », « B, O, B ») et sigles (« BBC », « USA », « ID ») : chaque lettre est lue par son nom,
+// écrit comme le mot anglais qui se prononce pareil (B = bee, I = eye). A et E restent des majuscules :
+// « ay » serait lu comme « aye » (comme I), et une majuscule seule est lue par son nom de lettre.
 const SPELLED = /^[A-Z](\s*,\s*[A-Z])*\.?$/;
-const forVoice = (text) => (SPELLED.test(text.trim()) ? text.toLowerCase() : text);
+const ACRONYM = /^[A-Z]{2,5}\.?$/;
+const LETTER_NAMES = {
+  A: 'A', B: 'bee', C: 'see', D: 'dee', E: 'E', F: 'eff', G: 'gee', H: 'aitch', I: 'eye', J: 'jay', K: 'kay', L: 'ell', M: 'em',
+  N: 'en', O: 'oh', P: 'pee', Q: 'cue', R: 'are', S: 'ess', T: 'tee', U: 'you', V: 'vee', W: 'double you', X: 'ex', Y: 'why', Z: 'zee',
+};
+const spell = (letters) => letters.map((l) => LETTER_NAMES[l]).join(', ');
+const forVoice = (text) => {
+  const t = text.trim();
+  if (SPELLED.test(t)) return spell(t.replace(/\.$/, '').split(/\s*,\s*/));
+  if (ACRONYM.test(t) && t !== 'OK') return spell([...t.replace(/\.$/, '')]);
+  return text;
+};
+// iPhone : un speak() lancé juste après cancel() est parfois perdu ; on attend un instant si une voix parlait.
+function say(u) {
+  const busy = speechSynthesis.speaking || speechSynthesis.pending;
+  if (busy) speechSynthesis.cancel();
+  if (speechSynthesis.paused) speechSynthesis.resume();
+  if (busy) setTimeout(() => speechSynthesis.speak(u), 80); else speechSynthesis.speak(u);
+}
 function utterance(text, rate, v = voice) {
   const u = new SpeechSynthesisUtterance(forVoice(text));
   u.lang = 'en-US'; // sans voix choisie, l'appareil prend sa voix américaine par défaut
@@ -311,13 +357,12 @@ function speak(text, talker, rate) {
     toast('La synthèse vocale n’est pas disponible sur cet appareil.');
     return;
   }
-  speechSynthesis.cancel();
   const u = utterance(text, rate);
   if (talker) {
     u.onstart = () => setMood(talker, 'talk');
     u.onend = u.onerror = () => setMood(talker, talker.dataset.base);
   }
-  speechSynthesis.speak(u);
+  say(u);
 }
 
 // Réglages de la voix : choix de la voix américaine, vitesse, essai.
@@ -349,17 +394,6 @@ function renderVoiceCard() {
         type: 'button', class: `rate-btn${Math.abs(rate - r) < 0.01 ? ' on' : ''}`, 'aria-pressed': String(Math.abs(rate - r) < 0.01),
         onclick: () => { store.set(KEYS.rate, r); renderVoiceCard(); speak('This is my speaking speed.'); },
       }, label))),
-    h('label', { class: 'fx-toggle' },
-      (() => {
-        const box = h('input', { type: 'checkbox' });
-        box.checked = fxPrefs().sound;
-        box.addEventListener('change', () => {
-          store.set(KEYS.fx, { ...fxPrefs(), sound: box.checked });
-          if (box.checked) FX.good();
-        });
-        return box;
-      })(),
-      h('span', null, '🎵 Sons de réussite')),
     h('details', { class: 'voice-help' },
       h('summary', null, '📱 Une voix plus naturelle sur iPhone ou iPad'),
       h('p', null, 'Réglages → Accessibilité → Contenu énoncé → Voix → Anglais → choisis une voix « États-Unis » marquée « Améliorée » ou « Premium » (ex. : Ava, Evan, Zoe) et télécharge-la. Reviens ensuite ici et choisis-la dans la liste.')));
@@ -459,7 +493,8 @@ async function loadCourse() {
     const res = await fetch('curriculum.json');
     COURSE = await res.json();
   } catch {
-    $('#path').replaceChildren(h('div', { class: 'status error' }, 'Impossible de charger le parcours. Vérifie ta connexion, puis recharge la page.'));
+    $('#path').replaceChildren(h('div', { class: 'status error' }, 'Impossible de charger le parcours. Vérifie ta connexion, puis réessaie.',
+      h('button', { type: 'button', class: 'btn primary small', style: 'margin-top:10px', onclick: () => location.reload() }, 'Réessayer')));
     return;
   }
   for (const level of COURSE.levels) {
@@ -777,14 +812,17 @@ function dialogueCard(lines) {
 // Lit une suite de répliques ; deux voix différentes si l'appareil en a.
 function speakSequence(items) {
   if (!('speechSynthesis' in window)) return toast('La synthèse vocale n’est pas disponible sur cet appareil.');
-  speechSynthesis.cancel();
+  const busy = speechSynthesis.speaking || speechSynthesis.pending;
+  if (busy) speechSynthesis.cancel();
+  if (speechSynthesis.paused) speechSynthesis.resume();
   const other = otherVoice();
-  items.forEach((it) => {
+  const queue = () => items.forEach((it) => {
     const u = utterance(it.text, null, it.alt ? other : voice);
     u.onstart = () => it.row.classList.add('playing');
     u.onend = u.onerror = () => it.row.classList.remove('playing');
     speechSynthesis.speak(u);
   });
+  if (busy) setTimeout(queue, 80); else queue();
 }
 
 function tipCard(tip) {
@@ -989,6 +1027,13 @@ function renderLesson(lesson, courseId) {
 // =====================================================================
 const chatLog = $('#chat-log');
 $('#dlg-mascot').append(mascot('wave', 'hero-buddy'));
+// La barre du dialogue reste visible sous l'en-tête pendant l'échange.
+{
+  const top = $('.topbar');
+  const setTop = () => document.documentElement.style.setProperty('--topbar-h', `${top ? top.offsetHeight : 0}px`);
+  setTop();
+  if (top && 'ResizeObserver' in window) new ResizeObserver(setTop).observe(top);
+}
 const getDialogueStars = () => store.get(KEYS.dialogues, {});
 let dialogue = null; // { scenario, idx, correct, asked }
 
@@ -1129,7 +1174,12 @@ function answer(turn, k) {
   setMood(last, good ? 'happy' : 'oops', 1400);
   dialogue.idx++;
   scrollChat();
-  setTimeout(() => dialogue && nextTurn(), reducedMotion() ? 0 : 900);
+  if (good) { setTimeout(() => dialogue && nextTurn(), reducedMotion() ? 0 : 900); return; }
+  // Après une erreur, la correction reste affichée : on avance quand l'élève l'a lue.
+  const next = h('button', { type: 'button', class: 'btn primary dlg-continue', onclick: () => dialogue && nextTurn() }, 'Continuer');
+  $('#dlg-choices').replaceChildren(next);
+  next.focus({ preventScroll: true });
+  scrollChat();
 }
 
 function endDialogue() {

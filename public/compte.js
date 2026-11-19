@@ -62,7 +62,7 @@
   });
   const submit = h('button', { type: 'submit', class: 'btn primary auth-submit' }, 'Se connecter');
   const forgot = h('button', { type: 'button', class: 'auth-link', 'data-only': 'login' }, 'Mot de passe oublié?');
-  const hint = h('p', { class: 'auth-hint', 'data-only': 'signup' }, 'Au moins 6 caractères. Ta progression sera sauvegardée dans ton compte et te suivra sur tous tes appareils.');
+  const hint = h('p', { class: 'auth-hint', 'data-only': 'signup' }, 'Au moins 8 caractères, avec au moins une lettre et un chiffre. Ta progression sera sauvegardée dans ton compte et te suivra sur tous tes appareils.');
   const form = h('form', { class: 'auth-form', novalidate: true },
     nameField,
     h('label', { class: 'field' }, h('span', null, 'E-mail'), emailInput),
@@ -194,33 +194,43 @@
   function openSheet() {
     const note = h('p', { class: 'auth-msg', role: 'alert', hidden: true });
     const tell = (text, kind = 'bad') => { note.hidden = !text; note.textContent = text; note.dataset.kind = kind; };
-    let confirmDelete = false;
+    // Suppression en deux temps : un panneau séparé, avec le mot de passe redemandé.
+    const delPass = h('input', { type: 'password', autocomplete: 'current-password', 'aria-label': 'Ton mot de passe' });
+    const premiumWarn = h('p', { class: 'muted small-note', hidden: true },
+      'Supprimer ton compte ne résilie pas ton abonnement. Résilie-le d’abord avec « Gérer mon abonnement » (ou dans les réglages de ton téléphone), sinon il continuera d’être facturé.');
+    const delGo = h('button', { type: 'button', class: 'btn danger' }, 'Supprimer définitivement');
+    const delPanel = h('div', { class: 'account-delete-panel', hidden: true },
+      h('p', null, h('strong', null, 'Ton compte et toute ta progression seront effacés. Cette action est définitive.')),
+      premiumWarn,
+      h('label', { class: 'field' }, h('span', null, 'Confirme avec ton mot de passe'), delPass),
+      delGo,
+      h('button', { type: 'button', class: 'btn ghost', onclick: () => { delPanel.hidden = true; del.hidden = false; tell(''); } }, 'Annuler'));
     const del = h('button', { type: 'button', class: 'btn ghost account-delete' }, 'Supprimer mon compte');
-    del.addEventListener('click', async () => {
-      // Un abonnement Stripe continuerait d'être facturé : on demande de l'annuler d'abord.
-      if (window.PDAbonnement && window.PDAbonnement.estPremium()) {
-        tell('Ton abonnement Premium est actif. Annule-le d’abord avec « Gérer mon abonnement », puis supprime ton compte.');
-        return;
-      }
-      if (!confirmDelete) {
-        confirmDelete = true;
-        del.textContent = 'Confirmer : tout supprimer définitivement';
-        del.classList.add('danger');
-        tell('Ton compte et toute ta progression seront effacés. Cette action est définitive.');
-        return;
-      }
-      del.disabled = true;
+    del.addEventListener('click', () => {
+      premiumWarn.hidden = !(window.PDAbonnement && window.PDAbonnement.estPremium());
+      del.hidden = true;
+      delPanel.hidden = false;
+      tell('');
+      delPass.focus();
+    });
+    delGo.addEventListener('click', async () => {
+      const usesPassword = (user.providerData || []).some((p) => p && p.providerId === 'password');
+      if (usesPassword && !delPass.value) { tell('Entre ton mot de passe pour confirmer.'); delPass.focus(); return; }
+      delGo.disabled = true;
       let erased = false;
       try {
+        if (usesPassword) {
+          await user.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(user.email, delPass.value));
+        }
         await db.collection('users').doc(user.uid).delete();
         erased = true;
         await user.delete();
         forgetDevice();
         location.reload();
       } catch (err) {
-        // Firebase demande parfois de se reconnecter avant de supprimer : on remet la progression en ligne.
+        // En cas d'échec après l'effacement, on remet la progression en ligne.
         if (erased) await push().catch(() => {});
-        del.disabled = false;
+        delGo.disabled = false;
         tell(message(err));
       }
     });
@@ -246,6 +256,7 @@
       note,
       h('button', { type: 'button', class: 'btn primary', onclick: signOut }, 'Se déconnecter'),
       del,
+      delPanel,
       h('button', { type: 'button', class: 'btn ghost', onclick: closeSheet }, 'Fermer'),
       h('p', { class: 'legal-links' },
         h('a', { href: 'conditions.html', target: '_blank', rel: 'noopener' }, 'Conditions d’utilisation et de vente'), ' · ',

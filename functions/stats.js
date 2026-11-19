@@ -16,14 +16,13 @@ function statutPremium(claims) {
   return null;
 }
 
-// Dernier jour d'activité : jours de pratique enregistrés par l'app, sinon dernière connexion.
+// Dernier jour d'activité : seulement les jours de pratique enregistrés par l'app.
+// Une simple connexion (ouvrir l'app sans pratiquer) ne compte pas comme une activité.
 function derniereActivite(compte, donnees) {
   const jours = (donnees && Array.isArray(donnees.days)) ? donnees.days.filter((j) => typeof j === 'string').sort() : [];
-  const parJours = jours.length ? enMs(`${jours[jours.length - 1]}T12:00:00Z`) : null;
-  const meta = compte.metadata || {};
-  const parConnexion = enMs(meta.lastRefreshTime) || enMs(meta.lastSignInTime);
-  return Math.max(parJours || 0, parConnexion || 0) || null;
+  return jours.length ? enMs(`${jours[jours.length - 1]}T12:00:00Z`) : null;
 }
+const derniereConnexion = (compte) => { const m = compte.metadata || {}; return enMs(m.lastRefreshTime) || enMs(m.lastSignInTime); };
 
 function calculer(comptes, docs, maintenant = Date.now(), limiteListe = 500) {
   const parUid = new Map(docs.map((d) => [d.uid, d.data || {}]));
@@ -55,7 +54,7 @@ function calculer(comptes, docs, maintenant = Date.now(), limiteListe = 500) {
     return {
       courriel: c.email || '', nom: (parUid.get(c.uid) || {}).name || c.displayName || '',
       verifie: !!c.emailVerified, desactive: !!c.disabled, admin: !!(c.customClaims || {}).admin,
-      inscrit: cree, actif, lecons: nbLecons, niveau: niveau || null,
+      inscrit: cree, actif, connexion: derniereConnexion(c), lecons: nbLecons, niveau: niveau || null,
       joursPratique: Array.isArray(donnees.days) ? donnees.days.length : 0, premium: statut,
     };
   }).sort((a, b) => (b.inscrit || 0) - (a.inscrit || 0));
@@ -72,4 +71,4 @@ function calculer(comptes, docs, maintenant = Date.now(), limiteListe = 500) {
   };
 }
 
-module.exports = { calculer, statutPremium, derniereActivite, NIVEAUX };
+module.exports = { calculer, statutPremium, derniereActivite, derniereConnexion, NIVEAUX };
