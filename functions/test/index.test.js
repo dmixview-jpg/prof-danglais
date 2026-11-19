@@ -24,3 +24,13 @@ test('événement de test RevenueCat : 200 sans toucher à Firebase', async () =
   await revenuecatWebhook(req('un-secret-assez-long-pour-le-test'), rep);
   assert.strictEqual(rep.code, 200);
 });
+
+test('suppression du compte : connexion requise, et connexion récente', async () => {
+  process.env.REVENUECAT_API_KEY = 'sk_test';
+  process.env.GCLOUD_PROJECT = 'demo-test';
+  const { supprimerCompte } = require('../index.js');
+  await assert.rejects(supprimerCompte.run({ data: {}, auth: null }), (e) => e.code === 'unauthenticated');
+  const vieux = Math.floor(Date.now() / 1000) - 3600;
+  await assert.rejects(supprimerCompte.run({ data: {}, auth: { uid: 'abcDEF123456', token: { auth_time: vieux } } }),
+    (e) => e.code === 'failed-precondition');
+});

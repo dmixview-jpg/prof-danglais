@@ -96,7 +96,40 @@ exports.synchroniserMagasin = onCall(
   },
 );
 
-// Tableau de bord (admin.html) : comptes, activité et abonnés. Réservé aux comptes admin=true
+// Suppression du compte demandée dans l'app (Mon compte → Supprimer mon compte).
+// Efface côté serveur tout ce qui est lié au compte, y compris ce que l'app ne peut pas effacer
+// elle-même : progression, abonnement App Store / Google Play (copie revenuecat/{uid}), marque
+// d'essai, données de paiement du site (customers/{uid} et ses sous-collections), fiche RevenueCat,
+// puis le compte de connexion. Exige une connexion récente (mot de passe redemandé par l'app).
+// Ne résilie pas un abonnement en cours : Apple et Google seuls le peuvent (l'app prévient avant).
+const CONNEXION_RECENTE = 10 * 60; // secondes
+exports.supprimerCompte = onCall(
+  { region: REGION, secrets: [CLE_API], maxInstances: 5, memory: '256MiB', timeoutSeconds: 60 },
+  async (req) => {
+    if (!req.auth) throw new HttpsError('unauthenticated', 'Connexion requise.');
+    const uid = req.auth.uid;
+    const connexion = Number(req.auth.token && req.auth.token.auth_time) || 0;
+    if (Date.now() / 1000 - connexion > CONNEXION_RECENTE) {
+      throw new HttpsError('failed-precondition', 'Reconnecte-toi, puis recommence la suppression.');
+    }
+    const db = getFirestore();
+    try {
+      // RevenueCat d'abord : si cette étape échoue, rien n'est encore effacé et la personne peut réessayer.
+      await rc.supprimerAbonne(uid, CLE_API.value());
+      for (const chemin of [`users/${uid}`, `essais/${uid}`, `revenuecat/${uid}`, `customers/${uid}`]) {
+        await db.recursiveDelete(db.doc(chemin));
+      }
+      await getAuth().deleteUser(uid);
+    } catch (e) {
+      logger.error('Suppression de compte incomplète', { uid, message: e && e.message, code: e && e.code });
+      throw new HttpsError('unavailable', 'La suppression n’a pas pu se terminer. Réessaie dans un instant.');
+    }
+    logger.info('Compte supprimé', { uid });
+    return { ok: true };
+  },
+);
+
+// Tableau de bord (admin.html) : comptes, activité et abonnés (liste nominative avec { liste: true }). Réservé aux comptes admin=true
 // au courriel confirmé (même règle que firestore.rules). La liste des comptes Firebase n'est
 // lisible que côté serveur : l'app n'y a jamais accès.
 exports.statsAdmin = onCall(
@@ -115,7 +148,12 @@ exports.statsAdmin = onCall(
     } while (page && comptes.length < 50000);
     const snap = await getFirestore().collection('users').select('name', 'data.lessons', 'data.level', 'data.pathLevel', 'data.days').get();
     const docs = snap.docs.map((d) => ({ uid: d.id, data: d.data() }));
-    logger.info('Statistiques consultées', { admin: req.auth.uid, comptes: comptes.length });
-    return stats.calculer(comptes, docs);
+    // Liste nominative (e-mails, noms) seulement sur demande explicite (onglet « Utilisateurs ») :
+    // la vue d'ensemble n'a besoin que des chiffres.
+    const avecListe = !!(req.data && req.data.liste === true);
+    logger.info(avecListe ? 'Liste des comptes consultée' : 'Statistiques consultées', { admin: req.auth.uid, comptes: comptes.length });
+    const resultat = stats.calculer(comptes, docs, Date.now(), avecListe ? 500 : 0);
+    if (!avecListe) { resultat.tronque = false; resultat.listeMasquee = true; }
+    return resultat;
   },
 );

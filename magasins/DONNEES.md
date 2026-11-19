@@ -10,9 +10,13 @@ un outil d'analyse, des notifications ou un autre fournisseur.
 |---|---|---|---|---|
 | Prénom | Fonctionnement de l'app (salutation) | Oui | Non | Non |
 | Adresse courriel | Fonctionnement de l'app, gestion du compte | Oui | Non | Non |
-| Identifiant du compte (uid Firebase) | Fonctionnement de l'app, achats | Oui | Non | Non |
-| Progression (leçons, étoiles, mots du carnet) | Fonctionnement de l'app (synchronisation) | Oui | Non | Non |
+| Identifiant du compte (uid Firebase) | Fonctionnement de l'app, achats, analyse (tableau de bord) | Oui | Non | Non |
+| Progression (leçons, étoiles, mots du carnet, jours de pratique) | Fonctionnement de l'app (synchronisation), analyse (tableau de bord) | Oui | Non | Non |
 | Historique d'achats (abonnement) | Fonctionnement de l'app (accès Premium) | Oui | Non | Non |
+
+« Analyse » : le tableau de bord de l'administration (`admin.html`) montre l'activité de chaque compte
+(leçons faites, jours de pratique, dernière activité) pour suivre l'usage de l'app. Apple et Google
+classent cet usage dans la finalité « Analyse » (Analytics), même sans outil d'analyse externe.
 
 Les fournisseurs qui traitent ces données pour notre compte (Google Firebase, RevenueCat)
 ne sont pas un « partage » au sens des deux magasins.
@@ -26,7 +30,8 @@ ne sont pas un « partage » au sens des deux magasins.
   - Identifiants → Identifiant de l'utilisateur ;
   - Achats → Historique des achats.
 - **Pour chaque type** : « Fonctionnalités de l'app », lié à l'identité, pas utilisé pour le suivi.
-- **URL de la politique de confidentialité** : `https://<ton-site>/confidentialite.html`.
+  - En plus, pour **Identifiant de l'utilisateur** et **Autre contenu de l'utilisateur** : cocher aussi « Analyse » (Analytics).
+- **URL de la politique de confidentialité** : `https://dmixview-jpg.github.io/prof-danglais/confidentialite.html`.
 
 ## Play Console : Sécurité des données
 
@@ -38,12 +43,12 @@ ne sont pas un « partage » au sens des deux magasins.
 - **Données chiffrées en transit** : Oui.
 - **Pour chaque type** :
   - collecte obligatoire ;
-  - finalités : fonctionnement de l'appli et gestion du compte ;
+  - finalités : fonctionnement de l'appli et gestion du compte ; en plus, « Analyse » pour l'ID utilisateur et la progression ;
   - traitement éphémère : non.
 - **Suppression des données** :
-  - la personne peut demander la suppression : Oui, dans l'app (« Mon compte » → « Supprimer mon compte ») ;
-  - lien Web : `https://<ton-site>/confidentialite.html#droits`, qui donne le courriel pour les demandes.
-- **URL de la politique de confidentialité** : `https://<ton-site>/confidentialite.html`.
+  - la personne peut demander la suppression : Oui, dans l'app (« Mon compte » → « Supprimer mon compte »). La fonction `supprimerCompte` efface la progression, la copie de l'abonnement, les données de paiement, la fiche RevenueCat et le compte ;
+  - lien Web : `https://dmixview-jpg.github.io/prof-danglais/confidentialite.html#droits`, qui donne le courriel pour les demandes.
+- **URL de la politique de confidentialité** : `https://dmixview-jpg.github.io/prof-danglais/confidentialite.html`.
 
 ## Comptes de démonstration (examen par Apple et Google)
 

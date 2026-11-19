@@ -23,6 +23,20 @@ service cloud.firestore {
     function essaiJours() { return 7; }
     // </généré>
 
+    // Type et taille de chaque champ de progression : empêche d'écrire des documents énormes
+    // (quotas, coûts) ou des valeurs absurdes qui fausseraient le tableau de bord.
+    // Plafonds larges : 184 leçons et environ 1 300 mots dans tout le parcours, 400 jours gardés.
+    // null est accepté : l'app envoie null pour ce qui n'existe pas encore sur l'appareil.
+    function progressionValide(d) {
+      return (!('progress' in d) || d.progress == null || (d.progress is map && d.progress.size() <= 1000))
+        && (!('lessons' in d) || d.lessons == null || (d.lessons is int && d.lessons >= 0 && d.lessons <= 100000))
+        && (!('days' in d) || d.days == null || (d.days is list && d.days.size() <= 400))
+        && (!('dialogues' in d) || d.dialogues == null || (d.dialogues is map && d.dialogues.size() <= 200))
+        && (!('vocab' in d) || d.vocab == null || (d.vocab is list && d.vocab.size() <= 3000))
+        && (!('level' in d) || d.level == null || (d.level is string && d.level.size() <= 10))
+        && (!('pathLevel' in d) || d.pathLevel == null || (d.pathLevel is string && d.pathLevel.size() <= 10));
+    }
+
     // Progression de chaque personne : elle seule peut la lire et la modifier.
     match /users/{uid} {
       allow read, delete: if connecte(uid);
@@ -30,7 +44,8 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['name', 'data', 'updatedAt', 'consent'])
         && (!('name' in request.resource.data) || (request.resource.data.name is string && request.resource.data.name.size() <= 60))
         && (!('data' in request.resource.data) || (request.resource.data.data is map
-          && request.resource.data.data.keys().hasOnly(['progress', 'lessons', 'days', 'dialogues', 'vocab', 'level', 'pathLevel'])))
+          && request.resource.data.data.keys().hasOnly(['progress', 'lessons', 'days', 'dialogues', 'vocab', 'level', 'pathLevel'])
+          && progressionValide(request.resource.data.data)))
         && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt == request.time)
         && (!('consent' in request.resource.data) || (request.resource.data.consent is map
           && request.resource.data.consent.keys().hasOnly(['version', 'at'])));
@@ -95,7 +110,7 @@ service cloud.firestore {
       // l'administration la marque traitée après avoir annulé et remboursé dans Stripe.
       match /retractations/{id} {
         allow read: if connecte(uid) || admin();
-        allow create: if connecte(uid)
+        allow create: if connecte(uid) && courrielConfirme()
           && request.resource.data.keys().hasOnly(['abonnement', 'pays', 'courriel', 'demandeLe'])
           && request.resource.data.abonnement is string && request.resource.data.abonnement.size() <= 100
           && request.resource.data.pays is string && request.resource.data.pays.size() <= 60

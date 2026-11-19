@@ -254,7 +254,28 @@
     ['inactifs', 'Inactifs (30 jours +)', (c) => !c.actif || Date.now() - c.actif >= 30 * DAY],
     ['nonverifies', 'E-mail non confirmé', (c) => !c.verifie],
   ];
+  // Liste nominative chargée seulement à la demande (bouton de l'onglet Utilisateurs)
+  async function chargerListe(btn) {
+    btn.disabled = true;
+    btn.textContent = 'Chargement…';
+    try {
+      const r = await firebase.app().functions(REGION_FONCTIONS).httpsCallable('statsAdmin')({ liste: true });
+      stats = r.data;
+      renderComptes();
+    } catch {
+      btn.disabled = false;
+      btn.textContent = 'Réessayer';
+    }
+  }
   function renderComptes() {
+    if (stats && stats.listeMasquee) {
+      $('#filtres-comptes').replaceChildren();
+      const btn = h('button', { type: 'button', class: 'btn' }, 'Afficher la liste des comptes');
+      btn.addEventListener('click', () => chargerListe(btn));
+      $('#comptes').replaceChildren(h('div', { class: 'subs-empty' },
+        h('p', { class: 'muted' }, 'La liste montre l’e-mail et le nom de chaque élève. Elle n’est chargée que si tu en as besoin.'), btn));
+      return;
+    }
     const liste = (stats && stats.comptes) || [];
     $('#filtres-comptes').replaceChildren(...FILTRES_COMPTES.map(([id, label, test]) => h('button', {
       type: 'button', class: `chip${filtreComptes === id ? ' on' : ''}`, 'aria-pressed': String(filtreComptes === id),

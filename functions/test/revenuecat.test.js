@@ -64,3 +64,14 @@ test('copie Firestore : champs utiles seulement, aucun jeton d’achat', () => {
   assert.deepStrictEqual(copie.subscriber_attributes, { $email: { value: 'a@b.c' } });
   assert.strictEqual(copie.other_purchases, undefined);
 });
+
+test('suppression chez RevenueCat : DELETE avec la clé secrète, 404 accepté, autre erreur signalée', async () => {
+  const appels = [];
+  const faux = (statut) => async (url, opts) => { appels.push({ url, opts }); return { status: statut, ok: statut < 300 }; };
+  assert.strictEqual(await rc.supprimerAbonne('abcDEF123456', 'sk_test', faux(200)), true);
+  assert.strictEqual(appels[0].url, 'https://api.revenuecat.com/v1/subscribers/abcDEF123456');
+  assert.strictEqual(appels[0].opts.method, 'DELETE');
+  assert.strictEqual(appels[0].opts.headers.Authorization, 'Bearer sk_test');
+  assert.strictEqual(await rc.supprimerAbonne('abcDEF123456', 'sk_test', faux(404)), false);
+  await assert.rejects(rc.supprimerAbonne('abcDEF123456', 'sk_test', faux(500)), /500/);
+});
