@@ -220,8 +220,10 @@ function confetti(count = 70) {
 // Sons synthétisés (aucun fichier audio), toujours actifs (décision du fondateur).
 const fxPrefs = () => ({ sound: true, haptic: true });
 let actx = null;
-// iPhone : le son Web Audio est coupé par l'interrupteur silencieux, sauf en mode « lecture ».
-try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* ancien Safari */ }
+// iPhone, site Web : en mode « lecture », iOS afficherait un lecteur « En cours de lecture » en haut de l'écran,
+// ce que le fondateur refuse. On garde le mode « ambiant » : pas de lecteur, mais l'interrupteur silencieux
+// coupe les effets, comme pour les jeux. L'app iOS native règle sa session audio dans AppDelegate.swift.
+try { if (navigator.audioSession) navigator.audioSession.type = 'ambient'; } catch { /* ancien Safari */ }
 function audio() {
   if (!actx) {
     const Ctx = window.AudioContext || window.webkitAudioContext;
