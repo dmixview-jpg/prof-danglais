@@ -50,7 +50,7 @@ function droitsActifs(abonne, maintenant = Date.now()) {
   }).sort();
 }
 
-// Nouveaux attributs du jeton : on garde ceux des autres sources (admin, stripeRole…).
+// Nouveaux attributs du jeton : on garde les autres (admin…).
 function nouveauxAttributs(actuels, actifs) {
   const suite = { ...(actuels || {}) };
   if (actifs.length) suite.revenueCatEntitlements = actifs;

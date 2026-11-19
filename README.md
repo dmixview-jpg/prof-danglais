@@ -166,66 +166,52 @@ Facultatif : **Authentication → Modèles** permet de mettre en français les c
 
 Pré-A1 reste gratuit ; les niveaux A1 à C2 et les dialogues guidés demandent un abonnement Premium (mensuel par défaut, ou annuel, avec 7 jours d'essai gratuit). Tant que `actif` vaut `false` dans `outils/programme/abonnement.json`, tout reste gratuit, comme avant.
 
-**On s'abonne seulement dans les apps** (`"paiementSite": false`). Apple et Google :
+**On s'abonne seulement dans les apps.** Le site ne vend rien et n'utilise plus Stripe. Apple et Google :
 - encaissent le paiement et envoient les reçus ;
 - perçoivent et reversent les taxes de chaque pays (TVA, TPS/TVQ…) : tu n'as pas à t'inscrire aux taxes à l'étranger pour ces ventes ;
 - relancent les cartes refusées, gèrent les remboursements et le droit de rétractation ;
 - te versent les revenus chaque mois, moins leur commission de 15 % (petit développeur) : Apple environ 33 jours après la fin de son mois financier, Google vers le 15 du mois suivant.
 
-Sur le site, la page « Débloque tout le parcours » invite à s'abonner dans l'app, puis à se connecter avec le même compte : l'accès Premium suit le compte partout. Ajoute l'adresse des fiches de l'app dans `liensMagasins` (`abonnement.json`) dès qu'elles existent. Les règles Firestore refusent toute demande de paiement Stripe tant que `paiementSite` vaut `false`.
+Sur le site, la page « Débloque tout le parcours » invite à s'abonner dans l'app, puis à se connecter avec le même compte : l'accès Premium suit le compte partout. Ajoute l'adresse des fiches de l'app dans `liensMagasins` (`abonnement.json`) dès qu'elles existent.
 
 **Paiements refusés : réglages à faire dans les magasins**
 - **App Store Connect → Apps → Abonnements → Période de grâce de facturation** : active-la (6 ou 16 jours). Apple réessaie la carte pendant 60 jours au total ; après la période de grâce, l'accès est coupé.
 - **Play Console → Monétiser → Abonnements → Période de grâce** (jusqu'à 30 jours) **et suspension du compte** (« account hold », jusqu'à 30 jours) : pendant la suspension, l'accès est coupé ; il revient dès que le paiement passe.
 - RevenueCat prévient Firebase à chaque changement : la fonction `revenuecatWebhook` retire le rôle Premium quand le droit d'accès expire, et l'app efface la copie hors connexion à la fin de la période payée.
 
-## Paiement sur le site avec Stripe (facultatif, désactivé)
-
-Le code reste en place si tu veux un jour vendre aussi sur le site (commission d'environ 3 % au lieu de 15 %, mais taxes, relances et remboursements à ta charge). Pour l'activer, mets `"paiementSite": true` et suis les étapes ci-dessous.
+## Contenu Premium : protection et mise en route
 
 **Comment le contenu est protégé**
 - Avec l'abonnement actif, `construire.py` ne met dans `public/curriculum.json` que le contenu gratuit ; les niveaux payants n'y gardent que leurs titres (avec un cadenas). Le contenu payant va dans `outils/premium/contenu.json` (jamais publié ni enregistré dans Git).
 - Les sources des leçons payantes sont dans le dépôt privé `prof-danglais-premium`, pas dans ce dépôt public.
-- `outils/programme/publier_premium.mjs` l'envoie dans Firestore (`contenu/{niveau}`). Les règles de `firestore.rules` ne le laissent lire qu'aux comptes abonnés (`stripeRole == 'premium'`, ajouté par l'extension Stripe). Les abonnés en gardent une copie sur l'appareil pour l'usage hors connexion ; elle est retirée si l'abonnement se termine.
-- Le code est dans `public/abonnement.js` (page « Débloque tout le parcours », paiement, gestion de l'abonnement).
+- `outils/programme/publier_premium.mjs` l'envoie dans Firestore (`contenu/{niveau}`). Les règles de `firestore.rules` ne le laissent lire qu'aux abonnés des magasins (`revenueCatEntitlements` contient `premium`, donné par la fonction `revenuecatWebhook`) et aux administrateurs. Les abonnés en gardent une copie sur l'appareil pour l'usage hors connexion ; elle est retirée si l'abonnement se termine.
+- Le code est dans `public/abonnement.js` (page « Débloque tout le parcours », accès Premium) et `public/magasin.js` (achats intégrés).
 
 **Mise en route** (après avoir activé les comptes, section précédente)
-1. **Firebase → Utilisation et facturation → Modifier le forfait → Blaze** (paiement à l'usage, nécessaire à l'extension Stripe). Ajoute une alerte de budget, par exemple 5 $.
-2. Crée un compte sur <https://stripe.com> et travaille d'abord en **mode test**.
-3. **Stripe → Catalogue de produits → Ajouter un produit** « Prof d'anglais Premium ». Dans ses **métadonnées**, ajoute `firebaseRole` = `premium`. Crée deux prix récurrents en CAD : 6,99 $ par mois et 49,99 $ par an.
-4. **Stripe → Paramètres → Portail client** : active-le (annulation, changement de formule, carte de paiement).
-5. **Firebase → Extensions → « Run Payments with Stripe »** : installe-la en suivant ses instructions (clé API Stripe, webhook à créer dans Stripe). Collections : `customers` et `products`. Pour « Automatically delete Stripe customer objects », garde « Do not delete » (l'historique des paiements reste dans Stripe pour ta comptabilité). Reporte dans `abonnement.json` la région choisie (`region`) et, si tu as changé l'identifiant de l'extension, le nom de la fonction du portail (`fonctionPortail` : `ext-<identifiant>-createPortalLink`).
-6. Dans `outils/programme/abonnement.json` : remplace les `price_A_REMPLACER_…` par les identifiants de tes prix Stripe, vérifie les montants affichés et l'adresse de ton site dans `sites`, puis mets `"actif": true`. Lance `python3 outils/programme/construire.py` : il recopie les prix, l'adresse et la durée de l'essai dans `firestore.rules`. Republie ensuite les règles dans Firebase.
-7. **Firebase → Paramètres du projet → Comptes de service → Générer une nouvelle clé privée**. Copie tout le contenu du fichier dans un secret GitHub nommé `FIREBASE_SERVICE_ACCOUNT` du dépôt **privé** `prof-danglais-premium` (**Settings → Secrets and variables → Actions**). Cette clé est secrète : ne la mets jamais dans le dépôt.
-8. Les leçons payantes sont déjà dans le dépôt privé `prof-danglais-premium` : ce dépôt-ci peut rester public (GitHub Pages gratuit). Attention, l'historique Git de ce dépôt contient encore les anciennes versions des leçons.
-9. Publie les leçons sur `main` du dépôt privé : son workflow « Publier le contenu Premium » envoie le contenu payant dans Firebase. Tu peux vérifier en local avec `node outils/programme/publier_premium.mjs --essai`.
-10. Teste un abonnement en mode test avec la carte `4242 4242 4242 4242`, puis passe Stripe en mode réel (nouvelles clés dans l'extension, nouveaux identifiants de prix dans `abonnement.json`).
+1. **Firebase → Utilisation et facturation → Modifier le forfait → Blaze** : nécessaire aux fonctions Firebase (`functions/`, dont `revenuecatWebhook`). Ajoute une alerte de budget, par exemple 5 $.
+2. **Firebase → Paramètres du projet → Comptes de service → Générer une nouvelle clé privée**. Copie tout le contenu du fichier dans un secret GitHub nommé `FIREBASE_SERVICE_ACCOUNT` du dépôt **privé** `prof-danglais-premium` (**Settings → Secrets and variables → Actions**). Cette clé est secrète : ne la mets jamais dans le dépôt.
+3. Les leçons payantes sont déjà dans le dépôt privé `prof-danglais-premium` : ce dépôt-ci peut rester public (GitHub Pages gratuit). Attention, l'historique Git de ce dépôt contient encore les anciennes versions des leçons.
+4. Publie les leçons sur `main` du dépôt privé : son workflow « Publier le contenu Premium » envoie le contenu payant dans Firebase. Tu peux vérifier en local avec `node outils/programme/publier_premium.mjs --essai`.
+5. Configure les abonnements dans App Store Connect, la Play Console et RevenueCat (section « App Store et Google Play »), vérifie les montants affichés dans `abonnement.json`, puis mets `"actif": true` et relance `python3 outils/programme/construire.py`.
 
 **Règles de gestion déjà programmées**
-- L'essai gratuit (`essaiJours`) n'est offert qu'une fois : une personne qui a déjà eu un abonnement voit « S'abonner », sans nouvel essai.
-- Paiement refusé : l'extension retire l'accès Premium dès que l'abonnement passe « en retard », pendant que Stripe réessaie. Dans l'app, la page d'abonnement affiche alors « Mettre à jour mon paiement » (portail Stripe) ; l'accès revient dès que le paiement passe.
+- L'essai gratuit (`essaiJours`) est géré par Apple et Google, qui ne l'offrent qu'une fois par compte de magasin.
 - Annulation : l'accès reste ouvert jusqu'à la fin de la période payée, puis les niveaux A1 à C2 se verrouillent et la copie hors connexion est effacée.
 - Hors connexion : la copie des leçons Premium reste utilisable jusqu'à la **fin de la période payée** (plus 3 jours de marge pour un renouvellement fait hors ligne), et au plus 30 jours après la dernière vérification en ligne (`HORS_LIGNE_MAX` dans `abonnement.js`). Un abonné qui ne paie plus perd donc l'accès à la fin de son mois, même s'il reste hors ligne. Si l'horloge de l'appareil est reculée pour prolonger la copie, elle n'est plus acceptée. Ensuite, l'app demande de se connecter à Internet une fois.
-- En ligne, l'accès Premium est vérifié par Firebase à chaque ouverture de l'app : dès que l'extension Stripe retire le rôle (paiement en retard, impayé, annulé), les règles Firestore refusent le contenu payant et la copie de l'appareil est effacée. Le jeton de connexion se renouvelle au plus tard toutes les heures.
-- **Réglages Stripe à faire** (Paramètres → Facturation → Récupération des revenus) :
-  - **Relances** : active les Smart Retries (Stripe réessaie la carte pendant environ 2 semaines) ;
-  - **Si toutes les relances échouent** : choisis **Annuler l'abonnement** ;
-  - **Courriels** : active l'envoi d'un courriel quand un paiement échoue et quand la carte va expirer ;
-  - **Litiges** (Paramètres → Facturation → Abonnements) : en cas de contestation d'un paiement, annule l'abonnement dans Stripe.
-- Un compte avec un abonnement actif ne peut pas être supprimé dans l'app : il faut d'abord annuler l'abonnement (sinon Stripe continuerait de facturer).
+- En ligne, l'accès Premium est vérifié par Firebase à chaque ouverture de l'app : dès que RevenueCat signale la fin du droit d'accès, les règles Firestore refusent le contenu payant et la copie de l'appareil est effacée. Le jeton de connexion se renouvelle au plus tard toutes les heures.
+- Supprimer son compte dans l'app n'annule pas l'abonnement chez Apple ou Google : la personne l'annule dans les réglages de son téléphone.
 
-**Avant d'ouvrir les abonnements :** remplis les politiques (section suivante). Au Québec, l'inscription aux taxes TPS/TVQ est obligatoire au-delà de 30 000 $ de revenus sur 12 mois ; Stripe Tax peut les calculer.
+**Avant d'ouvrir les abonnements :** remplis les politiques (section suivante).
 
 ## Conditions et confidentialité (clientèle internationale)
 
-> Les textes visent maintenant les abonnements achetés dans l'App Store et Google Play (Apple et Google vendent, remboursent et gèrent la rétractation). Le bouton « Me rétracter du contrat », Stripe Tax et les points sur les taxes ci-dessous ne servent que si tu actives le paiement sur le site ; il faudrait alors aussi reprendre les sections 5 à 10 des conditions dans l'historique Git (version du 21 octobre 2026).
+> Les textes visent les abonnements achetés dans l'App Store et Google Play : Apple et Google vendent, perçoivent les taxes, remboursent et gèrent la rétractation.
 
 L'app vise une clientèle francophone en Europe, dans les Amériques, en Afrique et en Asie. Deux pages publiques, liées depuis l'écran de connexion, le menu « Mon compte » et la page d'abonnement, couvrent ces régions :
 - `public/conditions.html` : conditions d'utilisation et de vente.
   - Réservé aux personnes de 18 ans ou plus ayant l'âge de la majorité dans leur pays.
   - Offert partout sauf en Chine continentale, où Firebase est bloqué.
   - Prix en $ CA, taxes du pays comprises ; essai offert une fois ; rappel avant le renouvellement annuel.
-  - **Droit de rétractation de 14 jours** en Union européenne, dans l'EEE et au Royaume-Uni, avec modèle de formulaire. Ailleurs, il s'applique seulement si la loi du pays le prévoit.
   - Pas de remboursement partiel en dehors de ces cas et des exceptions prévues.
   - Loi du Québec, sans priver le client des protections obligatoires de son pays.
 - `public/confidentialite.html` : politique de confidentialité.
@@ -235,47 +221,24 @@ L'app vise une clientèle francophone en Europe, dans les Amériques, en Afrique
 
 Pour créer un compte, la personne doit cocher « J'ai 18 ans ou plus et l'âge de la majorité dans mon pays, et j'accepte les conditions ». La version acceptée et la date d'acceptation sont enregistrées dans son profil (`users/{uid}.consent`).
 
-**Bouton de rétractation** (obligatoire dans l'UE depuis le 19 juin 2026)
-- Pendant 14 jours après le début d'un abonnement, « Mon compte » affiche **Me rétracter du contrat**.
-- La personne choisit son pays de résidence et confirme. L'app affiche aussitôt un accusé de réception avec la date et l'heure, et la demande est enregistrée dans `customers/{uid}/retractations`.
-- Elle apparaît dans le tableau de bord, section « À faire ». Si le pays est « Autre pays », vérifie si sa loi l'impose.
-- **À toi de jouer**, sans délai :
-  1. Écris à la personne pour confirmer la réception.
-  2. Dans Stripe, annule l'abonnement et rembourse les paiements dans les 14 jours.
-  3. Touche « Marquer comme traitée ».
-
 **Polices.** Les polices sont hébergées avec l'app (`public/fonts/`, licence OFL) : aucune adresse IP n'est envoyée à Google Fonts, ce que des tribunaux européens ont jugé contraire au RGPD.
 
 **À faire avant la mise en ligne payante**
 1. Remplis `public/legal-config.js` : nom ou nom d'entreprise, courriel de contact, adresse postale, téléphone (facultatif) et responsable des renseignements personnels. Ce sont des mentions obligatoires au Québec comme en Europe. Tant qu'un champ est vide, les pages affichent « [à compléter : …] » en surligné.
 2. **Représentants en Europe** (`representantUE`, `representantRU`) : un commerçant hors Europe qui vend à des Européens doit en désigner un dans l'Union européenne et un au Royaume-Uni (article 27 du RGPD). Des entreprises spécialisées offrent ce service, souvent pour quelques centaines d'euros par an.
-3. **Taxes à l'étranger** : plusieurs pays taxent les services numériques vendus à leurs résidents, souvent dès la première vente :
-   - Union européenne : TVA, avec le guichet unique OSS « non-Union » ;
-   - Royaume-Uni, Suisse, Norvège ;
-   - Afrique du Sud, Kenya, Nigeria ;
-   - Inde, Japon, Corée, Singapour, Australie, etc.
-
-   Active **Stripe Tax** (environ 0,5 % par transaction) : il surveille les seuils et calcule la bonne taxe. Ensuite :
-   - dans Stripe, règle tes prix en « taxes incluses » ;
-   - mets `"taxesAutomatiques": true` dans `outils/programme/abonnement.json`, puis relance `construire.py`.
-
-   Inscris-toi auprès de chaque pays quand Stripe te le signale. Un comptable peut t'aider.
-4. **Stripe → Paramètres → Facturation → Abonnements et courriels** : active les courriels de rappel avant les renouvellements (formule annuelle). Les conditions le promettent, et la Californie l'exige.
-5. **Stripe → Paramètres → Détails publics** : ajoute les adresses de `conditions.html` et de `confidentialite.html`, ainsi qu'un courriel de soutien.
-6. Republie `firestore.rules` (nouvelles règles pour les demandes de rétractation).
-7. Loi 25 : avant de confier des renseignements à Firebase et Stripe (serveurs hors Québec), fais et garde une courte évaluation des facteurs relatifs à la vie privée. Tiens aussi un registre des incidents de confidentialité, même vide.
-8. Si tu modifies un texte de façon importante, change `enVigueur` dans `legal-config.js` et préviens les abonnés 30 jours à l'avance.
-9. Ces textes sont un bon point de départ, pas un avis juridique. Fais-les relire par un avocat avant d'encaisser de vrais paiements, idéalement quelqu'un qui connaît le droit de la consommation européen, puisque l'Europe est le marché le plus encadré.
+3. Republie `firestore.rules` après chaque modification des règles.
+4. Loi 25 : avant de confier des renseignements à Firebase et RevenueCat (serveurs hors Québec), fais et garde une courte évaluation des facteurs relatifs à la vie privée. Tiens aussi un registre des incidents de confidentialité, même vide.
+5. Si tu modifies un texte de façon importante, change `enVigueur` dans `legal-config.js` et préviens les abonnés 30 jours à l'avance.
+6. Ces textes sont un bon point de départ, pas un avis juridique. Fais-les relire par un avocat avant d'encaisser de vrais paiements, idéalement quelqu'un qui connaît le droit de la consommation européen, puisque l'Europe est le marché le plus encadré.
 
 ## Sécurité
 
-**Les données de carte ne passent jamais par l'app.** Sur le site, le paiement se fait sur la page de Stripe (Stripe Checkout) ; dans les apps, par les achats intégrés d'Apple et de Google. Pour la norme PCI DSS, c'est le niveau le plus léger (questionnaire SAQ A, proposé dans le tableau de bord Stripe).
+**Les données de carte ne passent jamais par l'app.** Le paiement se fait uniquement par les achats intégrés d'Apple et de Google ; le site ne vend rien.
 
 **Ce que les règles Firestore (`firestore.rules`) bloquent**
-- Une demande de paiement ne peut contenir que les champs prévus : un des prix de `abonnement.json`, des adresses de retour vers ton site (`sites`) et l'essai de `essaiJours` jours. Impossible de fabriquer un prix, d'ajouter une remise ou de s'offrir un essai plus long.
-- L'essai gratuit n'est offert qu'une fois par compte : la marque `essais/{uid}` ne peut ni changer ni disparaître. Un paiement abandonné peut être repris pendant une heure.
-- Pour payer, le courriel doit être confirmé. Pour être administrateur aussi : sinon, quelqu'un pourrait créer un compte avec ton adresse avant toi (`nommer_admin.mjs` le refuse aussi).
-- Chaque personne ne lit et n'écrit que ses données, avec seulement les champs prévus. Le contenu Premium n'est lisible qu'avec le rôle d'abonné donné par Stripe ou RevenueCat.
+- Aucune demande de paiement, d'essai ou de rétractation ne peut être écrite dans Firestore : le site ne vend rien.
+- Pour être administrateur, le courriel doit être confirmé : sinon, quelqu'un pourrait créer un compte avec ton adresse avant toi (`nommer_admin.mjs` le refuse aussi).
+- Chaque personne ne lit et n'écrit que ses données, avec seulement les champs prévus. Le contenu Premium n'est lisible qu'avec le droit d'accès donné par RevenueCat.
 
 Ces règles sont testées sur l'émulateur Firebase (Java 11 ou plus récent) : `npm run test:regles`. Le workflow « Règles Firestore » les vérifie à chaque modification.
 
@@ -292,26 +255,25 @@ Ces règles sont testées sur l'émulateur Firebase (Java 11 ou plus récent) : 
 - SDK Firebase 12.19 inclus dans l'app ; `npm audit` ne signale aucune faille connue.
 - Android : sauvegarde des données de l'app désactivée (`allowBackup="false"`), pour que la session et la copie Premium ne puissent pas être extraites d'une sauvegarde. iOS : aucune exception au https.
 - Workflows GitHub : chaque action est épinglée par son empreinte (commit), pour qu'une action piratée ne puisse pas voler tes clés de signature. Dependabot (`.github/dependabot.yml`) propose les mises à jour chaque semaine.
-- Aucun secret dans l'historique Git (vérifié : clés Stripe, Firebase, Apple, Google, RevenueCat, fichiers de clés).
+- Aucun secret dans l'historique Git (vérifié : clés Firebase, Apple, Google, RevenueCat, fichiers de clés).
 
 **À faire toi-même**
-- Double authentification (application ou clé de sécurité, pas SMS) sur GitHub, Google/Firebase, Stripe, Apple, Google Play et RevenueCat. Un gestionnaire de mots de passe, un mot de passe unique par service.
+- Double authentification (application ou clé de sécurité, pas SMS) sur GitHub, Google/Firebase, Apple, Google Play et RevenueCat. Un gestionnaire de mots de passe, un mot de passe unique par service.
 - GitHub → **Settings → Branches** : protège `main` (fusion par PR seulement). **Settings → Code security** : active Dependabot et Secret scanning.
 - Google Cloud → **IAM** : donne au compte de service de `FIREBASE_SERVICE_ACCOUNT` seulement les rôles nécessaires (Cloud Datastore User, Firebase Authentication Admin), pas « Propriétaire ».
 - Firebase → **Authentication → Paramètres** : active la protection contre l'énumération des adresses e-mail.
 - Firebase → **Authentication → Paramètres → Règles relatives aux mots de passe** : 8 caractères minimum, au moins une lettre et un chiffre, mode **Appliquer**. L'app affiche déjà ces exigences.
-- Stripe → **Radar** : garde les règles par défaut contre la fraude ; elles repèrent aussi une même carte utilisée pour plusieurs essais.
 - Firebase → **Utilisation et facturation** : alerte de budget (ex. 5 $).
 
 ## Tableau de bord des abonnements (admin)
 
-La page `admin.html` (ex. : `https://<ton-site>/admin.html`) résume tous les abonnements, du site (Stripe) comme de l'App Store et de Google Play (RevenueCat) : abonnés payants, essais en cours, revenu mensuel récurrent, paiements en retard, annulations prévues et départs des 30 derniers jours. La section « À faire » signale les paiements en retard, les essais qui se terminent d'ici 3 jours et les annulations demandées, avec un lien vers la fiche Stripe de chaque personne. La page est en lecture seule ; remboursements et factures se font dans Stripe.
+La page `admin.html` (ex. : `https://<ton-site>/admin.html`) résume tous les abonnements de l'App Store et de Google Play (RevenueCat) : abonnés payants, essais en cours, revenu mensuel récurrent, paiements en retard, annulations prévues et départs des 30 derniers jours. La section « À faire » signale les paiements en retard, les essais qui se terminent d'ici 3 jours et les annulations demandées. La page est en lecture seule ; remboursements et factures se font chez Apple et Google.
 
 **Abonnés des magasins.** Ils y apparaissent dès que les fonctions Firebase du dossier `functions/` sont déployées (section « App Store et Google Play »). L'app donne aussi le courriel du compte à RevenueCat pour reconnaître chaque abonné. Le revenu des magasins est estimé avec les prix de `abonnement.json`, avant la commission d'Apple ou de Google. Les achats de test (sandbox) sont listés avec la mention « Test », mais ne sont pas comptés.
 
 **Accès réservé.** Seuls les comptes marqués administrateur peuvent lire ces données (règles de `firestore.rules`). Pour te donner l'accès :
 1. Crée ton compte dans l'app (comme un utilisateur).
-2. Sur GitHub : **Actions → Nommer un administrateur → Run workflow**, écris ton courriel, puis **Run workflow**. (Le secret `FIREBASE_SERVICE_ACCOUNT` doit exister, voir « Abonnement payant ».)
+2. Sur GitHub : **Actions → Nommer un administrateur → Run workflow**, écris ton courriel, puis **Run workflow**. (Le secret `FIREBASE_SERVICE_ACCOUNT` doit exister, voir « Contenu Premium : protection et mise en route ».)
 3. Dans l'app, déconnecte-toi puis reconnecte-toi : le menu « Mon compte » affiche maintenant **📊 Tableau de bord des abonnements**.
 
 Pour retirer l'accès, relance le même workflow en cochant « Retirer l'accès ». En local : `FIREBASE_SERVICE_ACCOUNT="$(cat cle.json)" node outils/admin/nommer_admin.mjs courriel@exemple.com`.
@@ -321,14 +283,14 @@ Pour retirer l'accès, relance le même workflow en cochant « Retirer l'accès 
 L'app web est emballée en vraies apps iPhone/iPad et Android avec **Capacitor** (dossiers `android/` et `ios/`). Les fichiers de `public/` sont inclus dans l'app : elle marche hors connexion dès le premier lancement. Le SDK Firebase et les polices sont aussi inclus (`public/vendor/`, `public/fonts/`), car Apple interdit de télécharger du code. Aucun Mac n'est nécessaire : le workflow **Apps mobiles** construit les deux apps sur GitHub.
 
 **Ce qui change dans les apps**
-- **Paiement** : Apple et Google exigent leurs achats intégrés pour débloquer du contenu. Stripe n'y est jamais proposé.
+- **Paiement** : Apple et Google exigent leurs achats intégrés pour débloquer du contenu. C'est le seul moyen de s'abonner.
   - L'app utilise **RevenueCat** (`public/magasin.js`), gratuit jusqu'à 2 500 $ US de revenus par mois.
-  - Un abonnement pris sur le site, dans l'App Store ou dans Google Play donne le même accès Premium, avec le même compte.
+  - Un abonnement pris dans l'App Store ou dans Google Play donne le même accès Premium sur le site, avec le même compte.
 - **Remboursements et rétractation** : pour les achats dans les magasins, c'est Apple ou Google qui s'en chargent (section « Achat dans l'App Store ou Google Play » des conditions).
 - **Mises à jour** :
   - une modification de `public/` demande une nouvelle version dans les magasins, avec un nouvel examen ;
   - le contenu Premium, lui, vient de Firebase et se met à jour sans nouvelle version.
-- **Commission** : 15 % pour un petit développeur, contre environ 3 % avec Stripe sur le site.
+- **Commission** : 15 % pour un petit développeur.
 
 **1. Comptes**
 - **Apple Developer Program** : 99 $ US par an, sur <https://developer.apple.com/programs/>.
@@ -440,7 +402,7 @@ prof-danglais/
 ├── server.js                  # Petit serveur de fichiers sans dépendance (Node 18+)
 ├── package.json
 ├── .env.example               # Seul réglage : PORT
-├── firestore.rules            # Règles de sécurité Firebase (comptes, contenu payant, Stripe)
+├── firestore.rules            # Règles de sécurité Firebase (comptes, contenu payant)
 ├── firebase.json              # Émulateur Firebase pour tester les règles (npm run test:regles)
 ├── test/server.test.js        # Tests du serveur et de tout le contenu
 ├── test/fusion.test.js        # Tests de la fusion des progressions (comptes)
@@ -457,7 +419,7 @@ prof-danglais/
 ├── outils/logo/               # Logo 3D : script Blender, rendus HD et police Fredoka (OFL)
 ├── outils/programme/          # Tout le contenu pédagogique (Python) et son générateur
 │   ├── construire.py
-│   ├── abonnement.json        # Abonnement Premium : actif?, prix Stripe, essai gratuit
+│   ├── abonnement.json        # Abonnement Premium : actif?, prix affichés, essai gratuit
 │   ├── publier_premium.mjs    # Envoie le contenu payant dans Firebase
 │   ├── aide.py
 │   ├── premiers_pas.py
@@ -467,7 +429,7 @@ prof-danglais/
     ├── styles.css
     ├── app.js
     ├── compte.js              # Comptes utilisateurs et synchronisation (Firebase)
-    ├── abonnement.js          # Abonnement Premium (page d'abonnement, Stripe)
+    ├── abonnement.js          # Abonnement Premium (page d'abonnement, accès Premium)
     ├── magasin.js             # Achats intégrés App Store / Google Play (RevenueCat)
     ├── vendor/firebase/       # SDK Firebase inclus dans l'app
     ├── admin.html, admin.js   # Tableau de bord des abonnements (administrateurs)

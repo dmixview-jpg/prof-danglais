@@ -15,9 +15,9 @@ const docs = [
   { uid: 'b', data: { data: { lessons: 1, level: 'pre', days: ['2026-10-29'] } } },
 ];
 
-test('statut Premium : magasin, site ou aucun', () => {
+test('statut Premium : magasin ou aucun (Stripe retiré)', () => {
   assert.strictEqual(statutPremium({ revenueCatEntitlements: ['premium'] }), 'magasin');
-  assert.strictEqual(statutPremium({ stripeRole: 'premium' }), 'site');
+  assert.strictEqual(statutPremium({ stripeRole: 'premium' }), null);
   assert.strictEqual(statutPremium({ admin: true }), null);
   assert.strictEqual(statutPremium(undefined), null);
 });
@@ -25,7 +25,7 @@ test('statut Premium : magasin, site ou aucun', () => {
 test('chiffres agrégés', () => {
   const s = calculer(comptes, docs, maintenant);
   assert.deepStrictEqual(s.utilisateurs, { total: 3, verifies: 2, nouveaux7: 1, nouveaux30: 2, actifs1: 1, actifs7: 1, actifs30: 2 });
-  assert.deepStrictEqual(s.premium, { total: 2, magasin: 1, site: 1, conversion: 2 / 3 });
+  assert.deepStrictEqual(s.premium, { total: 1, magasin: 1, conversion: 1 / 3 });
   assert.strictEqual(s.apprentissage.lecons, 5);
   assert.strictEqual(s.apprentissage.niveaux.a1, 1);
   assert.strictEqual(s.apprentissage.niveaux.pre, 1);

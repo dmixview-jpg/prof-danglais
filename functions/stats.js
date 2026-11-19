@@ -12,7 +12,6 @@ const enMs = (d) => { const t = d ? Date.parse(d) : NaN; return Number.isFinite(
 function statutPremium(claims) {
   const c = claims || {};
   if (Array.isArray(c.revenueCatEntitlements) && c.revenueCatEntitlements.includes('premium')) return 'magasin';
-  if (c.stripeRole === 'premium') return 'site';
   return null;
 }
 
@@ -32,7 +31,7 @@ function calculer(comptes, docs, maintenant = Date.now(), limiteListe = 500) {
   const actifsParJour = Object.fromEntries(Object.keys(inscriptions).map((j) => [j, 0]));
   const niveaux = Object.fromEntries(NIVEAUX.map((n) => [n, 0]));
   let verifies = 0; let nouveaux7 = 0; let nouveaux30 = 0; let actifs1 = 0; let actifs7 = 0; let actifs30 = 0;
-  let lecons = 0; let premium = 0; let premiumMagasin = 0; let premiumSite = 0;
+  let lecons = 0; let premium = 0; let premiumMagasin = 0;
 
   const liste = comptes.map((c) => {
     const donnees = (parUid.get(c.uid) || {}).data || {};
@@ -50,7 +49,7 @@ function calculer(comptes, docs, maintenant = Date.now(), limiteListe = 500) {
     for (const j of (Array.isArray(donnees.days) ? donnees.days : [])) if (j in actifsParJour) actifsParJour[j]++;
     if (niveau in niveaux) niveaux[niveau]++;
     lecons += nbLecons;
-    if (statut) { premium++; if (statut === 'magasin') premiumMagasin++; else premiumSite++; }
+    if (statut) { premium++; premiumMagasin++; }
     return {
       courriel: c.email || '', nom: (parUid.get(c.uid) || {}).name || c.displayName || '',
       verifie: !!c.emailVerified, desactive: !!c.disabled, admin: !!(c.customClaims || {}).admin,
@@ -62,7 +61,7 @@ function calculer(comptes, docs, maintenant = Date.now(), limiteListe = 500) {
   return {
     genereLe: maintenant,
     utilisateurs: { total: comptes.length, verifies, nouveaux7, nouveaux30, actifs1, actifs7, actifs30 },
-    premium: { total: premium, magasin: premiumMagasin, site: premiumSite, conversion: comptes.length ? premium / comptes.length : 0 },
+    premium: { total: premium, magasin: premiumMagasin, conversion: comptes.length ? premium / comptes.length : 0 },
     apprentissage: { lecons, moyenneParActif: actifs30 ? lecons / actifs30 : 0, niveaux },
     inscriptionsParJour: Object.entries(inscriptions).map(([jour, n]) => ({ jour, n })),
     actifsParJour: Object.entries(actifsParJour).map(([jour, n]) => ({ jour, n })),

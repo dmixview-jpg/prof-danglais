@@ -194,49 +194,11 @@ def split_premium(data, config):
             if "turns" in sc:
                 premium.setdefault(lid, {"lessons": {}, "scenarios": {}})["scenarios"][sc["id"]] = sc.pop("turns")
             sc["locked"] = True
-    data["abonnement"] = {k: config[k] for k in ("gratuit", "essaiJours", "region", "fonctionPortail", "taxesAutomatiques", "prix")}
+    data["abonnement"] = {k: config[k] for k in ("gratuit", "essaiJours", "prix")}
     data["abonnement"]["dialoguesGratuits"] = sorted(free_dialogues)
-    data["abonnement"]["paiementSite"] = config.get("paiementSite", True)
     data["abonnement"]["liensMagasins"] = config.get("liensMagasins", {})
     data["abonnement"]["magasins"] = {k: v for k, v in config.get("magasins", {}).items() if not k.startswith("_")}
     return premium
-
-
-RULES_DEBUT = "    // <généré : outils/programme/abonnement.json>"
-RULES_FIN = "    // </généré>"
-
-
-def bloc_regles(config):
-    """Constantes de firestore.rules tirées de abonnement.json : prix acceptés, adresses de retour
-    du paiement (le site), durée de l'essai. Une adresse absente bloque tout paiement."""
-    # Paiement sur le site désactivé (paiementSite=false) : aucune demande de paiement Stripe acceptée
-    prix = ", ".join(f"'{p['id']}'" for p in config.get("prix", [])) if config.get("paiementSite", True) else ""
-    sites = [s for s in config.get("sites", []) if s.startswith("https://") and s.endswith("/")]
-    if sites:
-        motifs = " || ".join(
-            "u.matches('" + re.escape(s).replace("\\", "\\\\").replace("'", "") + ".*')" for s in sites)
-    else:
-        motifs = "false"
-    return "\n".join([
-        RULES_DEBUT + " (construire.py réécrit ce bloc, ne le modifie pas à la main)",
-        f"    function prixAutorise(p) {{ return p in [{prix}]; }}",
-        f"    function adresseAutorisee(u) {{ return u is string && u.size() <= 300 && ({motifs}); }}",
-        f"    function essaiJours() {{ return {int(config.get('essaiJours', 0))}; }}",
-        RULES_FIN,
-    ])
-
-
-def ecrire_regles(config):
-    path = os.path.join(ROOT, "firestore.rules")
-    with open(path, encoding="utf-8") as f:
-        texte = f.read()
-    debut = texte.index(RULES_DEBUT)
-    fin = texte.index(RULES_FIN, debut) + len(RULES_FIN)
-    nouveau = texte[:debut] + bloc_regles(config) + texte[fin:]
-    if nouveau != texte:
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(nouveau)
-        print("firestore.rules mis à jour : republie-le dans la console Firebase (Firestore → Règles).")
 
 
 def main():
@@ -296,12 +258,6 @@ def main():
     if problems:
         print("\n".join(problems))
         sys.exit(1)
-
-    if config.get("actif") and config.get("paiementSite", True) and not any(x.startswith("https://") for x in config.get("sites", [])):
-        print("abonnement.json : indique l'adresse de ton site dans « sites » (ex. https://exemple.netlify.app/)")
-        sys.exit(1)
-    if not test_dir:
-        ecrire_regles(config)
 
     data = {"version": 2, "levels": levels, "scenarios": scenarios}
     premium = split_premium(data, config) if config.get("actif") else None
