@@ -71,7 +71,7 @@ test('parcours complet : 7 niveaux, de Pré-A1 à C2, toutes les leçons rédig�
   assert.deepEqual(COURSE.levels.map((l) => l.code), ['Pré-A1', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
   const all = COURSE.levels.flatMap((l) => l.units.flatMap((u) => u.lessons));
   const lessons = all.filter((l) => !l.dialogue);
-  assert.equal(lessons.filter((l) => !l.review).length, 179);
+  assert.equal(lessons.filter((l) => !l.review).length, 183);
   assert.equal(lessons.filter((l) => l.review).length, 36);
   const ids = all.map((l) => l.id);
   for (const l of lessons) {
