@@ -24,6 +24,10 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Le micro sert aux exercices de prononciation : tu dis une phrase en anglais et l'app vérifie ce que tu as dit. Rien n'est enregistré.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>La reconnaissance vocale d'Apple transforme ta phrase en texte pour vérifier ta prononciation. Rien n'est conservé par l'app.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
