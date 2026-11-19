@@ -48,3 +48,11 @@ test('aucun compte : pas de division par zéro', () => {
   assert.strictEqual(s.premium.conversion, 0);
   assert.strictEqual(s.apprentissage.moyenneParActif, 0);
 });
+
+test('une connexion sans pratique ne compte pas comme une activité', () => {
+  const seul = [{ uid: 'd', email: 'd@x.ca', metadata: { creationTime: il(3), lastSignInTime: il(0.1) } }];
+  const s = calculer(seul, [], maintenant);
+  assert.deepStrictEqual([s.utilisateurs.actifs1, s.utilisateurs.actifs7, s.utilisateurs.actifs30], [0, 0, 0]);
+  assert.strictEqual(s.comptes[0].actif, null);
+  assert.ok(s.comptes[0].connexion > 0);
+});

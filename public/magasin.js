@@ -91,7 +91,9 @@
       // Erreur brute du pont natif : le code peut être sur l'erreur ou dans err.data (1 = annulé)
       const d = (err && err.data) || {};
       if (err && (err.userCancelled || d.userCancelled || String(err.code) === '1' || String(d.code) === '1')) return false;
-      throw new Error(`Achat impossible : ${(err && err.message) || 'réessaie dans un instant.'}`);
+      // Message clair pour l'élève ; le détail technique reste dans la console.
+      console.warn('Achat magasin', err);
+      throw new Error('L’achat n’a pas pu aboutir. Vérifie ta connexion, puis réessaie.');
     }
   }
 

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr-CA">
+<html lang="fr">
 <head>
   <meta charset="utf-8">
   <!-- Sécurité : seuls les fichiers de l'app, Firebase et reCAPTCHA peuvent être chargés (voir public/_headers) -->
@@ -115,11 +115,13 @@
         <div class="scenario-grid" id="scenario-chips"></div>
       </div>
       <div id="dlg-view" hidden>
-        <div class="lesson-bar">
-          <button type="button" class="btn ghost small" id="dlg-back">← Situations</button>
-          <span class="crumb" id="dlg-crumb"></span>
+        <div class="dlg-sticky">
+          <div class="lesson-bar">
+            <button type="button" class="btn ghost small" id="dlg-back">← Situations</button>
+            <span class="crumb" id="dlg-crumb"></span>
+          </div>
+          <div class="progress dlg-progress" aria-hidden="true"><span id="dlg-progress"></span></div>
         </div>
-        <div class="progress dlg-progress" aria-hidden="true"><span id="dlg-progress"></span></div>
         <div id="chat-log" class="chat-log" aria-live="polite"></div>
         <div id="dlg-choices" class="dlg-choices"></div>
       </div>

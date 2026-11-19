@@ -489,7 +489,8 @@ async function loadCourse() {
     const res = await fetch('curriculum.json');
     COURSE = await res.json();
   } catch {
-    $('#path').replaceChildren(h('div', { class: 'status error' }, 'Impossible de charger le parcours. Vérifie ta connexion, puis recharge la page.'));
+    $('#path').replaceChildren(h('div', { class: 'status error' }, 'Impossible de charger le parcours. Vérifie ta connexion, puis réessaie.',
+      h('button', { type: 'button', class: 'btn primary small', style: 'margin-top:10px', onclick: () => location.reload() }, 'Réessayer')));
     return;
   }
   for (const level of COURSE.levels) {
@@ -1022,6 +1023,13 @@ function renderLesson(lesson, courseId) {
 // =====================================================================
 const chatLog = $('#chat-log');
 $('#dlg-mascot').append(mascot('wave', 'hero-buddy'));
+// La barre du dialogue reste visible sous l'en-tête pendant l'échange.
+{
+  const top = $('.topbar');
+  const setTop = () => document.documentElement.style.setProperty('--topbar-h', `${top ? top.offsetHeight : 0}px`);
+  setTop();
+  if (top && 'ResizeObserver' in window) new ResizeObserver(setTop).observe(top);
+}
 const getDialogueStars = () => store.get(KEYS.dialogues, {});
 let dialogue = null; // { scenario, idx, correct, asked }
 
@@ -1162,7 +1170,12 @@ function answer(turn, k) {
   setMood(last, good ? 'happy' : 'oops', 1400);
   dialogue.idx++;
   scrollChat();
-  setTimeout(() => dialogue && nextTurn(), reducedMotion() ? 0 : 900);
+  if (good) { setTimeout(() => dialogue && nextTurn(), reducedMotion() ? 0 : 900); return; }
+  // Après une erreur, la correction reste affichée : on avance quand l'élève l'a lue.
+  const next = h('button', { type: 'button', class: 'btn primary dlg-continue', onclick: () => dialogue && nextTurn() }, 'Continuer');
+  $('#dlg-choices').replaceChildren(next);
+  next.focus({ preventScroll: true });
+  scrollChat();
 }
 
 function endDialogue() {

@@ -13,7 +13,7 @@
     telephone: 'téléphone', responsable: 'nom du responsable',
     representantUE: 'représentant dans l’Union européenne', representantRU: 'représentant au Royaume-Uni',
   };
-  const date = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' });
+  const date = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
   document.querySelectorAll('[data-legal]').forEach((el) => {
     const key = el.dataset.legal;
     const v = key === 'enVigueur' ? (L.enVigueur ? date(L.enVigueur) : '') : (L[key] || (key === 'responsable' ? L.nom : ''));

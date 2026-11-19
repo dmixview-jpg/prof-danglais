@@ -50,8 +50,8 @@
     const d = new Date(v);
     return Number.isNaN(d.getTime()) ? null : d;
   }
-  const date = (v) => { const d = toDate(v); return d ? d.toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'; };
-  const money = (cents, cur = 'cad') => (cents / 100).toLocaleString('fr-CA', { style: 'currency', currency: cur.toUpperCase() });
+  const date = (v) => { const d = toDate(v); return d ? d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'; };
+  const money = (cents, cur = 'cad') => (cents / 100).toLocaleString('fr-FR', { style: 'currency', currency: cur.toUpperCase() });
   function plan(r) {
     const pr = (r.items && r.items[0] && r.items[0].price) || {};
     const interval = pr.recurring && pr.recurring.interval;
@@ -130,15 +130,15 @@
     $('#kpis').replaceChildren(
       kpi('Abonnés payants', String(active.length), ((n, m) => `dont ${n} annuel${n > 1 ? 's' : ''} · ${m} par les magasins`)(active.filter((r) => plan(r).interval === 'year').length, active.filter((r) => r.source !== 'Site').length)),
       kpi('Essais en cours', String(trials.length), soon.length ? `${soon.length} ${soon.length > 1 ? 'se terminent' : 'se termine'} d’ici 3 jours` : 'aucun ne se termine d’ici 3 jours'),
-      kpi('Revenu mensuel récurrent', money(Math.round(mrr)), `≈ ${money(Math.round(mrr * 12))} par an, avant frais et commissions`),
+      kpi('Revenu par mois', money(Math.round(mrr)), `ce que rapportent chaque mois les abonnés actuels · ≈ ${money(Math.round(mrr * 12))} par an, avant frais et commissions`),
       kpi('Paiements en retard', String(rows.filter(late).length), 'le service de paiement réessaie automatiquement', rows.some(late) ? 'alert' : ''),
       kpi('Annulations prévues', String(rows.filter(ending).length), 'accès gardé jusqu’à la fin de la période'),
-      kpi('Départs (30 jours)', String(recent.length), 'abonnements terminés'));
+      kpi('Abonnements terminés (30 jours)', String(recent.length), 'personnes qui ne sont plus abonnées depuis 30 jours'));
 
     const todo = [
       ...retractations.filter((x) => !x.traiteLe).map((x) => ({
         r: x, icon: '↩️', fait: x,
-        text: `Rétractation demandée le ${date(x.demandeLe)} (${x.pays}). ${x.pays === 'Autre pays' ? 'Vérifie si la loi de son pays l’impose. ' : ''}Dans Stripe : annule l’abonnement et rembourse, puis confirme par courriel.`,
+        text: `Rétractation demandée le ${date(x.demandeLe)} (${x.pays}). ${x.pays === 'Autre pays' ? 'Vérifie si la loi de son pays l’impose. ' : ''}Dans Stripe : annule l’abonnement et rembourse, puis confirme par e-mail.`,
       })),
       ...rows.filter(late).map((r) => ({ r, icon: '⚠️', text: r.source === 'Site'
         ? `Paiement en retard (${plan(r).texte || plan(r).nom}). Stripe réessaie ; écris à la personne si ça dure.`
@@ -172,15 +172,15 @@
         h('div', { class: 'sub-next muted' }, nextLine(r)),
         stripeLink(r) ? h('a', { class: 'btn ghost small sub-link', href: stripeLink(r), target: '_blank', rel: 'noopener' }, 'Stripe ↗') : h('span'));
     }) : [h('p', { class: 'muted subs-empty' }, rows.length ? 'Aucun abonnement dans cette catégorie.' : 'Aucun abonnement pour l’instant. Ils apparaîtront ici dès le premier essai.')]));
-    $('#updated').textContent = `Mis à jour le ${new Date().toLocaleString('fr-CA', { dateStyle: 'long', timeStyle: 'short' })}`;
+    $('#updated').textContent = `Mis à jour le ${new Date().toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })}`;
     show('dash');
   }
 
 
   // ---------------------------------------------------------------- Vue d'ensemble et utilisateurs
-  const nombre = (n) => Number(n || 0).toLocaleString('fr-CA');
-  const pct = (x) => `${(x * 100).toLocaleString('fr-CA', { maximumFractionDigits: 1 })} %`;
-  const jourCourt = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' });
+  const nombre = (n) => Number(n || 0).toLocaleString('fr-FR');
+  const pct = (x) => `${(x * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %`;
+  const jourCourt = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
   const NOMS_NIVEAUX = { pre: 'Pré-A1', a1: 'A1', a2: 'A2', b1: 'B1', b2: 'B2', c1: 'C1', c2: 'C2' };
   function depuis(t) {
     if (!t) return 'jamais';
@@ -217,20 +217,24 @@
   function renderApercu() {
     const note = $('#stats-note');
     if (!stats) {
-      note.textContent = 'Les statistiques des comptes ne sont pas disponibles : la fonction statsAdmin n’est pas encore déployée, ou la connexion a échoué. Actualise dans un instant.';
+      note.textContent = 'Les statistiques des comptes ne sont pas disponibles pour le moment. Vérifie ta connexion, puis touche « Actualiser ». Si le problème continue, le service des statistiques n’est peut-être pas encore installé.';
       note.hidden = false;
       $('#kpis-app').replaceChildren();
       return;
     }
     note.hidden = true;
-    const u = stats.utilisateurs; const p = stats.premium; const a = stats.apprentissage;
+    const u = stats.utilisateurs; const a = stats.apprentissage;
+    // Même calcul que l'onglet Abonnements : payants et essais en cours, achats de test exclus.
+    const reels = lignes.filter((r) => !r.test && (r.status === 'active' || r.status === 'trialing' || late(r)));
+    const uidsReels = new Set(reels.map((r) => r.uid));
+    const premiumReels = { total: uidsReels.size, magasin: new Set(reels.filter((r) => r.source !== 'Site').map((r) => r.uid)).size };
     $('#kpis-app').replaceChildren(
-      kpiCarte('Comptes', nombre(u.total), `${nombre(u.verifies)} avec courriel confirmé`),
+      kpiCarte('Comptes', nombre(u.total), `${nombre(u.verifies)} avec e-mail confirmé`),
       kpiCarte('Nouveaux', nombre(u.nouveaux7), `cette semaine · ${nombre(u.nouveaux30)} en 30 jours`),
-      kpiCarte('Actifs', nombre(u.actifs7), `cette semaine · ${nombre(u.actifs1)} aujourd’hui · ${nombre(u.actifs30)} en 30 jours`),
-      kpiCarte('Abonnés Premium', nombre(p.total), `${pct(p.conversion)} des comptes · ${nombre(p.magasin)} par les magasins`),
-      kpiCarte('Leçons terminées', nombre(a.lecons), `≈ ${a.moyenneParActif.toLocaleString('fr-CA', { maximumFractionDigits: 1 })} par élève actif (30 jours)`),
-      kpiCarte('Taux d’activité', u.total ? pct(u.actifs30 / u.total) : '—', 'des comptes ont pratiqué en 30 jours'));
+      kpiCarte('Élèves actifs', nombre(u.actifs7), `ont pratiqué cette semaine · ${nombre(u.actifs1)} aujourd’hui · ${nombre(u.actifs30)} en 30 jours`),
+      kpiCarte('Accès Premium', nombre(premiumReels.total), `payants et essais, sans les achats de test · ${u.total ? pct(premiumReels.total / u.total) : '—'} des comptes (ce n’est pas un taux de conversion) · ${nombre(premiumReels.magasin)} par les magasins`),
+      kpiCarte('Leçons terminées', nombre(a.lecons), `≈ ${a.moyenneParActif.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} par élève actif (30 jours)`),
+      kpiCarte('Part d’élèves actifs', u.total ? pct(u.actifs30 / u.total) : '—', 'des comptes ont fait au moins une leçon en 30 jours (une simple connexion ne compte pas)'));
     barres($('#graph-inscriptions'), stats.inscriptionsParJour, 'inscriptions');
     barres($('#graph-actifs'), stats.actifsParJour, 'élèves');
     const niv = Object.entries(a.niveaux);
@@ -248,7 +252,7 @@
     ['premium', 'Premium', (c) => !!c.premium],
     ['actifs', 'Actifs (7 jours)', (c) => c.actif && Date.now() - c.actif < 7 * DAY],
     ['inactifs', 'Inactifs (30 jours +)', (c) => !c.actif || Date.now() - c.actif >= 30 * DAY],
-    ['nonverifies', 'Courriel non confirmé', (c) => !c.verifie],
+    ['nonverifies', 'E-mail non confirmé', (c) => !c.verifie],
   ];
   function renderComptes() {
     const liste = (stats && stats.comptes) || [];
@@ -261,9 +265,9 @@
       .filter((c) => !q || c.courriel.toLowerCase().includes(q) || (c.nom || '').toLowerCase().includes(q));
     const AFFICHES = 200;
     $('#comptes').replaceChildren(...(vus.length ? vus.slice(0, AFFICHES).map((c) => h('article', { class: 'compte' },
-      h('div', { class: 'compte-qui' }, h('strong', null, c.courriel || '(sans courriel)'), c.nom ? h('span', { class: 'muted' }, c.nom) : null),
+      h('div', { class: 'compte-qui' }, h('strong', null, c.courriel || '(sans e-mail)'), c.nom ? h('span', { class: 'muted' }, c.nom) : null),
       h('div', { class: 'compte-infos' },
-        h('span', null, `Inscrit le ${date(c.inscrit)}`), h('span', null, `Actif ${depuis(c.actif)}`),
+        h('span', null, `Inscrit le ${date(c.inscrit)}`), h('span', null, c.actif ? `A pratiqué ${depuis(c.actif)}` : 'N’a pas encore pratiqué'), c.connexion ? h('span', null, `Connexion ${depuis(c.connexion)}`) : null,
         h('span', null, `${nombre(c.lecons)} leçon${c.lecons > 1 ? 's' : ''}`), h('span', null, `${nombre(c.joursPratique)} jour${c.joursPratique > 1 ? 's' : ''} de pratique`),
         c.niveau && NOMS_NIVEAUX[c.niveau] ? h('span', null, `Niveau ${NOMS_NIVEAUX[c.niveau]}`) : null),
       h('div', { class: 'compte-pills' },
@@ -326,7 +330,7 @@
       renderComptes();
     } catch (err) {
       state(err && err.code === 'permission-denied'
-        ? 'Accès refusé par les règles Firebase. Vérifie que firestore.rules est publié et que ton compte est administrateur.'
+        ? 'Accès refusé : ce compte n’a pas les droits d’administration. Connecte-toi avec le compte administrateur.'
         : 'Impossible de charger le tableau de bord. Vérifie ta connexion Internet, puis actualise.');
     } finally {
       $('#refresh').disabled = false;

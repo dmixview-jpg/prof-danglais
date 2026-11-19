@@ -1264,3 +1264,12 @@ a.btn { text-decoration: none; }
 .node-row.stamp .node { animation: fx-stamp .6s cubic-bezier(.3, 1.6, .5, 1) both; }
 .node-row.arrive .node { animation: fx-rise-in .4s cubic-bezier(.2, .8, .2, 1) .5s both; }
 
+
+/* Suppression du compte : panneau de confirmation séparé */
+.account-delete-panel { display: grid; gap: 10px; padding: 14px; border-radius: 16px; border: 2px solid var(--bad); background: color-mix(in srgb, var(--bad) 8%, transparent); }
+.account-delete-panel p { margin: 0; }
+
+/* Dialogue : titre, progression et sortie toujours visibles */
+.dlg-sticky { position: sticky; top: var(--topbar-h, 64px); z-index: 10; background: var(--bg); padding: 6px 0 10px; display: grid; gap: 8px; }
+.dlg-sticky .dlg-progress { margin-top: 0; }
+.dlg-continue { width: 100%; }
