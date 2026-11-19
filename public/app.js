@@ -395,23 +395,24 @@ function speak(text, talker, rate) {
 // Réglages de la voix : choix de la voix américaine, vitesse, essai.
 const RATES = [[0.75, '🐢 Lente'], [0.92, 'Normale'], [1.05, '🐇 Rapide']];
 // Bouton de vitesse dans les leçons et les dialogues : chaque toucher passe à la vitesse suivante.
-const SPEED_CHIPS = { 0.75: '🐢 Lent', 0.92: '🔊 Normal', 1.05: '🐇 Rapide' };
+const SPEED_CHIPS = { 0.75: '🐢 Lente', 0.92: '🔊 Normale', 1.05: '🐇 Rapide' };
+// Une phrase par vitesse, pour entendre la différence.
+const SPEED_SAMPLES = { 0.75: 'I am speaking slowly.', 0.92: 'This is my normal speed.', 1.05: 'Now I am speaking fast!' };
+const rateIndex = () => Math.max(0, RATES.findIndex(([r]) => Math.abs(r - speechRate()) < 0.01));
 function renderSpeedChips() {
-  const rate = speechRate();
-  const i = Math.max(0, RATES.findIndex(([r]) => Math.abs(r - rate) < 0.01));
+  const r = RATES[rateIndex()][0];
   document.querySelectorAll('[data-speed]').forEach((b) => {
-    b.textContent = SPEED_CHIPS[RATES[i][0]];
-    b.setAttribute('aria-label', `Vitesse de la voix : ${RATES[i][1].replace(/^\S+\s/, '')}. Toucher pour changer.`);
+    b.replaceChildren(h('small', null, 'Vitesse de lecture'), h('span', null, SPEED_CHIPS[r]));
+    b.setAttribute('aria-label', `Vitesse de lecture : ${SPEED_CHIPS[r].replace(/^\S+\s/, '')}. Toucher pour changer.`);
   });
 }
-document.querySelectorAll('[data-speed]').forEach((b) => b.addEventListener('click', () => {
-  const rate = speechRate();
-  const i = Math.max(0, RATES.findIndex(([r]) => Math.abs(r - rate) < 0.01));
-  store.set(KEYS.rate, RATES[(i + 1) % RATES.length][0]);
+function setRate(r) {
+  store.set(KEYS.rate, r);
   renderSpeedChips();
   renderVoiceCard();
-  speak('This is my speaking speed.');
-}));
+  speak(SPEED_SAMPLES[r] || 'This is my normal speed.');
+}
+document.querySelectorAll('[data-speed]').forEach((b) => b.addEventListener('click', () => setRate(RATES[(rateIndex() + 1) % RATES.length][0])));
 function renderVoiceCard() {
   const box = document.getElementById('voice-card');
   if (!box) return;
@@ -437,7 +438,7 @@ function renderVoiceCard() {
     h('div', { class: 'rate-row', role: 'group', 'aria-label': 'Vitesse de la voix' }, RATES.map(([r, label]) =>
       h('button', {
         type: 'button', class: `rate-btn${Math.abs(rate - r) < 0.01 ? ' on' : ''}`, 'aria-pressed': String(Math.abs(rate - r) < 0.01),
-        onclick: () => { store.set(KEYS.rate, r); renderVoiceCard(); renderSpeedChips(); speak('This is my speaking speed.'); },
+        onclick: () => setRate(r),
       }, label))),
     h('details', { class: 'voice-help' },
       h('summary', null, '📱 Une voix plus naturelle sur iPhone ou iPad'),
