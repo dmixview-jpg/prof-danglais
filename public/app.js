@@ -13,6 +13,7 @@ const KEYS = {
   voice: 'pd.voice',
   rate: 'pd.rate',
   fx: 'pd.fx', // sons de réussite et vibrations
+  mistakes: 'pd.erreurs', // questions ratées, à revoir
 };
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 const MASTERED = 3;
@@ -714,6 +715,7 @@ function showHome() {
   $('#lesson-view').hidden = true;
   $('#home').hidden = false;
   window.scrollTo({ top: 0 });
+  renderMistakesBtn();
   renderPath();
   renderContinue();
   renderStats();
@@ -1003,16 +1005,60 @@ function spokenScore(heard, expected) {
 }
 
 // Quiz : une question à la fois, plusieurs types d'exercices, la mascotte réagit.
-function quizCard(exercises, onComplete) {
+// ---------- Mes erreurs : les questions ratées reviennent jusqu'à ce qu'elles soient réussies ----------
+const MISTAKES_MAX = 80;
+const mistakeKey = (x) => `${x.type}|${x.question || x.audio || x.sentence || x.answer || x.text || ''}`;
+function getMistakes() {
+  const list = store.get(KEYS.mistakes, []);
+  return Array.isArray(list) ? list.filter((m) => m && m.ex && m.key) : [];
+}
+function noteAnswer(ex, good, from) {
+  if (!ex || ex.type === 'speak') return;
+  const key = mistakeKey(ex);
+  const list = getMistakes();
+  const old = list.find((m) => m.key === key);
+  if (good && !old) return;
+  const rest = list.filter((m) => m.key !== key);
+  store.set(KEYS.mistakes, good ? rest
+    : [{ key, ex, from: (old && old.from) || from || '', at: Date.now() }, ...rest].slice(0, MISTAKES_MAX));
+  renderMistakesBtn();
+}
+function renderMistakesBtn() {
+  const btn = $('#mistakes-btn');
+  if (!btn) return;
+  const n = getMistakes().length;
+  btn.hidden = !n;
+  btn.replaceChildren(
+    h('span', { class: 'mistakes-icon', 'aria-hidden': 'true' }, '🔁'),
+    h('span', { class: 'mistakes-text' },
+      h('strong', null, 'Revoir mes erreurs'),
+      h('span', { class: 'muted' }, `${n}\u00a0${n > 1 ? 'questions ratées' : 'question ratée'} à réussir`)),
+    h('span', { class: 'mistakes-go', 'aria-hidden': 'true' }, '→'));
+}
+function openMistakes() {
+  const list = shuffled(getMistakes()).slice(0, 10);
+  if (!list.length) return;
+  showLessonView('Mes erreurs');
+  $('#lesson').replaceChildren(
+    h('div', { class: 'card lesson-main' },
+      h('h1', null, 'Revoir mes erreurs'),
+      h('p', { class: 'objective' }, `${list.length}\u00a0${list.length > 1 ? 'questions ratées' : 'question ratée'} récemment. Chaque bonne réponse retire la question de ta liste.`)),
+    quizCard(list.map((m) => m.ex), null, 'Mes erreurs'));
+}
+$('#mistakes-btn').addEventListener('click', openMistakes);
+
+function quizCard(exercises, onComplete, source) {
   // Sans reconnaissance vocale, les exercices « à dire » sont retirés (le score reste juste).
   exercises = exercises.filter((x) => x.type !== 'speak' || SPEECH_OK);
   const card = h('div', { class: 'card lesson-quiz' });
   const buddy = mascot('idle', 'quiz-buddy');
   let idx = 0;
   let correct = 0;
+  let current = null; // exercice affiché
 
   function answered(good, explainEl, nextEl, text) {
     if (good) correct++;
+    noteAnswer(current, good, source);
     setMood(buddy, good ? 'happy' : 'oops', 1600);
     markActive();
     explainEl.replaceChildren(h('span', { class: 'explain-icon', 'aria-hidden': 'true' }, good ? '🎉' : '💡'), h('span', null, text || (good ? 'Bravo!' : '')));
@@ -1106,6 +1152,7 @@ function quizCard(exercises, onComplete) {
         const ok = h('button', { type: 'button', class: 'btn ghost small typed-ok' }, '🙋 Ma réponse était juste aussi');
         ok.addEventListener('click', () => {
           correct++;
+          noteAnswer(ex, true);
           setMood(buddy, 'happy', 1600);
           form.classList.replace('bad', 'good');
           ok.replaceWith(h('span', { class: 'muted typed-ok-done' }, '✓ Comptée comme bonne réponse'));
@@ -1188,6 +1235,7 @@ function quizCard(exercises, onComplete) {
   function renderQuestion() {
     if (idx >= exercises.length) return renderScore();
     const ex = exercises[idx];
+    current = ex;
     const type = ex.type || 'choice';
     const explain = h('div', { class: 'explain', hidden: true });
     const next = h('button', {
@@ -1325,7 +1373,7 @@ function renderLesson(lesson, courseId) {
     (lesson.dialogue || []).length ? dialogueCard(lesson.dialogue) : null,
     vocab.childElementCount ? h('div', { class: 'card lesson-vocab' }, sectionTitle('🧩', 'Mots utiles'), vocab) : null,
     lesson.tip && lesson.tip.text ? tipCard(lesson.tip) : null,
-    (lesson.exercises || []).length ? quizCard(lesson.exercises, onComplete) : null,
+    (lesson.exercises || []).length ? quizCard(lesson.exercises, onComplete, lesson.title) : null,
   ].filter(Boolean));
 }
 
@@ -1732,6 +1780,7 @@ if (!Array.isArray(store.get(KEYS.vocab, null))) setVocab(SAMPLE_VOCAB);
 greet();
 renderStats();
 renderDueBadge();
+renderMistakesBtn();
 loadCourse().then(() => {
   renderContinue();
   renderScenarios();

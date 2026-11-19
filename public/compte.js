@@ -317,7 +317,7 @@
   function forgetDevice() {
     clearLocal();
     // pd.premium : copie hors ligne du contenu payant (abonnement.js), propre à chaque compte
-    try { ['pd.premium', OWNER, PENDING].forEach((k) => localStorage.removeItem(k)); } catch { /* rien */ }
+    try { ['pd.premium', 'pd.erreurs', OWNER, PENDING].forEach((k) => localStorage.removeItem(k)); } catch { /* rien */ }
   }
   const withTimeout = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error('timeout')), ms))]);
   const docRef = () => db.collection('users').doc(user.uid);

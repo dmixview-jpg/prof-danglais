@@ -1320,3 +1320,16 @@ a.btn { text-decoration: none; }
 /* Retours à la ligne soignés partout : titres équilibrés, pas de mot seul en fin de paragraphe. */
 h1, h2, h3, .crumb, .kpi-label, .node-label, .scenario-grid strong, .plan-name, .btn { text-wrap: balance; }
 p, li, .explain, .bubble, .tip-card p, .option { text-wrap: pretty; }
+
+/* Accueil : revoir mes erreurs */
+.mistakes-btn {
+  display: flex; align-items: center; gap: 12px; width: 100%; margin: 4px 0 18px; padding: 14px 16px;
+  border: 2px solid var(--border); border-radius: 18px; background: var(--surface); color: var(--text);
+  font: inherit; text-align: left; cursor: pointer; box-shadow: 0 4px 14px rgba(24, 32, 58, .06);
+}
+.mistakes-btn[hidden] { display: none; }
+.mistakes-btn:active { transform: translateY(1px); }
+.mistakes-icon { flex: none; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: var(--bad-soft); font-size: 1.3rem; }
+.mistakes-text { display: flex; flex-direction: column; flex: 1; min-width: 0; line-height: 1.3; }
+.mistakes-text .muted { font-size: .88rem; }
+.mistakes-go { flex: none; font-weight: 800; color: var(--accent); }
