@@ -16,6 +16,19 @@ const KEYS = {
 };
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 const MASTERED = 3;
+// Révision espacée : après chaque « Je sais », le mot revient plus tard (en jours).
+// 0 « Je sais » : aujourd'hui ; 1 : demain ; 2 : dans 3 jours ; puis 7, 16, 35 et 90 jours.
+const SRS_DAYS = [0, 1, 3, 7, 16, 35, 90];
+const DAY_MS = 86400000;
+function startOfDay(t = Date.now()) {
+  const d = new Date(t);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+const isDue = (w, now = Date.now()) => !(typeof w.due === 'number' && w.due > now);
+function nextDue(known) {
+  return startOfDay() + SRS_DAYS[Math.min(known, SRS_DAYS.length - 1)] * DAY_MS;
+}
 
 const store = {
   get(key, fallback) {
@@ -1051,7 +1064,12 @@ function renderLesson(lesson, courseId) {
       h('div', { class: 'word-actions' }, speakBtn(v.word), add));
   }));
 
-  const onComplete = courseId ? (correct, total) => completeCourseLesson(courseId, correct, total) : null;
+  // Leçon terminée : ses mots entrent dans les révisions (onglet Vocabulaire).
+  const onComplete = courseId ? (correct, total) => {
+    const added = (lesson.vocab || []).filter((v) => addWord(v.word, v.fr, v.example, v.emoji)).length;
+    if (added) toast(`📚 ${added} ${added > 1 ? 'mots ajoutés' : 'mot ajouté'} à tes révisions`, 3000);
+    return completeCourseLesson(courseId, correct, total);
+  } : null;
 
   root.replaceChildren(...[
     h('div', { class: 'card lesson-main' },
@@ -1278,9 +1296,10 @@ function setVocab(list) {
 function addWord(en, fr, example, emoji) {
   const list = getVocab();
   if (list.some((w) => w.en.toLowerCase() === en.toLowerCase())) return false;
-  list.unshift({ id: uid(), emoji: emoji || '', en, fr, example: example || '', known: 0 });
+  list.unshift({ id: uid(), emoji: emoji || '', en, fr, example: example || '', known: 0, due: Date.now() });
   setVocab(list);
   deck = null;
+  renderDueBadge();
   if (!$('#panel-vocab').hidden) renderVocab();
   return true;
 }
@@ -1298,14 +1317,15 @@ function renderFlash() {
   const wrap = $('#flash');
   const list = getVocab();
   const byId = new Map(list.map((w) => [w.id, w]));
-  if (!deck) deck = list.filter((w) => w.known < MASTERED).map((w) => w.id);
-  deck = deck.filter((id) => byId.has(id) && byId.get(id).known < MASTERED);
+  // Les cartes du jour : les mots dont la date de révision est arrivée.
+  if (!deck) deck = list.filter((w) => isDue(w)).map((w) => w.id);
+  deck = deck.filter((id) => byId.has(id));
 
   if (!deck.length) {
     wrap.replaceChildren(h('div', { class: 'card flash-empty' },
       mascot(list.length ? 'happy' : 'wave', 'empty-buddy'),
-      h('h2', null, list.length ? 'Tout est maîtrisé! 🎉' : 'Ton carnet est vide'),
-      h('p', { class: 'muted' }, 'Ajoute des mots ici ou avec « + Carnet » dans une leçon.')));
+      h('h2', null, list.length ? 'Révisions du jour terminées 🎉' : 'Ton carnet est vide'),
+      h('p', { class: 'muted' }, list.length ? nextReviewText(list) : 'Termine une leçon : ses mots arrivent ici. Tu peux aussi en ajouter toi-même.')));
     return;
   }
 
@@ -1336,6 +1356,14 @@ function renderFlash() {
   };
   const review = () => leave('fly-left', () => {
     markActive();
+    // Oublié : le mot perd un niveau et revient à la fin des cartes du jour.
+    const all = getVocab();
+    const w = all.find((x) => x.id === word.id);
+    if (w) {
+      w.known = Math.max(0, (w.known || 0) - 1);
+      w.due = Date.now();
+      setVocab(all);
+    }
     deck.push(deck.shift());
     flipped = false;
     renderFlash();
@@ -1346,14 +1374,16 @@ function renderFlash() {
     const w = all.find((x) => x.id === word.id);
     if (w) {
       w.known = (w.known || 0) + 1;
+      w.due = nextDue(w.known);
       setVocab(all);
-      if (w.known >= MASTERED) {
+      if (w.known === MASTERED) {
         toast(`« ${w.en} » est maîtrisé! 🎉`);
         confetti();
+      } else {
+        toast(`Prochaine révision ${whenText(w.due)}`);
       }
     }
     deck.shift();
-    if (w && w.known < MASTERED) deck.push(w.id);
     flipped = false;
     renderVocab();
   });
@@ -1370,6 +1400,30 @@ function renderFlash() {
       h('button', { type: 'button', class: 'btn good', onclick: know }, '✅ Je sais')));
 }
 
+// « demain », « dans 3 jours »… à partir d'une date de révision.
+function whenText(due) {
+  const days = Math.round((startOfDay(due) - startOfDay()) / DAY_MS);
+  if (days <= 0) return 'aujourd’hui';
+  if (days === 1) return 'demain';
+  return `dans ${days}\u00a0jours`;
+}
+function nextReviewText(list) {
+  const next = Math.min(...list.map((w) => (typeof w.due === 'number' ? w.due : Date.now())));
+  const n = list.filter((w) => startOfDay(typeof w.due === 'number' ? w.due : Date.now()) === startOfDay(next)).length;
+  return `Prochaine révision ${whenText(next)} : ${n}\u00a0${n > 1 ? 'mots' : 'mot'}. Revenir chaque jour aide ta mémoire à garder les mots.`;
+}
+// Pastille sur l'onglet Vocabulaire : le nombre de mots à réviser aujourd'hui.
+function renderDueBadge() {
+  const tab = document.querySelector('.tab[data-tab="vocab"]');
+  if (!tab) return;
+  const n = getVocab().filter((w) => isDue(w)).length;
+  let badge = tab.querySelector('.tab-badge');
+  if (!n) { if (badge) badge.remove(); return; }
+  if (!badge) { badge = h('span', { class: 'tab-badge' }); tab.append(badge); }
+  badge.textContent = n > 99 ? '99+' : String(n);
+  badge.setAttribute('aria-label', `${n} ${n > 1 ? 'mots' : 'mot'} à réviser`);
+}
+
 function renderList() {
   const list = getVocab();
   const mastered = list.filter((w) => w.known >= MASTERED).length;
@@ -1382,7 +1436,8 @@ function renderList() {
           h('span', { class: 'en', lang: 'en' }, w.en), ' ',
           w.sample ? h('span', { class: 'badge' }, 'Exemple') : null),
         h('div', { class: 'fr' }, w.fr),
-        w.known >= MASTERED ? h('span', { class: 'mastered' }, '⭐ Maîtrisé') : progressDots(w.known || 0)),
+        w.known >= MASTERED ? h('span', { class: 'mastered' }, '⭐ Maîtrisé') : progressDots(w.known || 0),
+        h('span', { class: 'due-hint muted' }, isDue(w) ? '🔁 À réviser aujourd’hui' : `Prochaine révision ${whenText(w.due)}`)),
       speakBtn(w.en),
       h('button', {
         type: 'button', class: 'btn ghost small icon-btn', 'aria-label': `Retirer « ${w.en} »`, title: 'Retirer',
@@ -1398,6 +1453,7 @@ function renderVocab() {
   renderFlash();
   renderList();
   renderStats();
+  renderDueBadge();
 }
 
 $('#vocab-form').addEventListener('submit', (e) => {
@@ -1435,6 +1491,7 @@ document.addEventListener('focusout', () => {
 if (!Array.isArray(store.get(KEYS.vocab, null))) setVocab(SAMPLE_VOCAB);
 greet();
 renderStats();
+renderDueBadge();
 loadCourse().then(() => {
   renderContinue();
   renderScenarios();
