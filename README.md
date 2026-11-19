@@ -5,7 +5,7 @@ Ton coach d'anglais personnel, pensé pour les francophones et utilisé sur **iP
 **100 % gratuit, sans IA, sans compte et sans clé.** Toutes les leçons et tous les dialogues sont rédigés d'avance et intégrés à l'app. Rien n'est envoyé sur Internet. Une fois chargée, l'app fonctionne **entièrement hors ligne**.
 
 - **Un parcours complet, de l'alphabet à la maîtrise** :
-  - 7 niveaux (Pré-A1, A1, A2, B1, B2, C1, C2), 36 unités et **179 leçons rédigées** ;
+  - 7 niveaux (Pré-A1, A1, A2, B1, B2, C1, C2), 36 unités et **183 leçons rédigées** ;
   - à la fin de chaque unité, de A1 à C2 : un **dialogue guidé** sur le thème de l'unité, puis un bilan ;
   - le bouton « Continuer » ouvre toujours ta prochaine leçon ;
   - chaque leçon terminée rapporte jusqu'à 3 étoiles.
