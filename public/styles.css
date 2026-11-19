@@ -840,7 +840,7 @@ h2 { display: flex; align-items: center; gap: 8px; font-weight: 700; }
 .node.next { background: var(--grad); box-shadow: 0 6px 0 #1d3f99, 0 0 0 6px color-mix(in srgb, var(--accent) 22%, transparent); }
 .node.review { border-radius: 22px; }
 @keyframes node-pulse { 0%, 100% { box-shadow: 0 6px 0 #1d3f99, 0 0 0 6px color-mix(in srgb, var(--accent) 22%, transparent); } 50% { box-shadow: 0 6px 0 #1d3f99, 0 0 0 12px color-mix(in srgb, var(--accent) 8%, transparent); } }
-.node-label { max-width: 160px; margin-top: 8px; text-align: center; font-size: .85rem; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+.node-label { max-width: 180px; margin-top: 8px; text-align: center; font-size: .85rem; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
 .node-row.todo .node-label { color: var(--muted); }
 .node-stars { display: block; color: #ffb300; letter-spacing: 1px; font-size: .9rem; }
 .node-buddy { position: absolute; top: -6px; left: calc(50% + 40px); width: 58px; height: 58px; pointer-events: none; }
@@ -851,7 +851,10 @@ h2 { display: flex; align-items: center; gap: 8px; font-weight: 700; }
 .free-lesson .topic-grid { margin-bottom: 0; }
 
 /* ---------- Vue leçon ---------- */
-.lesson-bar { position: relative; display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.lesson-bar { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 14px; }
+/* Le fil d'Ariane passe sur sa propre ligne, sous les boutons : il ne se coupe plus au milieu. */
+.lesson-bar .crumb { order: 3; flex-basis: 100%; text-align: left; padding-left: 4px; }
+.lesson-bar .speed-chip { margin-left: auto; }
 .crumb { flex: 1; min-width: 0; font-weight: 700; font-size: .85rem; color: var(--muted); text-align: center; overflow-wrap: anywhere; }
 .level-chip.done { background: var(--good-soft); color: var(--good); }
 .retry { margin-top: 8px; }
@@ -870,7 +873,7 @@ h2 { display: flex; align-items: center; gap: 8px; font-weight: 700; }
 .alpha-tile.trap::after { content: ""; position: absolute; top: 7px; right: 8px; width: 9px; height: 9px; border-radius: 50%; background: #ffc93c; box-shadow: 0 0 0 2px #fff; }
 .alpha-tile.pop { animation: pop .35s cubic-bezier(.3, 1.6, .5, 1); }
 .alpha-letter { font: 800 1.6rem var(--font-title); line-height: 1.1; }
-.alpha-sound { font-size: .74rem; font-weight: 700; opacity: .75; }
+.alpha-sound { font-size: .74rem; font-weight: 700; opacity: .75; white-space: nowrap; letter-spacing: -.01em; }
 
 /* Dialogue */
 .dl-list { display: flex; flex-direction: column; gap: 10px; }
@@ -1270,7 +1273,8 @@ a.btn { text-decoration: none; }
 .account-delete-panel p { margin: 0; }
 
 /* Dialogue : titre, progression et sortie toujours visibles */
-.dlg-sticky { position: sticky; top: var(--topbar-h, 64px); z-index: 10; background: var(--bg); padding: 6px 0 10px; display: grid; gap: 8px; }
+.dlg-sticky { position: sticky; top: calc(var(--topbar-h, 64px) + 6px); z-index: 10; background: var(--surface); border-radius: 18px; padding: 10px 10px 12px; margin-bottom: 12px; box-shadow: 0 4px 14px rgba(24, 32, 58, .10); display: grid; gap: 8px; }
+.dlg-sticky .lesson-bar { margin-bottom: 0; }
 .dlg-sticky .dlg-progress { margin-top: 0; }
 .dlg-continue { width: 100%; }
 
@@ -1279,3 +1283,7 @@ a.btn { text-decoration: none; }
 .speed-chip:active { transform: scale(.96); }
 
 .speed-chip small { font-size: .62rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+
+/* Retours à la ligne soignés partout : titres équilibrés, pas de mot seul en fin de paragraphe. */
+h1, h2, h3, .crumb, .kpi-label, .node-label, .scenario-grid strong, .plan-name, .btn { text-wrap: balance; }
+p, li, .explain, .bubble, .tip-card p, .option { text-wrap: pretty; }

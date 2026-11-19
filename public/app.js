@@ -456,7 +456,7 @@ const speakBtn = (text, talker) =>
 // ---------- Niveau ----------
 const levelSelect = $('#level');
 const LEVEL_NAMES = { A1: 'Débutant', A2: 'Élémentaire', B1: 'Intermédiaire', B2: 'Avancé', C1: 'Autonome', C2: 'Maîtrise' };
-const compactHeader = matchMedia('(max-width: 419px), (min-width: 700px) and (max-width: 939px), (orientation: landscape) and (max-height: 500px)');
+const compactHeader = matchMedia('(max-width: 449px), (min-width: 700px) and (max-width: 939px), (orientation: landscape) and (max-height: 500px)');
 function labelLevels() {
   for (const opt of levelSelect.options) {
     opt.textContent = compactHeader.matches ? `Niveau ${opt.value}` : `${opt.value} · ${LEVEL_NAMES[opt.value]}`;
@@ -687,10 +687,12 @@ function renderPath() {
 // ---------- Vue « leçon » ----------
 let currentLesson = null; // { id?, lesson }
 
+// Espaces insécables dans chaque segment « Unité 1 », « Leçon 2 » : la coupure ne se fait qu'entre segments.
+const nbsp = (t) => t.split(' · ').map((x) => x.replace(/ /g, '\u00a0')).join(' · ');
 function showLessonView(crumb) {
   $('#home').hidden = true;
   $('#lesson-view').hidden = false;
-  $('#lesson-crumb').textContent = crumb;
+  $('#lesson-crumb').textContent = nbsp(crumb);
   window.scrollTo({ top: 0 });
 }
 
@@ -816,7 +818,7 @@ const ALPHABET = [
   ['A', 'é-i', 1], ['B', 'bi'], ['C', 'si'], ['D', 'di'], ['E', 'i', 1], ['F', 'èf'], ['G', 'dji', 1],
   ['H', 'éitch', 1], ['I', 'aï', 1], ['J', 'djé-i', 1], ['K', 'ké-i'], ['L', 'èl'], ['M', 'èm'], ['N', 'èn'],
   ['O', 'ô-ou'], ['P', 'pi'], ['Q', 'kiou', 1], ['R', 'ar', 1], ['S', 'èss'], ['T', 'ti'], ['U', 'iou', 1],
-  ['V', 'vi'], ['W', 'dobeul-iou', 1], ['X', 'èks'], ['Y', 'ouaï', 1], ['Z', 'zi (zèd au Royaume-Uni)'],
+  ['V', 'vi'], ['W', 'dobeul\u2011iou', 1], ['X', 'èks'], ['Y', 'ouaï', 1], ['Z', 'zi / zèd'],
 ];
 function alphabetCard() {
   return h('div', { class: 'card lesson-alphabet' },
@@ -1147,7 +1149,7 @@ function startDialogue(id) {
   dialogue = { scenario, idx: 0, correct: 0, asked: scenario.turns.filter((t) => t.options).length };
   $('#dlg-home').hidden = true;
   $('#dlg-view').hidden = false;
-  $('#dlg-crumb').textContent = `${scenario.emoji} ${scenario.title} · ${scenario.level}`;
+  $('#dlg-crumb').textContent = nbsp(`${scenario.emoji} ${scenario.title} · ${scenario.level}`);
   chatLog.replaceChildren(h('div', { class: 'dlg-intro' }, h('span', { 'aria-hidden': 'true' }, '🎬 '), scenario.intro));
   $('#dlg-choices').replaceChildren();
   window.scrollTo({ top: 0 });
