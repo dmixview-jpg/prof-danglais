@@ -220,8 +220,10 @@ function confetti(count = 70) {
 // Sons synthétisés (aucun fichier audio), toujours actifs (décision du fondateur).
 const fxPrefs = () => ({ sound: true, haptic: true });
 let actx = null;
-// iPhone : le son Web Audio est coupé par l'interrupteur silencieux, sauf en mode « lecture ».
-try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* ancien Safari */ }
+// iPhone, site Web : en mode « lecture », iOS afficherait un lecteur « En cours de lecture » en haut de l'écran,
+// ce que le fondateur refuse. On garde le mode « ambiant » : pas de lecteur, mais l'interrupteur silencieux
+// coupe les effets, comme pour les jeux. L'app iOS native règle sa session audio dans AppDelegate.swift.
+try { if (navigator.audioSession) navigator.audioSession.type = 'ambient'; } catch { /* ancien Safari */ }
 function audio() {
   if (!actx) {
     const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -243,7 +245,18 @@ function unlockAudio() {
     src.start(0);
   } catch { /* rien */ }
 }
-['touchend', 'pointerdown', 'keydown'].forEach((ev) => document.addEventListener(ev, unlockAudio, { passive: true }));
+// iPhone : en mode « lecture », iOS affiche un lecteur (« En cours de lecture ») tant que le son est actif.
+// On met le son en veille 1,5 s après le dernier effet, pour que ce lecteur disparaisse aussitôt.
+let idleTimer = null;
+function sleepSoon(extra = 0) {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    try { if (actx && actx.state === 'running') actx.suspend().catch(() => {}); } catch { /* rien */ }
+    try { if (navigator.mediaSession) navigator.mediaSession.playbackState = 'none'; } catch { /* rien */ }
+  }, 1500 + extra);
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) sleepSoon(); });
+['touchend', 'pointerdown', 'keydown'].forEach((ev) => document.addEventListener(ev, () => { unlockAudio(); sleepSoon(); }, { passive: true }));
 function tone(freq, ms = 120, type = 'sine', vol = 0.25, delay = 0) {
   if (!fxPrefs().sound) return;
   try {
@@ -263,6 +276,7 @@ function tone(freq, ms = 120, type = 'sine', vol = 0.25, delay = 0) {
       o.stop(t + ms / 1000 + 0.03);
     };
     if (ctx.state === 'running') play(); else ctx.resume().then(play).catch(() => {});
+    sleepSoon(delay * 1000 + ms);
   } catch { /* audio indisponible : on continue sans */ }
 }
 const buzz = (pattern) => { if (fxPrefs().haptic) navigator.vibrate?.(pattern); };
