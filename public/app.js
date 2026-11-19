@@ -934,8 +934,50 @@ function checkTyped(typed, expected) {
 
 // ---------- Prononciation : reconnaissance vocale ----------
 // Safari (iPhone) et Chrome (Android) la proposent ; l'exercice « à dire » est retiré ailleurs.
+// Dans les apps des magasins, un module natif (ReconnaissanceVocale) fait le même travail.
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition || null;
-const SPEECH_OK = !!SpeechRec && !NATIF;
+const NATIVE_REC = (() => {
+  const C = window.Capacitor;
+  if (!NATIF || !C) return null;
+  try {
+    if (typeof C.isPluginAvailable === 'function' && !C.isPluginAvailable('ReconnaissanceVocale')) return null;
+    return (C.Plugins && C.Plugins.ReconnaissanceVocale) || (typeof C.registerPlugin === 'function' ? C.registerPlugin('ReconnaissanceVocale') : null);
+  } catch { return null; }
+})();
+const SPEECH_OK = NATIF ? !!NATIVE_REC : !!SpeechRec;
+
+// Écoute une phrase. onPartial(texte) pendant qu'on parle ; renvoie les transcriptions
+// (tableau, vide si rien entendu) ou lève 'not-allowed' si le micro est refusé.
+// stop() termine l'écoute plus tôt.
+function listenOnce(onPartial) {
+  if (NATIVE_REC) {
+    let handle = null;
+    const p = Promise.resolve(NATIVE_REC.addListener('partiel', (d) => onPartial(d.texte || ''))).then((h) => { handle = h; })
+      .then(() => NATIVE_REC.ecouter())
+      .then((r) => (r && Array.isArray(r.textes) ? r.textes : []))
+      .catch((e) => { throw (String(e && (e.message || e.code || e)).includes('not-allowed') ? 'not-allowed' : 'error'); })
+      .finally(() => { if (handle && handle.remove) handle.remove(); });
+    return { done: p, stop: () => NATIVE_REC.arreter().catch(() => {}) };
+  }
+  const rec = new SpeechRec();
+  rec.lang = 'en-US';
+  rec.interimResults = true;
+  rec.maxAlternatives = 3;
+  rec.continuous = false;
+  const done = new Promise((resolve, reject) => {
+    let alts = [];
+    let refused = false;
+    rec.onresult = (e) => {
+      const res = e.results[e.results.length - 1];
+      onPartial(res[0].transcript);
+      if (res.isFinal) alts = Array.from(res, (a) => a.transcript);
+    };
+    rec.onerror = (e) => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') refused = true; };
+    rec.onend = () => (refused ? reject('not-allowed') : resolve(alts));
+    try { rec.start(); } catch { reject('error'); }
+  });
+  return { done, stop: () => { try { rec.stop(); } catch { /* rien */ } } };
+}
 // Part de la phrase attendue bien prononcée (0 à 1), mot à mot, dans l'ordre (plus longue sous-suite commune).
 function spokenScore(heard, expected) {
   const words = (t) => [...sentenceForms(t)].map((f) => f.split(' ').filter(Boolean));
@@ -1092,48 +1134,34 @@ function quizCard(exercises, onComplete) {
     };
     skip.addEventListener('click', () => {
       // Exercice retiré de cette série : il ne compte ni juste ni faux.
-      if (rec) try { rec.abort(); } catch { /* rien */ }
+      if (rec) rec.stop();
       exercises.splice(idx, 1);
       renderQuestion();
     });
     mic.addEventListener('click', () => {
       if (done) return;
-      if (rec) { try { rec.stop(); } catch { /* rien */ } return; }
+      if (rec) { rec.stop(); return; }
       if ('speechSynthesis' in window) speechSynthesis.cancel();
-      rec = new SpeechRec();
-      rec.lang = 'en-US';
-      rec.interimResults = true;
-      rec.maxAlternatives = 3;
-      rec.continuous = false;
-      let finalAlts = [];
       mic.classList.add('listening');
       mic.textContent = '⏺️ J’écoute… (touche pour arrêter)';
       heard.replaceChildren();
       setMood(buddy, 'talk');
-      rec.onresult = (e) => {
-        const res = e.results[e.results.length - 1];
-        heard.replaceChildren(h('span', { class: 'muted' }, 'J’entends\u00a0: '), h('span', { lang: 'en' }, res[0].transcript));
-        if (res.isFinal) finalAlts = Array.from(res, (a) => a.transcript);
-      };
-      rec.onerror = (e) => {
-        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-          heard.replaceChildren(h('span', null, '🎤 Le micro est bloqué. Autorise-le dans les réglages du navigateur, ou touche « Je ne peux pas parler maintenant ».'));
-          finalAlts = null;
-        }
-      };
-      rec.onend = () => {
+      rec = listenOnce((t) => heard.replaceChildren(h('span', { class: 'muted' }, 'J’entends\u00a0: '), h('span', { lang: 'en' }, t)));
+      const settle = () => {
         rec = null;
         mic.classList.remove('listening');
         setMood(buddy, buddy.dataset.base);
+      };
+      rec.done.then((alts) => {
+        settle();
         if (done) return;
-        if (finalAlts === null) { mic.textContent = '🎤 Réessayer'; return; }
-        if (!finalAlts.length) {
+        if (!alts.length) {
           heard.replaceChildren(h('span', null, 'Je n’ai rien entendu. Approche le téléphone et parle un peu plus fort.'));
           mic.textContent = '🎤 Réessayer';
           return;
         }
         tries++;
-        const best = finalAlts.map((t) => ({ t, ...spokenScore(t, ex.text) })).sort((a, b) => b.score - a.score)[0];
+        const best = alts.map((t) => ({ t, ...spokenScore(t, ex.text) })).sort((a, b) => b.score - a.score)[0];
         heard.replaceChildren(h('span', { class: 'muted' }, 'J’ai entendu\u00a0: '), h('span', { lang: 'en' }, `« ${best.t} »`));
         if (best.score >= 0.8) {
           finish(true, best.score === 1 ? `Parfait! ${ex.explain}` : `Très bien! ${ex.explain}`);
@@ -1146,8 +1174,13 @@ function quizCard(exercises, onComplete) {
             : `${lead} Dis toute la phrase, sans t’arrêter. Essai ${tries} sur 3.`));
           mic.textContent = '🎤 Réessayer';
         }
-      };
-      try { rec.start(); } catch { mic.classList.remove('listening'); rec = null; mic.textContent = '🎤 Réessayer'; }
+      }).catch((err) => {
+        settle();
+        heard.replaceChildren(h('span', null, err === 'not-allowed'
+          ? '🎤 Le micro est bloqué. Autorise-le dans les réglages, ou touche « Je ne peux pas parler maintenant ».'
+          : 'Le micro n’a pas pu démarrer. Réessaie dans un instant.'));
+        mic.textContent = '🎤 Réessayer';
+      });
     });
     return wrap;
   }
