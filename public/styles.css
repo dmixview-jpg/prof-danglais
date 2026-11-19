@@ -930,6 +930,16 @@ h2 { display: flex; align-items: center; gap: 8px; font-weight: 700; }
 .typed-solution { margin-top: 10px; line-height: 1.4; text-wrap: pretty; }
 .typed-ok { margin: 10px 0 0; display: flex; width: 100%; justify-content: center; }
 .typed-ok-done { display: block; margin-top: 8px; font-size: .9rem; }
+.speak-text { font-size: 1.25rem; font-weight: 700; margin: 4px 0; text-wrap: balance; }
+.speak-ex { display: grid; gap: 10px; }
+.speak-mic { min-height: 56px; font-size: 1.05rem; }
+.speak-mic.listening { background: var(--bad); animation: pulse-mic 1.2s ease-in-out infinite; }
+@keyframes pulse-mic { 50% { transform: scale(1.03); } }
+@media (prefers-reduced-motion: reduce) { .speak-mic.listening { animation: none; } }
+.speak-heard:empty { display: none; }
+.speak-heard { line-height: 1.45; text-wrap: pretty; }
+.speak-tip { margin-top: 6px; font-weight: 600; color: var(--bad); }
+.speak-skip { justify-self: center; }
 .order-hint { color: var(--muted); font-size: .9rem; padding: 0 6px; }
 .order-bank { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .word-tile {

@@ -932,8 +932,38 @@ function checkTyped(typed, expected) {
   return 'wrong';
 }
 
+// ---------- Prononciation : reconnaissance vocale ----------
+// Safari (iPhone) et Chrome (Android) la proposent ; l'exercice « à dire » est retiré ailleurs.
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+const SPEECH_OK = !!SpeechRec && !NATIF;
+// Part de la phrase attendue bien prononcée (0 à 1), mot à mot, dans l'ordre (plus longue sous-suite commune).
+function spokenScore(heard, expected) {
+  const words = (t) => [...sentenceForms(t)].map((f) => f.split(' ').filter(Boolean));
+  let best = -1;
+  let missing = [];
+  for (const want of words(expected)) {
+    for (const got of words(heard)) {
+      const m = Array.from({ length: want.length + 1 }, () => new Array(got.length + 1).fill(0));
+      for (let i = 1; i <= want.length; i++) {
+        for (let j = 1; j <= got.length; j++) {
+          m[i][j] = want[i - 1] === got[j - 1] ? m[i - 1][j - 1] + 1 : Math.max(m[i - 1][j], m[i][j - 1]);
+        }
+      }
+      const score = want.length ? m[want.length][got.length] / want.length : 0;
+      if (score > best) {
+        best = score;
+        const heardSet = new Set(got); // mots attendus absents de ce qui a été entendu
+        missing = want.filter((w) => !heardSet.has(w));
+      }
+    }
+  }
+  return { score: Math.max(0, best), missing };
+}
+
 // Quiz : une question à la fois, plusieurs types d'exercices, la mascotte réagit.
 function quizCard(exercises, onComplete) {
+  // Sans reconnaissance vocale, les exercices « à dire » sont retirés (le score reste juste).
+  exercises = exercises.filter((x) => x.type !== 'speak' || SPEECH_OK);
   const card = h('div', { class: 'card lesson-quiz' });
   const buddy = mascot('idle', 'quiz-buddy');
   let idx = 0;
@@ -1044,6 +1074,84 @@ function quizCard(exercises, onComplete) {
     return form;
   }
 
+  // Dire la phrase à voix haute : le téléphone écoute et compare, 3 essais.
+  function speakFor(ex, explain, next) {
+    let tries = 0;
+    let rec = null;
+    let done = false;
+    const heard = h('div', { class: 'speak-heard', 'aria-live': 'polite' });
+    const mic = h('button', { type: 'button', class: 'btn primary speak-mic' }, '🎤 Touche et parle');
+    const skip = h('button', { type: 'button', class: 'btn ghost small speak-skip' }, 'Je ne peux pas parler maintenant');
+    const wrap = h('div', { class: 'speak-ex' }, mic, heard, skip);
+    const finish = (good, text) => {
+      done = true;
+      mic.remove();
+      skip.remove();
+      FX[good ? 'good' : 'bad']();
+      answered(good, explain, next, text);
+    };
+    skip.addEventListener('click', () => {
+      // Exercice retiré de cette série : il ne compte ni juste ni faux.
+      if (rec) try { rec.abort(); } catch { /* rien */ }
+      exercises.splice(idx, 1);
+      renderQuestion();
+    });
+    mic.addEventListener('click', () => {
+      if (done) return;
+      if (rec) { try { rec.stop(); } catch { /* rien */ } return; }
+      if ('speechSynthesis' in window) speechSynthesis.cancel();
+      rec = new SpeechRec();
+      rec.lang = 'en-US';
+      rec.interimResults = true;
+      rec.maxAlternatives = 3;
+      rec.continuous = false;
+      let finalAlts = [];
+      mic.classList.add('listening');
+      mic.textContent = '⏺️ J’écoute… (touche pour arrêter)';
+      heard.replaceChildren();
+      setMood(buddy, 'talk');
+      rec.onresult = (e) => {
+        const res = e.results[e.results.length - 1];
+        heard.replaceChildren(h('span', { class: 'muted' }, 'J’entends\u00a0: '), h('span', { lang: 'en' }, res[0].transcript));
+        if (res.isFinal) finalAlts = Array.from(res, (a) => a.transcript);
+      };
+      rec.onerror = (e) => {
+        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+          heard.replaceChildren(h('span', null, '🎤 Le micro est bloqué. Autorise-le dans les réglages du navigateur, ou touche « Je ne peux pas parler maintenant ».'));
+          finalAlts = null;
+        }
+      };
+      rec.onend = () => {
+        rec = null;
+        mic.classList.remove('listening');
+        setMood(buddy, buddy.dataset.base);
+        if (done) return;
+        if (finalAlts === null) { mic.textContent = '🎤 Réessayer'; return; }
+        if (!finalAlts.length) {
+          heard.replaceChildren(h('span', null, 'Je n’ai rien entendu. Approche le téléphone et parle un peu plus fort.'));
+          mic.textContent = '🎤 Réessayer';
+          return;
+        }
+        tries++;
+        const best = finalAlts.map((t) => ({ t, ...spokenScore(t, ex.text) })).sort((a, b) => b.score - a.score)[0];
+        heard.replaceChildren(h('span', { class: 'muted' }, 'J’ai entendu\u00a0: '), h('span', { lang: 'en' }, `« ${best.t} »`));
+        if (best.score >= 0.8) {
+          finish(true, best.score === 1 ? `Parfait! ${ex.explain}` : `Très bien! ${ex.explain}`);
+        } else if (tries >= 3) {
+          finish(false, `Continue de t’entraîner : écoute la phrase avec 🔊 puis répète-la lentement.${best.missing.length ? ` Mots à travailler\u00a0: ${best.missing.join(', ')}.` : ''}`);
+        } else {
+          const lead = best.score >= 0.5 ? 'Presque!' : 'Essaie encore.';
+          heard.append(h('div', { class: 'speak-tip' }, best.missing.length
+            ? `${lead} Mots à mieux prononcer\u00a0: ${best.missing.join(', ')}. Essai ${tries} sur 3.`
+            : `${lead} Dis toute la phrase, sans t’arrêter. Essai ${tries} sur 3.`));
+          mic.textContent = '🎤 Réessayer';
+        }
+      };
+      try { rec.start(); } catch { mic.classList.remove('listening'); rec = null; mic.textContent = '🎤 Réessayer'; }
+    });
+    return wrap;
+  }
+
   function renderQuestion() {
     if (idx >= exercises.length) return renderScore();
     const ex = exercises[idx];
@@ -1070,6 +1178,15 @@ function quizCard(exercises, onComplete) {
           h('button', { type: 'button', class: 'btn primary listen-play', onclick: () => speak(ex.audio, buddy) }, '🔊 Écouter'),
           h('button', { type: 'button', class: 'btn ghost listen-slow', 'aria-label': 'Écouter lentement', onclick: () => speak(ex.audio, buddy, 0.6) }, '🐢')));
       body = typedFor(ex, ex.audio, explain, next);
+    } else if (type === 'speak') {
+      prompt = h('div', { class: 'q-bubble listen-bubble' },
+        h('div', { class: 'q-label' }, '🎤 Dis cette phrase à voix haute'),
+        h('div', { class: 'speak-text', lang: 'en' }, ex.text),
+        ex.fr ? h('div', { class: 'q-fr' }, `« ${ex.fr} »`) : null,
+        h('div', { class: 'listen-btns' },
+          h('button', { type: 'button', class: 'btn ghost listen-play', onclick: () => speak(ex.text, buddy) }, '🔊 Modèle'),
+          h('button', { type: 'button', class: 'btn ghost listen-slow', 'aria-label': 'Écouter lentement', onclick: () => speak(ex.text, buddy, 0.6) }, '🐢')));
+      body = speakFor(ex, explain, next);
     } else if (type === 'write') {
       prompt = h('div', { class: 'q-bubble' },
         h('div', { class: 'q-label' }, '⌨️ Écris cette phrase en anglais'),
