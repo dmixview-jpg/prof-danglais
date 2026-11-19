@@ -1273,3 +1273,7 @@ a.btn { text-decoration: none; }
 .dlg-sticky { position: sticky; top: var(--topbar-h, 64px); z-index: 10; background: var(--bg); padding: 6px 0 10px; display: grid; gap: 8px; }
 .dlg-sticky .dlg-progress { margin-top: 0; }
 .dlg-continue { width: 100%; }
+
+/* Vitesse de la voix, dans les leçons et les dialogues */
+.speed-chip { flex: none; min-height: 40px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--surface); color: var(--text); font-weight: 700; font-size: .85rem; font-family: inherit; box-shadow: 0 2px 6px rgba(24, 32, 58, .12); cursor: pointer; white-space: nowrap; }
+.speed-chip:active { transform: scale(.96); }
