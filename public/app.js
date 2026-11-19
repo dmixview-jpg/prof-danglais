@@ -394,6 +394,24 @@ function speak(text, talker, rate) {
 
 // Réglages de la voix : choix de la voix américaine, vitesse, essai.
 const RATES = [[0.75, '🐢 Lente'], [0.92, 'Normale'], [1.05, '🐇 Rapide']];
+// Bouton de vitesse dans les leçons et les dialogues : chaque toucher passe à la vitesse suivante.
+const SPEED_CHIPS = { 0.75: '🐢 Lent', 0.92: '🔊 Normal', 1.05: '🐇 Rapide' };
+function renderSpeedChips() {
+  const rate = speechRate();
+  const i = Math.max(0, RATES.findIndex(([r]) => Math.abs(r - rate) < 0.01));
+  document.querySelectorAll('[data-speed]').forEach((b) => {
+    b.textContent = SPEED_CHIPS[RATES[i][0]];
+    b.setAttribute('aria-label', `Vitesse de la voix : ${RATES[i][1].replace(/^\S+\s/, '')}. Toucher pour changer.`);
+  });
+}
+document.querySelectorAll('[data-speed]').forEach((b) => b.addEventListener('click', () => {
+  const rate = speechRate();
+  const i = Math.max(0, RATES.findIndex(([r]) => Math.abs(r - rate) < 0.01));
+  store.set(KEYS.rate, RATES[(i + 1) % RATES.length][0]);
+  renderSpeedChips();
+  renderVoiceCard();
+  speak('This is my speaking speed.');
+}));
 function renderVoiceCard() {
   const box = document.getElementById('voice-card');
   if (!box) return;
@@ -419,12 +437,13 @@ function renderVoiceCard() {
     h('div', { class: 'rate-row', role: 'group', 'aria-label': 'Vitesse de la voix' }, RATES.map(([r, label]) =>
       h('button', {
         type: 'button', class: `rate-btn${Math.abs(rate - r) < 0.01 ? ' on' : ''}`, 'aria-pressed': String(Math.abs(rate - r) < 0.01),
-        onclick: () => { store.set(KEYS.rate, r); renderVoiceCard(); speak('This is my speaking speed.'); },
+        onclick: () => { store.set(KEYS.rate, r); renderVoiceCard(); renderSpeedChips(); speak('This is my speaking speed.'); },
       }, label))),
     h('details', { class: 'voice-help' },
       h('summary', null, '📱 Une voix plus naturelle sur iPhone ou iPad'),
       h('p', null, 'Réglages → Accessibilité → Contenu énoncé → Voix → Anglais → choisis une voix « États-Unis » marquée « Améliorée » ou « Premium » (ex. : Ava, Evan, Zoe) et télécharge-la. Reviens ensuite ici et choisis-la dans la liste.')));
 }
+renderSpeedChips();
 if ('speechSynthesis' in window) {
   pickVoice();
   speechSynthesis.addEventListener?.('voiceschanged', pickVoice);
