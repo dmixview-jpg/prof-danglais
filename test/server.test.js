@@ -10,9 +10,16 @@ const { createServer } = require('../server.js');
 
 // Programme complet (gratuit + payant), construit à part : public/curriculum.json n'a plus
 // le contenu payant quand l'abonnement est actif.
-const FULL_DIR = fs.mkdtempSync(path.join(require('os').tmpdir(), 'pd-tout-'));
-require('child_process').execFileSync('python3', [path.join(__dirname, '..', 'outils', 'programme', 'construire.py'), '--tout', FULL_DIR]);
-const COURSE = JSON.parse(fs.readFileSync(path.join(FULL_DIR, 'curriculum.json'), 'utf8'));
+// Les leçons payantes sont dans le dépôt privé : sans lui (outils/programme/contenu/), les tests
+// du contenu complet sont sautés ici et lancés par le dépôt privé.
+const COMPLET = fs.existsSync(path.join(__dirname, '..', 'outils', 'programme', 'contenu', 'dialogues.py'));
+const SANS_PAYANT = !COMPLET && 'leçons payantes absentes (testées par le dépôt privé)';
+let COURSE = null;
+if (COMPLET) {
+  const FULL_DIR = fs.mkdtempSync(path.join(require('os').tmpdir(), 'pd-tout-'));
+  require('child_process').execFileSync('python3', [path.join(__dirname, '..', 'outils', 'programme', 'construire.py'), '--tout', FULL_DIR]);
+  COURSE = JSON.parse(fs.readFileSync(path.join(FULL_DIR, 'curriculum.json'), 'utf8'));
+}
 
 let server;
 let base;
@@ -67,7 +74,7 @@ test('aucune route d’IA : seules les requêtes GET sont acceptées', async () 
   assert.equal(res.status, 405);
 });
 
-test('parcours complet : 7 niveaux, de Pré-A1 à C2, toutes les leçons rédigées', () => {
+test('parcours complet : 7 niveaux, de Pré-A1 à C2, toutes les leçons rédigées', { skip: SANS_PAYANT }, () => {
   assert.deepEqual(COURSE.levels.map((l) => l.code), ['Pré-A1', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
   const all = COURSE.levels.flatMap((l) => l.units.flatMap((u) => u.lessons));
   const lessons = all.filter((l) => !l.dialogue);
@@ -81,7 +88,7 @@ test('parcours complet : 7 niveaux, de Pré-A1 à C2, toutes les leçons rédig�
   assert.equal(new Set(ids).size, ids.length, 'identifiants uniques');
 });
 
-test('chaque leçon est complète et ses exercices sont valides', () => {
+test('chaque leçon est complète et ses exercices sont valides', { skip: SANS_PAYANT }, () => {
   for (const level of COURSE.levels) {
     for (const unit of level.units) {
       for (const { id, content: c } of unit.lessons.filter((l) => !l.dialogue)) {
@@ -114,7 +121,7 @@ test('chaque leçon est complète et ses exercices sont valides', () => {
   }
 });
 
-test('un dialogue guidé par unité, de A1 à C2, placé avant le bilan', () => {
+test('un dialogue guidé par unité, de A1 à C2, placé avant le bilan', { skip: SANS_PAYANT }, () => {
   const byId = new Map(COURSE.scenarios.map((s) => [s.id, s]));
   for (const level of COURSE.levels.filter((l) => l.id !== 'pre')) {
     for (const unit of level.units) {
@@ -129,7 +136,7 @@ test('un dialogue guidé par unité, de A1 à C2, placé avant le bilan', () => 
   }
 });
 
-test('dialogues guidés : 35 situations, de A1 à C2, réponses valides', () => {
+test('dialogues guidés : 35 situations, de A1 à C2, réponses valides', { skip: SANS_PAYANT }, () => {
   const sc = COURSE.scenarios;
   assert.equal(sc.length, 35);
   assert.equal(new Set(sc.map((s) => s.id)).size, 35);

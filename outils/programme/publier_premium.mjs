@@ -29,6 +29,14 @@ function valeur(v) {
 }
 const champs = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, valeur(v)]));
 
+// Garde-fou : un niveau sans leçon effacerait le contenu payant déjà dans Firebase
+const niveaux = Object.entries(contenu.levels);
+if (!niveaux.length) throw new Error('contenu.json ne contient aucun niveau payant : rien n’est envoyé');
+for (const [niveau, part] of niveaux) {
+  if (!part.lessons || Object.keys(part.lessons).length < 10) {
+    throw new Error(`contenu/${niveau} : seulement ${Object.keys(part.lessons || {}).length} leçons, rien n’est envoyé`);
+  }
+}
 const docs = Object.entries(contenu.levels).map(([niveau, part]) => {
   const body = JSON.stringify({ fields: champs({ ...part, build: contenu.build }) });
   return { niveau, body, ko: Math.round(Buffer.byteLength(body) / 1024) };
@@ -52,3 +60,5 @@ for (const d of docs) {
   console.log(`✓ contenu/${d.niveau}`);
 }
 console.log('Contenu payant publié.');
+// Termine tout de suite : sans cela, les connexions restées ouvertes retenaient l'envoi 4 minutes.
+process.exit(0);
