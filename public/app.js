@@ -56,12 +56,12 @@ function h(tag, attrs, ...children) {
 }
 
 let toastTimer;
-function toast(text) {
+function toast(text, ms = 2200) {
   const el = $('#toast');
   el.textContent = text;
   el.hidden = false;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (el.hidden = true), 2200);
+  toastTimer = setTimeout(() => (el.hidden = true), ms);
 }
 
 // Mélange de Fisher-Yates (copie).
@@ -223,7 +223,18 @@ let actx = null;
 // iPhone, site Web : en mode « lecture », iOS afficherait un lecteur « En cours de lecture » en haut de l'écran,
 // ce que le fondateur refuse. On garde le mode « ambiant » : pas de lecteur, mais l'interrupteur silencieux
 // coupe les effets, comme pour les jeux. L'app iOS native règle sa session audio dans AppDelegate.swift.
-try { if (navigator.audioSession) navigator.audioSession.type = 'ambient'; } catch { /* ancien Safari */ }
+const NATIF = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+// Dans l'app native, on ne touche pas au mode : la session « lecture » réglée par l'app s'applique.
+try { if (navigator.audioSession && !NATIF) navigator.audioSession.type = 'ambient'; } catch { /* ancien Safari */ }
+// Site sur iPhone ou iPad : une seule fois, on rappelle que le mode silencieux coupe les sons.
+const IOS_WEB = !NATIF && (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+let silentTipShown = false;
+function silentTip() {
+  if (!IOS_WEB || silentTipShown) return;
+  silentTipShown = true;
+  try { if (localStorage.getItem('pd.astuceSilencieux')) return; localStorage.setItem('pd.astuceSilencieux', '1'); } catch { /* rien */ }
+  setTimeout(() => toast('🔔 Pas de son ? Désactive le mode silencieux de ton iPhone et monte le volume.', 5000), 600);
+}
 function audio() {
   if (!actx) {
     const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -259,6 +270,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) sleep
 ['touchend', 'pointerdown', 'keydown'].forEach((ev) => document.addEventListener(ev, () => { unlockAudio(); sleepSoon(); }, { passive: true }));
 function tone(freq, ms = 120, type = 'sine', vol = 0.25, delay = 0) {
   if (!fxPrefs().sound) return;
+  silentTip();
   try {
     const ctx = audio();
     if (!ctx) return;
@@ -335,12 +347,12 @@ function otherVoice() {
 }
 
 // Lettres épelées (« J », « B, O, B ») et sigles (« BBC », « USA », « ID ») : chaque lettre est lue par son nom,
-// écrit comme le mot anglais qui se prononce pareil (B = bee, I = eye). A et E restent des majuscules :
-// « ay » serait lu comme « aye » (comme I), et une majuscule seule est lue par son nom de lettre.
+// écrit comme le mot anglais qui se prononce pareil (B = bee, I = eye). Jamais de majuscule seule :
+// l'iPhone la lit « alphabet A ». A s'écrit « eigh » (comme dans eight, weigh), E s'écrit « ee ».
 const SPELLED = /^[A-Z](\s*,\s*[A-Z])*\.?$/;
 const ACRONYM = /^[A-Z]{2,5}\.?$/;
 const LETTER_NAMES = {
-  A: 'A', B: 'bee', C: 'see', D: 'dee', E: 'E', F: 'eff', G: 'gee', H: 'aitch', I: 'eye', J: 'jay', K: 'kay', L: 'ell', M: 'em',
+  A: 'eigh', B: 'bee', C: 'see', D: 'dee', E: 'ee', F: 'eff', G: 'gee', H: 'aitch', I: 'eye', J: 'jay', K: 'kay', L: 'ell', M: 'em',
   N: 'en', O: 'oh', P: 'pee', Q: 'cue', R: 'are', S: 'ess', T: 'tee', U: 'you', V: 'vee', W: 'double you', X: 'ex', Y: 'why', Z: 'zee',
 };
 const spell = (letters) => letters.map((l) => LETTER_NAMES[l]).join(', ');
@@ -367,6 +379,7 @@ function utterance(text, rate, v = voice) {
 
 // talker : mascotte qui « parle » (bouche animée) pendant la lecture.
 function speak(text, talker, rate) {
+  silentTip();
   if (!('speechSynthesis' in window)) {
     toast('La synthèse vocale n’est pas disponible sur cet appareil.');
     return;
