@@ -243,36 +243,18 @@ function unlockAudio() {
     src.start(0);
   } catch { /* rien */ }
 }
-// Mode silencieux de l'iPhone : il coupe Web Audio et parfois la voix. Un vrai élément <audio> en lecture
-// (ici une boucle de silence) fait passer la page en mode « lecture », que l'interrupteur ne coupe pas.
-let keepAlive = null;
-function silentWav() {
-  const n = 8000; // 1 s de silence, 8 kHz, 8 bits, mono
-  const b = new DataView(new ArrayBuffer(44 + n));
-  const txt = (o, t) => [...t].forEach((c, i) => b.setUint8(o + i, c.charCodeAt(0)));
-  txt(0, 'RIFF'); b.setUint32(4, 36 + n, true); txt(8, 'WAVE'); txt(12, 'fmt ');
-  b.setUint32(16, 16, true); b.setUint16(20, 1, true); b.setUint16(22, 1, true);
-  b.setUint32(24, 8000, true); b.setUint32(28, 8000, true); b.setUint16(32, 1, true); b.setUint16(34, 8, true);
-  txt(36, 'data'); b.setUint32(40, n, true);
-  for (let i = 0; i < n; i++) b.setUint8(44 + i, 128);
-  return URL.createObjectURL(new Blob([b], { type: 'audio/wav' }));
+// iPhone : en mode « lecture », iOS affiche un lecteur (« En cours de lecture ») tant que le son est actif.
+// On met le son en veille 1,5 s après le dernier effet, pour que ce lecteur disparaisse aussitôt.
+let idleTimer = null;
+function sleepSoon(extra = 0) {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    try { if (actx && actx.state === 'running') actx.suspend().catch(() => {}); } catch { /* rien */ }
+    try { if (navigator.mediaSession) navigator.mediaSession.playbackState = 'none'; } catch { /* rien */ }
+  }, 1500 + extra);
 }
-function keepPlaybackMode() {
-  try {
-    if (!keepAlive) {
-      keepAlive = new Audio(silentWav());
-      keepAlive.loop = true;
-      keepAlive.setAttribute('playsinline', '');
-      keepAlive.setAttribute('x-webkit-airplay', 'deny');
-    }
-    if (keepAlive.paused && !document.hidden) keepAlive.play().catch(() => {});
-  } catch { /* rien */ }
-}
-document.addEventListener('visibilitychange', () => {
-  if (!keepAlive) return;
-  if (document.hidden) keepAlive.pause(); else keepAlive.play().catch(() => {});
-});
-['touchend', 'pointerdown', 'keydown'].forEach((ev) => document.addEventListener(ev, () => { keepPlaybackMode(); unlockAudio(); }, { passive: true }));
+document.addEventListener('visibilitychange', () => { if (document.hidden) sleepSoon(); });
+['touchend', 'pointerdown', 'keydown'].forEach((ev) => document.addEventListener(ev, () => { unlockAudio(); sleepSoon(); }, { passive: true }));
 function tone(freq, ms = 120, type = 'sine', vol = 0.25, delay = 0) {
   if (!fxPrefs().sound) return;
   try {
@@ -292,6 +274,7 @@ function tone(freq, ms = 120, type = 'sine', vol = 0.25, delay = 0) {
       o.stop(t + ms / 1000 + 0.03);
     };
     if (ctx.state === 'running') play(); else ctx.resume().then(play).catch(() => {});
+    sleepSoon(delay * 1000 + ms);
   } catch { /* audio indisponible : on continue sans */ }
 }
 const buzz = (pattern) => { if (fxPrefs().haptic) navigator.vibrate?.(pattern); };
