@@ -217,8 +217,8 @@ function confetti(count = 70) {
 }
 
 // ---------- Effets sonores et vibrations (réussite, erreur, étoiles, série) ----------
-// Sons synthétisés (aucun fichier audio). Réglage « Sons de réussite » dans la carte Voix.
-const fxPrefs = () => ({ sound: false, haptic: true, ...store.get(KEYS.fx, {}) });
+// Sons synthétisés (aucun fichier audio), toujours actifs (décision du fondateur).
+const fxPrefs = () => ({ sound: true, haptic: true });
 let actx = null;
 // iPhone : le son Web Audio est coupé par l'interrupteur silencieux, sauf en mode « lecture ».
 try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* ancien Safari */ }
@@ -376,17 +376,6 @@ function renderVoiceCard() {
         type: 'button', class: `rate-btn${Math.abs(rate - r) < 0.01 ? ' on' : ''}`, 'aria-pressed': String(Math.abs(rate - r) < 0.01),
         onclick: () => { store.set(KEYS.rate, r); renderVoiceCard(); speak('This is my speaking speed.'); },
       }, label))),
-    h('label', { class: 'fx-toggle' },
-      (() => {
-        const box = h('input', { type: 'checkbox' });
-        box.checked = fxPrefs().sound;
-        box.addEventListener('change', () => {
-          store.set(KEYS.fx, { ...fxPrefs(), sound: box.checked });
-          if (box.checked) FX.good();
-        });
-        return box;
-      })(),
-      h('span', null, '🎵 Sons de réussite')),
     h('details', { class: 'voice-help' },
       h('summary', null, '📱 Une voix plus naturelle sur iPhone ou iPad'),
       h('p', null, 'Réglages → Accessibilité → Contenu énoncé → Voix → Anglais → choisis une voix « États-Unis » marquée « Améliorée » ou « Premium » (ex. : Ava, Evan, Zoe) et télécharge-la. Reviens ensuite ici et choisis-la dans la liste.')));
