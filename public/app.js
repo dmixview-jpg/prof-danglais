@@ -347,12 +347,12 @@ function otherVoice() {
 }
 
 // Lettres épelées (« J », « B, O, B ») et sigles (« BBC », « USA », « ID ») : chaque lettre est lue par son nom,
-// écrit comme le mot anglais qui se prononce pareil (B = bee, I = eye). A et E restent des majuscules :
-// « ay » serait lu comme « aye » (comme I), et une majuscule seule est lue par son nom de lettre.
+// écrit comme le mot anglais qui se prononce pareil (B = bee, I = eye). Jamais de majuscule seule :
+// l'iPhone la lit « alphabet A ». A s'écrit « eigh » (comme dans eight, weigh), E s'écrit « ee ».
 const SPELLED = /^[A-Z](\s*,\s*[A-Z])*\.?$/;
 const ACRONYM = /^[A-Z]{2,5}\.?$/;
 const LETTER_NAMES = {
-  A: 'A', B: 'bee', C: 'see', D: 'dee', E: 'E', F: 'eff', G: 'gee', H: 'aitch', I: 'eye', J: 'jay', K: 'kay', L: 'ell', M: 'em',
+  A: 'eigh', B: 'bee', C: 'see', D: 'dee', E: 'ee', F: 'eff', G: 'gee', H: 'aitch', I: 'eye', J: 'jay', K: 'kay', L: 'ell', M: 'em',
   N: 'en', O: 'oh', P: 'pee', Q: 'cue', R: 'are', S: 'ess', T: 'tee', U: 'you', V: 'vee', W: 'double you', X: 'ex', Y: 'why', Z: 'zee',
 };
 const spell = (letters) => letters.map((l) => LETTER_NAMES[l]).join(', ');
