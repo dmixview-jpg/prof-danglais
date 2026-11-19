@@ -1,0 +1,50 @@
+# Publie les règles Firestore et les fonctions Firebase (functions/) avec la clé de service.
+# Actions → « Déployer Firebase » → Run workflow. Ne se lance jamais tout seul : c'est la production.
+# Les secrets RevenueCat des fonctions sont déjà dans Secret Manager (voir le README) : rien à fournir ici.
+name: Déployer Firebase
+
+on:
+  workflow_dispatch:
+    inputs:
+      cible:
+        description: Ce qu'il faut déployer
+        type: choice
+        options: [regles-et-fonctions, regles, fonctions]
+        default: regles-et-fonctions
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deployer-firebase
+  cancel-in-progress: false
+
+jobs:
+  deployer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: Clé de service (fichier temporaire, effacé à la fin)
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          test -n "$FIREBASE_SERVICE_ACCOUNT" || { echo "::error::Secret FIREBASE_SERVICE_ACCOUNT manquant"; exit 1; }
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/cle.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/cle.json" >> "$GITHUB_ENV"
+          echo "PROJET=$(node -e "process.stdout.write(require(process.argv[1]).project_id)" "$RUNNER_TEMP/cle.json")" >> "$GITHUB_ENV"
+      - name: Dépendances des fonctions
+        if: inputs.cible != 'regles'
+        working-directory: functions
+        run: npm ci --ignore-scripts && npm test
+      - name: Règles Firestore
+        if: inputs.cible != 'fonctions'
+        run: npx -y firebase-tools@15 deploy --only firestore:rules --project "$PROJET" --non-interactive
+      - name: Fonctions
+        if: inputs.cible != 'regles'
+        run: npx -y firebase-tools@15 deploy --only functions --project "$PROJET" --non-interactive --force
+      - name: Effacer la clé
+        if: always()
+        run: rm -f "$RUNNER_TEMP/cle.json"
