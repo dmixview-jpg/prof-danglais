@@ -49,6 +49,38 @@ def review_of(unit_title, lessons):
     }
 
 
+def _norm(t):
+    return re.sub(r"[^a-z0-9]", "", t.lower().replace("’", "'"))
+
+
+def with_typed(c):
+    """Ajoute à une leçon deux exercices à écrire au clavier, tirés de ses exemples :
+    une dictée (on écrit ce qu'on entend) et une traduction (français → anglais).
+    Exemples retenus : 3 à 10 mots, sans chiffres ni symboles, pas déjà utilisés par un exercice."""
+    used = {_norm(x.get("audio") or x.get("sentence") or "") for x in c["exercises"]}
+    cands = []
+    for ex in c.get("examples", []):
+        en = ex["en"].strip()
+        toks = re.sub(r"[.,!?;:]", " ", en).split()
+        n = len(toks)
+        if sum(1 for t in toks if len(t) == 1 and t not in ("a", "I")) > 1:
+            continue  # lettres épelées : pas une dictée de phrase
+        if 3 <= n <= 10 and not re.search(r"[0-9/=«»()…+&@#%$€£→]", en) \
+                and _norm(en) not in used and ex.get("fr") and "(" not in ex["fr"]:
+            cands.append(ex)
+            used.add(_norm(en))
+    extra = []
+    if cands:
+        ex = cands[-1]
+        extra.append({"type": "dictation", "audio": ex["en"], "fr": ex["fr"],
+                      "explain": f"En français : {ex['fr']}"})
+    if len(cands) > 1:
+        ex = cands[0]
+        extra.append({"type": "write", "fr": ex["fr"], "answer": ex["en"],
+                      "explain": "Une autre formulation peut aussi être juste : compare avec la réponse attendue."})
+    return {**c, "exercises": c["exercises"] + extra}
+
+
 # Dialogue guidé rattaché à chaque unité (rempli dans main) : id d'unité → dialogue
 DIALOGUE_OF_UNIT = {}
 
@@ -57,7 +89,7 @@ def build_level(lid, code, name, emoji, desc, units):
     out_units = []
     for u, (utitle, uemoji, goal, lessons) in enumerate(units, 1):
         uid = f"{lid}.{u}"
-        out = [{"id": f"{uid}.{n}", "emoji": le, "title": lt, "content": {"title": lt, **c}}
+        out = [{"id": f"{uid}.{n}", "emoji": le, "title": lt, "content": {"title": lt, **with_typed(c)}}
                for n, (le, lt, c) in enumerate(lessons, 1)]
         review = review_of(utitle, lessons)
         sc = DIALOGUE_OF_UNIT.get(uid)
@@ -90,6 +122,10 @@ def check_lesson(where, c, problems):
                 same = [i for i, o in enumerate(opts) if norm(o) == norm(x["audio"])]
                 if same and same[0] != x["answer"]:
                     bad(f"écoute : la réponse lue est l’option {same[0]}, pas {x['answer']} ({x['audio']})")
+        elif t in ("dictation", "write"):
+            text = x.get("audio") if t == "dictation" else x.get("answer")
+            if not text or not x.get("fr"):
+                bad(f"exercice à écrire incomplet : {x}")
         elif t == "order":
             n = len(re.sub(r"[.,!?;:]", "", x["sentence"]).split())
             if not 2 <= n <= 14:

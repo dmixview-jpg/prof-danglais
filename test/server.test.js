@@ -90,9 +90,13 @@ test('chaque leçon est complète et ses exercices sont valides', () => {
         assert.ok(c.examples.length >= 2 && c.examples.every((x) => x.en && x.fr), `${id} : exemples`);
         assert.ok(c.exercises.length >= 4, `${id} : au moins 4 exercices`);
         for (const x of c.exercises) {
-          assert.ok(['choice', 'listen', 'order'].includes(x.type), `${id} : type ${x.type}`);
+          assert.ok(['choice', 'listen', 'order', 'dictation', 'write'].includes(x.type), `${id} : type ${x.type}`);
           assert.ok(x.explain, `${id} : explication d’exercice`);
-          if (x.type === 'order') {
+          if (x.type === 'dictation' || x.type === 'write') {
+            const text = x.type === 'dictation' ? x.audio : x.answer;
+            const n = (text || '').replace(/[.,!?;:]/g, '').split(/\s+/).filter(Boolean).length;
+            assert.ok(n >= 3 && n <= 10 && !/\d/.test(text) && x.fr, `${id} : phrase à écrire « ${text} »`);
+          } else if (x.type === 'order') {
             const n = x.sentence.replace(/[.,!?;:]/g, '').split(/\s+/).filter(Boolean).length;
             assert.ok(n >= 2 && n <= 14 && x.fr, `${id} : phrase à ordonner « ${x.sentence} »`);
           } else {
