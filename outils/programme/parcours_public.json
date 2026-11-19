@@ -1,0 +1,2202 @@
+{
+"levels": [
+{
+"id": "a1",
+"code": "A1",
+"name": "Débutant",
+"emoji": "🐣",
+"desc": "Te présenter, parler de ton quotidien et comprendre des phrases simples.",
+"units": [
+{
+"id": "a1.1",
+"emoji": "👋",
+"title": "Se présenter",
+"goal": "Dire qui tu es, d’où tu viens et poser des questions simples.",
+"lessons": [
+{
+"id": "a1.1.1",
+"emoji": "🙋",
+"title": "« Je suis… » : le verbe to be",
+"locked": true
+},
+{
+"id": "a1.1.2",
+"emoji": "❓",
+"title": "Questions et négations avec to be",
+"locked": true
+},
+{
+"id": "a1.1.3",
+"emoji": "🌎",
+"title": "Pays, nationalités et langues",
+"locked": true
+},
+{
+"id": "a1.1.4",
+"emoji": "👪",
+"title": "My, your, his, her : les possessifs",
+"locked": true
+},
+{
+"id": "a1.1.5",
+"emoji": "🔤",
+"title": "A, an et le pluriel",
+"locked": true
+},
+{
+"id": "a1.1.6",
+"emoji": "🎯",
+"title": "The ou rien ? Les articles",
+"locked": true
+},
+{
+"id": "a1.1.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Se présenter",
+"dialogue": "intro"
+},
+{
+"id": "a1.1.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "a1.2",
+"emoji": "☀️",
+"title": "Ma journée",
+"goal": "Parler de tes habitudes et de ta routine.",
+"lessons": [
+{
+"id": "a1.2.1",
+"emoji": "🔁",
+"title": "Le présent simple : affirmations",
+"locked": true
+},
+{
+"id": "a1.2.2",
+"emoji": "🚫",
+"title": "Do / does : questions et négations",
+"locked": true
+},
+{
+"id": "a1.2.3",
+"emoji": "🕒",
+"title": "L’heure et les moments de la journée",
+"locked": true
+},
+{
+"id": "a1.2.4",
+"emoji": "📊",
+"title": "Always, often, never : la fréquence",
+"locked": true
+},
+{
+"id": "a1.2.5",
+"emoji": "⚽",
+"title": "Les loisirs : like + -ing",
+"locked": true
+},
+{
+"id": "a1.2.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Ma journée",
+"dialogue": "day"
+},
+{
+"id": "a1.2.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "a1.3",
+"emoji": "🏠",
+"title": "Famille et maison",
+"goal": "Décrire ta famille, ton logement et les gens autour de toi.",
+"lessons": [
+{
+"id": "a1.3.1",
+"emoji": "👨‍👩‍👧",
+"title": "La famille",
+"locked": true
+},
+{
+"id": "a1.3.2",
+"emoji": "🛋️",
+"title": "There is / there are",
+"locked": true
+},
+{
+"id": "a1.3.3",
+"emoji": "📦",
+"title": "Les prépositions de lieu",
+"locked": true
+},
+{
+"id": "a1.3.4",
+"emoji": "👉",
+"title": "This, that, these, those",
+"locked": true
+},
+{
+"id": "a1.3.5",
+"emoji": "🧑",
+"title": "Décrire une personne",
+"locked": true
+},
+{
+"id": "a1.3.6",
+"emoji": "👉",
+"title": "Me, mine, whose : les pronoms",
+"locked": true
+},
+{
+"id": "a1.3.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Ma famille",
+"dialogue": "family"
+},
+{
+"id": "a1.3.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "a1.4",
+"emoji": "🛒",
+"title": "Manger et acheter",
+"goal": "Commander, faire des achats et parler de nourriture.",
+"lessons": [
+{
+"id": "a1.4.1",
+"emoji": "🍎",
+"title": "Dénombrable ou indénombrable",
+"locked": true
+},
+{
+"id": "a1.4.2",
+"emoji": "💲",
+"title": "How much, how many et les prix",
+"locked": true
+},
+{
+"id": "a1.4.3",
+"emoji": "☕",
+"title": "Au café et au restaurant",
+"locked": true
+},
+{
+"id": "a1.4.4",
+"emoji": "🛍️",
+"title": "Faire les magasins",
+"locked": true
+},
+{
+"id": "a1.4.5",
+"emoji": "🍳",
+"title": "Les recettes et l’impératif",
+"locked": true
+},
+{
+"id": "a1.4.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Au café",
+"dialogue": "cafe"
+},
+{
+"id": "a1.4.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "a1.5",
+"emoji": "📍",
+"title": "Ici et maintenant",
+"goal": "Décrire ce qui se passe maintenant et te déplacer en ville.",
+"lessons": [
+{
+"id": "a1.5.1",
+"emoji": "🎬",
+"title": "Le présent continu",
+"locked": true
+},
+{
+"id": "a1.5.2",
+"emoji": "🧥",
+"title": "Les vêtements et la météo",
+"locked": true
+},
+{
+"id": "a1.5.3",
+"emoji": "💪",
+"title": "Can et can’t",
+"locked": true
+},
+{
+"id": "a1.5.4",
+"emoji": "🗺️",
+"title": "Demander son chemin",
+"locked": true
+},
+{
+"id": "a1.5.5",
+"emoji": "🚌",
+"title": "Les transports",
+"locked": true
+},
+{
+"id": "a1.5.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Demander son chemin",
+"dialogue": "directions"
+},
+{
+"id": "a1.5.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "a1.6",
+"emoji": "🕰️",
+"title": "Hier",
+"goal": "Raconter ce que tu as fait hier, la semaine passée ou il y a longtemps.",
+"lessons": [
+{
+"id": "a1.6.1",
+"emoji": "📅",
+"title": "Was et were",
+"locked": true
+},
+{
+"id": "a1.6.2",
+"emoji": "✅",
+"title": "Le passé simple : verbes réguliers",
+"locked": true
+},
+{
+"id": "a1.6.3",
+"emoji": "🔀",
+"title": "Les verbes irréguliers essentiels",
+"locked": true
+},
+{
+"id": "a1.6.4",
+"emoji": "❔",
+"title": "Questions et négations au passé",
+"locked": true
+},
+{
+"id": "a1.6.5",
+"emoji": "🏖️",
+"title": "Raconter son week-end",
+"locked": true
+},
+{
+"id": "a1.6.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Ton week-end",
+"dialogue": "weekend"
+},
+{
+"id": "a1.6.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+}
+]
+},
+{
+"id": "a2",
+"code": "A2",
+"name": "Élémentaire",
+"emoji": "🌿",
+"desc": "Raconter, comparer, parler de projets et te débrouiller dans la vie pratique.",
+"units": [
+{
+"id": "a2.1",
+"emoji": "📖",
+"title": "Raconter une histoire",
+"goal": "Raconter des événements passés de façon vivante.",
+"lessons": [
+{
+"id": "a2.1.1",
+"emoji": "⏳",
+"title": "Le passé continu",
+"locked": true
+},
+{
+"id": "a2.1.2",
+"emoji": "⚡",
+"title": "When et while",
+"locked": true
+},
+{
+"id": "a2.1.3",
+"emoji": "🧭",
+"title": "Les mots pour raconter",
+"locked": true
+},
+{
+"id": "a2.1.4",
+"emoji": "🔄",
+"title": "Used to : les habitudes passées",
+"locked": true
+},
+{
+"id": "a2.1.5",
+"emoji": "🗞️",
+"title": "Les sentiments : -ed ou -ing ?",
+"locked": true
+},
+{
+"id": "a2.1.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Un souvenir de voyage",
+"dialogue": "memory"
+},
+{
+"id": "a2.1.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "a2.2",
+"emoji": "⚖️",
+"title": "Comparer",
+"goal": "Comparer des personnes, des lieux et des objets.",
+"lessons": [
+{
+"id": "a2.2.1",
+"emoji": "📏",
+"title": "Les comparatifs",
+"locked": true
+},
+{
+"id": "a2.2.2",
+"emoji": "🏆",
+"title": "Les superlatifs",
+"locked": true
+},
+{
+"id": "a2.2.3",
+"emoji": "🟰",
+"title": "As… as, too et enough",
+"locked": true
+},
+{
+"id": "a2.2.4",
+"emoji": "🏙️",
+"title": "Décrire une ville",
+"locked": true
+},
+{
+"id": "a2.2.5",
+"emoji": "🛒",
+"title": "Comparer avant d’acheter",
+"locked": true
+},
+{
+"id": "a2.2.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Choisir un téléphone portable",
+"dialogue": "phoneshop"
+},
+{
+"id": "a2.2.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "a2.3",
+"emoji": "🔮",
+"title": "L’avenir",
+"goal": "Parler de tes projets, de tes décisions et faire des prédictions.",
+"lessons": [
+{
+"id": "a2.3.1",
+"emoji": "🎯",
+"title": "Going to : projets et intentions",
+"locked": true
+},
+{
+"id": "a2.3.2",
+"emoji": "💭",
+"title": "Will : décisions, offres et promesses",
+"locked": true
+},
+{
+"id": "a2.3.3",
+"emoji": "🗓️",
+"title": "Le présent continu pour l’avenir",
+"locked": true
+},
+{
+"id": "a2.3.4",
+"emoji": "💌",
+"title": "Inviter et répondre",
+"locked": true
+},
+{
+"id": "a2.3.5",
+"emoji": "✈️",
+"title": "Préparer un voyage",
+"locked": true
+},
+{
+"id": "a2.3.6",
+"emoji": "🤔",
+"title": "May et might : peut-être",
+"locked": true
+},
+{
+"id": "a2.3.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Planifier une sortie",
+"dialogue": "plans"
+},
+{
+"id": "a2.3.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "a2.4",
+"emoji": "🌟",
+"title": "Mes expériences",
+"goal": "Parler de ce que tu as déjà vécu.",
+"lessons": [
+{
+"id": "a2.4.1",
+"emoji": "🌍",
+"title": "Le present perfect : expériences",
+"locked": true
+},
+{
+"id": "a2.4.2",
+"emoji": "⚔️",
+"title": "Present perfect ou passé simple ?",
+"locked": true
+},
+{
+"id": "a2.4.3",
+"emoji": "⏱️",
+"title": "Just, already et yet",
+"locked": true
+},
+{
+"id": "a2.4.4",
+"emoji": "📍",
+"title": "For et since",
+"locked": true
+},
+{
+"id": "a2.4.5",
+"emoji": "🧳",
+"title": "Been ou gone ?",
+"locked": true
+},
+{
+"id": "a2.4.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Mes loisirs",
+"dialogue": "hobbies"
+},
+{
+"id": "a2.4.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "a2.5",
+"emoji": "📋",
+"title": "Règles et conseils",
+"goal": "Exprimer des obligations, des interdictions et donner des conseils.",
+"lessons": [
+{
+"id": "a2.5.1",
+"emoji": "📜",
+"title": "Have to et must",
+"locked": true
+},
+{
+"id": "a2.5.2",
+"emoji": "💡",
+"title": "Should : donner des conseils",
+"locked": true
+},
+{
+"id": "a2.5.3",
+"emoji": "🩺",
+"title": "Chez le médecin",
+"locked": true
+},
+{
+"id": "a2.5.4",
+"emoji": "🙏",
+"title": "Demander poliment",
+"locked": true
+},
+{
+"id": "a2.5.5",
+"emoji": "🏢",
+"title": "Les règles au travail et à l’école",
+"locked": true
+},
+{
+"id": "a2.5.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Chez le médecin",
+"dialogue": "doctor"
+},
+{
+"id": "a2.5.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "a2.6",
+"emoji": "🧰",
+"title": "Vie pratique",
+"goal": "Te débrouiller au téléphone, à l’hôtel et à l’écrit.",
+"lessons": [
+{
+"id": "a2.6.1",
+"emoji": "📞",
+"title": "Au téléphone",
+"locked": true
+},
+{
+"id": "a2.6.2",
+"emoji": "🏨",
+"title": "À l’hôtel",
+"locked": true
+},
+{
+"id": "a2.6.3",
+"emoji": "👉",
+"title": "Les pronoms compléments",
+"locked": true
+},
+{
+"id": "a2.6.4",
+"emoji": "🐢",
+"title": "Les adverbes de manière",
+"locked": true
+},
+{
+"id": "a2.6.5",
+"emoji": "📧",
+"title": "Écrire un e-mail simple",
+"locked": true
+},
+{
+"id": "a2.6.6",
+"emoji": "🎭",
+"title": "Les faux amis essentiels",
+"locked": true
+},
+{
+"id": "a2.6.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : À l’hôtel",
+"dialogue": "hotel"
+},
+{
+"id": "a2.6.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+}
+]
+},
+{
+"id": "b1",
+"code": "B1",
+"name": "Intermédiaire",
+"emoji": "🌳",
+"desc": "Te débrouiller dans la plupart des situations, raconter, argumenter et travailler en anglais.",
+"units": [
+{
+"id": "b1.1",
+"emoji": "⌛",
+"title": "Le temps qui passe",
+"goal": "Maîtriser les temps du passé et du present perfect.",
+"lessons": [
+{
+"id": "b1.1.1",
+"emoji": "🏃",
+"title": "Le present perfect continu",
+"locked": true
+},
+{
+"id": "b1.1.2",
+"emoji": "⏮️",
+"title": "Le past perfect",
+"locked": true
+},
+{
+"id": "b1.1.3",
+"emoji": "🕯️",
+"title": "Used to, would et be used to",
+"locked": true
+},
+{
+"id": "b1.1.4",
+"emoji": "📰",
+"title": "Les temps du récit",
+"locked": true
+},
+{
+"id": "b1.1.5",
+"emoji": "🎉",
+"title": "Raconter une anecdote",
+"locked": true
+},
+{
+"id": "b1.1.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Retrouver un vieil ami",
+"dialogue": "oldfriend"
+},
+{
+"id": "b1.1.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "b1.2",
+"emoji": "🤔",
+"title": "Si…",
+"goal": "Exprimer des conditions réelles et imaginaires.",
+"lessons": [
+{
+"id": "b1.2.1",
+"emoji": "🧪",
+"title": "Conditionnels zéro et un",
+"locked": true
+},
+{
+"id": "b1.2.2",
+"emoji": "💭",
+"title": "Le deuxième conditionnel",
+"locked": true
+},
+{
+"id": "b1.2.3",
+"emoji": "🌠",
+"title": "Wish et if only au présent",
+"locked": true
+},
+{
+"id": "b1.2.4",
+"emoji": "⚖️",
+"title": "Réel ou imaginaire ?",
+"locked": true
+},
+{
+"id": "b1.2.5",
+"emoji": "🗳️",
+"title": "Débattre d’un sujet de société",
+"locked": true
+},
+{
+"id": "b1.2.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Et si on déménageait?",
+"dialogue": "whatif"
+},
+{
+"id": "b1.2.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "b1.3",
+"emoji": "🏗️",
+"title": "La voix passive",
+"goal": "Mettre l’accent sur l’action plutôt que sur la personne.",
+"lessons": [
+{
+"id": "b1.3.1",
+"emoji": "🏭",
+"title": "Le passif : présent et passé",
+"locked": true
+},
+{
+"id": "b1.3.2",
+"emoji": "🧱",
+"title": "Le passif aux autres temps",
+"locked": true
+},
+{
+"id": "b1.3.3",
+"emoji": "💇",
+"title": "Faire faire : have something done",
+"locked": true
+},
+{
+"id": "b1.3.4",
+"emoji": "🔬",
+"title": "Inventions et faits célèbres",
+"locked": true
+},
+{
+"id": "b1.3.5",
+"emoji": "📑",
+"title": "Lire un texte informatif",
+"locked": true
+},
+{
+"id": "b1.3.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Visite guidée de New York",
+"dialogue": "tour"
+},
+{
+"id": "b1.3.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "b1.4",
+"emoji": "🗣️",
+"title": "Rapporter des paroles",
+"goal": "Répéter ce que quelqu’un a dit.",
+"lessons": [
+{
+"id": "b1.4.1",
+"emoji": "💬",
+"title": "Le discours indirect",
+"locked": true
+},
+{
+"id": "b1.4.2",
+"emoji": "❓",
+"title": "Rapporter des questions",
+"locked": true
+},
+{
+"id": "b1.4.3",
+"emoji": "📨",
+"title": "Ordres et demandes",
+"locked": true
+},
+{
+"id": "b1.4.4",
+"emoji": "🧩",
+"title": "Les verbes rapporteurs",
+"locked": true
+},
+{
+"id": "b1.4.5",
+"emoji": "📰",
+"title": "Résumer une conversation",
+"locked": true
+},
+{
+"id": "b1.4.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Transmettre un message",
+"dialogue": "message"
+},
+{
+"id": "b1.4.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "b1.5",
+"emoji": "🔗",
+"title": "Relier les idées",
+"goal": "Construire des phrases plus longues et mieux liées.",
+"lessons": [
+{
+"id": "b1.5.1",
+"emoji": "🧷",
+"title": "Les propositions relatives",
+"locked": true
+},
+{
+"id": "b1.5.2",
+"emoji": "↔️",
+"title": "Gérondif ou infinitif ?",
+"locked": true
+},
+{
+"id": "b1.5.3",
+"emoji": "🧵",
+"title": "Les connecteurs logiques",
+"locked": true
+},
+{
+"id": "b1.5.4",
+"emoji": "🧱",
+"title": "Les verbes à particule courants",
+"locked": true
+},
+{
+"id": "b1.5.5",
+"emoji": "✍️",
+"title": "Écrire un paragraphe structuré",
+"locked": true
+},
+{
+"id": "b1.5.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Visiter un appartement",
+"dialogue": "apartment"
+},
+{
+"id": "b1.5.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "b1.6",
+"emoji": "💼",
+"title": "Au travail",
+"goal": "Utiliser l’anglais dans un contexte professionnel.",
+"lessons": [
+{
+"id": "b1.6.1",
+"emoji": "🤝",
+"title": "L’entretien d’embauche",
+"locked": true
+},
+{
+"id": "b1.6.2",
+"emoji": "📧",
+"title": "L’e-mail professionnel",
+"locked": true
+},
+{
+"id": "b1.6.3",
+"emoji": "🗓️",
+"title": "Les réunions",
+"locked": true
+},
+{
+"id": "b1.6.4",
+"emoji": "👍",
+"title": "Donner son opinion",
+"locked": true
+},
+{
+"id": "b1.6.5",
+"emoji": "🗂️",
+"title": "Parler de son parcours",
+"locked": true
+},
+{
+"id": "b1.6.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Entretien d’embauche",
+"dialogue": "interview"
+},
+{
+"id": "b1.6.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+}
+]
+},
+{
+"id": "b2",
+"code": "B2",
+"name": "Intermédiaire avancé",
+"emoji": "🌲",
+"desc": "Comprendre l’essentiel de textes complexes, argumenter et parler avec aisance.",
+"units": [
+{
+"id": "b2.1",
+"emoji": "🎞️",
+"title": "Récits et regrets",
+"goal": "Raconter avec précision et exprimer des regrets.",
+"lessons": [
+{
+"id": "b2.1.1",
+"emoji": "🎬",
+"title": "Les temps narratifs avancés",
+"locked": true
+},
+{
+"id": "b2.1.2",
+"emoji": "🔙",
+"title": "Le troisième conditionnel",
+"locked": true
+},
+{
+"id": "b2.1.3",
+"emoji": "🔀",
+"title": "Les conditionnels mixtes",
+"locked": true
+},
+{
+"id": "b2.1.4",
+"emoji": "😔",
+"title": "Regrets : wish et should have",
+"locked": true
+},
+{
+"id": "b2.1.5",
+"emoji": "🗨️",
+"title": "Raconter avec style",
+"locked": true
+},
+{
+"id": "b2.1.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Un rendez-vous manqué",
+"dialogue": "missed"
+},
+{
+"id": "b2.1.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "b2.2",
+"emoji": "🕵️",
+"title": "Déduire et supposer",
+"goal": "Faire des déductions et parler de probabilités.",
+"lessons": [
+{
+"id": "b2.2.1",
+"emoji": "🔎",
+"title": "Must, might, can’t au présent",
+"locked": true
+},
+{
+"id": "b2.2.2",
+"emoji": "🧾",
+"title": "Must have, might have, can’t have",
+"locked": true
+},
+{
+"id": "b2.2.3",
+"emoji": "🤷",
+"title": "Exprimer la probabilité",
+"locked": true
+},
+{
+"id": "b2.2.4",
+"emoji": "🧠",
+"title": "Seem, appear et look like",
+"locked": true
+},
+{
+"id": "b2.2.5",
+"emoji": "🧩",
+"title": "Résoudre un mystère",
+"locked": true
+},
+{
+"id": "b2.2.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Le mystère du bureau",
+"dialogue": "mystery"
+},
+{
+"id": "b2.2.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "b2.3",
+"emoji": "🧬",
+"title": "Phrases complexes",
+"goal": "Écrire et parler avec des structures plus riches.",
+"lessons": [
+{
+"id": "b2.3.1",
+"emoji": "✂️",
+"title": "Les relatives explicatives",
+"locked": true
+},
+{
+"id": "b2.3.2",
+"emoji": "🧩",
+"title": "Les propositions participiales",
+"locked": true
+},
+{
+"id": "b2.3.3",
+"emoji": "🎯",
+"title": "La mise en relief",
+"locked": true
+},
+{
+"id": "b2.3.4",
+"emoji": "🔁",
+"title": "Éviter les répétitions",
+"locked": true
+},
+{
+"id": "b2.3.5",
+"emoji": "🧮",
+"title": "Les déterminants avancés",
+"locked": true
+},
+{
+"id": "b2.3.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Recommander un film",
+"dialogue": "movie"
+},
+{
+"id": "b2.3.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "b2.4",
+"emoji": "📣",
+"title": "Le passif et le discours avancés",
+"goal": "Rapporter des informations comme dans les médias.",
+"lessons": [
+{
+"id": "b2.4.1",
+"emoji": "📢",
+"title": "It is said that…",
+"locked": true
+},
+{
+"id": "b2.4.2",
+"emoji": "🗯️",
+"title": "Les verbes rapporteurs avancés",
+"locked": true
+},
+{
+"id": "b2.4.3",
+"emoji": "🧰",
+"title": "Le causatif avancé",
+"locked": true
+},
+{
+"id": "b2.4.4",
+"emoji": "📰",
+"title": "Lire la presse",
+"locked": true
+},
+{
+"id": "b2.4.5",
+"emoji": "📝",
+"title": "Rédiger un rapport",
+"locked": true
+},
+{
+"id": "b2.4.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Les nouvelles du jour",
+"dialogue": "news"
+},
+{
+"id": "b2.4.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "b2.5",
+"emoji": "📚",
+"title": "Enrichir son vocabulaire",
+"goal": "Parler de façon plus naturelle et précise.",
+"lessons": [
+{
+"id": "b2.5.1",
+"emoji": "🧷",
+"title": "Les collocations",
+"locked": true
+},
+{
+"id": "b2.5.2",
+"emoji": "🧗",
+"title": "Les verbes à particule avancés",
+"locked": true
+},
+{
+"id": "b2.5.3",
+"emoji": "🦜",
+"title": "Les expressions idiomatiques",
+"locked": true
+},
+{
+"id": "b2.5.4",
+"emoji": "🏗️",
+"title": "La formation des mots",
+"locked": true
+},
+{
+"id": "b2.5.5",
+"emoji": "🎭",
+"title": "Les faux amis",
+"locked": true
+},
+{
+"id": "b2.5.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Réseautage",
+"dialogue": "networking"
+},
+{
+"id": "b2.5.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "b2.6",
+"emoji": "🎤",
+"title": "Convaincre",
+"goal": "Argumenter, nuancer et présenter.",
+"lessons": [
+{
+"id": "b2.6.1",
+"emoji": "⚔️",
+"title": "Argumenter et débattre",
+"locked": true
+},
+{
+"id": "b2.6.2",
+"emoji": "🌫️",
+"title": "Nuancer son propos",
+"locked": true
+},
+{
+"id": "b2.6.3",
+"emoji": "👔",
+"title": "Registre formel ou familier",
+"locked": true
+},
+{
+"id": "b2.6.4",
+"emoji": "📊",
+"title": "Faire une présentation",
+"locked": true
+},
+{
+"id": "b2.6.5",
+"emoji": "✉️",
+"title": "La lettre de plainte",
+"locked": true
+},
+{
+"id": "b2.6.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Débat : le télétravail",
+"dialogue": "debate"
+},
+{
+"id": "b2.6.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+}
+]
+},
+{
+"id": "c1",
+"code": "C1",
+"name": "Avancé",
+"emoji": "🏔️",
+"desc": "T’exprimer avec aisance et précision, à l’oral comme à l’écrit, même dans des contextes exigeants.",
+"units": [
+{
+"id": "c1.1",
+"emoji": "✨",
+"title": "Emphase et style",
+"goal": "Donner du relief et du style à ton anglais.",
+"lessons": [
+{
+"id": "c1.1.1",
+"emoji": "🔄",
+"title": "L’inversion",
+"locked": true
+},
+{
+"id": "c1.1.2",
+"emoji": "🎯",
+"title": "Clivées avancées et fronting",
+"locked": true
+},
+{
+"id": "c1.1.3",
+"emoji": "💥",
+"title": "L’emphase et les intensifs",
+"locked": true
+},
+{
+"id": "c1.1.4",
+"emoji": "🔗",
+"title": "La cohésion du discours",
+"locked": true
+},
+{
+"id": "c1.1.5",
+"emoji": "🖋️",
+"title": "Style et rythme",
+"locked": true
+},
+{
+"id": "c1.1.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Un discours pour une collègue",
+"dialogue": "toast"
+},
+{
+"id": "c1.1.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "c1.2",
+"emoji": "🎚️",
+"title": "Nuances grammaticales",
+"goal": "Maîtriser les subtilités de la grammaire.",
+"lessons": [
+{
+"id": "c1.2.1",
+"emoji": "🔮",
+"title": "Futur continu et futur antérieur",
+"locked": true
+},
+{
+"id": "c1.2.2",
+"emoji": "🎓",
+"title": "Les modaux avancés",
+"locked": true
+},
+{
+"id": "c1.2.3",
+"emoji": "🏛️",
+"title": "Le subjonctif et les structures formelles",
+"locked": true
+},
+{
+"id": "c1.2.4",
+"emoji": "🧲",
+"title": "Les prépositions dépendantes",
+"locked": true
+},
+{
+"id": "c1.2.5",
+"emoji": "🎛️",
+"title": "Le temps grammatical vs le temps réel",
+"locked": true
+},
+{
+"id": "c1.2.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Planifier un lancement",
+"dialogue": "launch"
+},
+{
+"id": "c1.2.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "c1.3",
+"emoji": "🧑‍💼",
+"title": "Écrire comme un pro",
+"goal": "Rédiger des textes clairs, structurés et convaincants.",
+"lessons": [
+{
+"id": "c1.3.1",
+"emoji": "🧾",
+"title": "La nominalisation",
+"locked": true
+},
+{
+"id": "c1.3.2",
+"emoji": "📄",
+"title": "L’essai argumentatif",
+"locked": true
+},
+{
+"id": "c1.3.3",
+"emoji": "💼",
+"title": "La correspondance formelle",
+"locked": true
+},
+{
+"id": "c1.3.4",
+"emoji": "🧹",
+"title": "Réviser son texte",
+"locked": true
+},
+{
+"id": "c1.3.5",
+"emoji": "📈",
+"title": "Résumer et paraphraser",
+"locked": true
+},
+{
+"id": "c1.3.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Un e-mail délicat",
+"dialogue": "email"
+},
+{
+"id": "c1.3.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "c1.4",
+"emoji": "🦉",
+"title": "Langue idiomatique",
+"goal": "Comprendre et utiliser l’anglais naturel des natifs.",
+"lessons": [
+{
+"id": "c1.4.1",
+"emoji": "🧠",
+"title": "Les idiomes avancés",
+"locked": true
+},
+{
+"id": "c1.4.2",
+"emoji": "🎲",
+"title": "Particules à plusieurs sens",
+"locked": true
+},
+{
+"id": "c1.4.3",
+"emoji": "🍽️",
+"title": "Binômes et expressions figées",
+"locked": true
+},
+{
+"id": "c1.4.4",
+"emoji": "🛹",
+"title": "L’anglais familier américain",
+"locked": true
+},
+{
+"id": "c1.4.5",
+"emoji": "🌈",
+"title": "Les métaphores du quotidien",
+"locked": true
+},
+{
+"id": "c1.4.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Dîner entre amis",
+"dialogue": "dinner"
+},
+{
+"id": "c1.4.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "c1.5",
+"emoji": "👂",
+"title": "Comprendre finement",
+"goal": "Saisir l’humour, l’implicite et les accents.",
+"lessons": [
+{
+"id": "c1.5.1",
+"emoji": "😏",
+"title": "L’humour et le sarcasme",
+"locked": true
+},
+{
+"id": "c1.5.2",
+"emoji": "🧩",
+"title": "Le sens implicite",
+"locked": true
+},
+{
+"id": "c1.5.3",
+"emoji": "🗺️",
+"title": "Les accents anglophones",
+"locked": true
+},
+{
+"id": "c1.5.4",
+"emoji": "🗣️",
+"title": "La parole rapide",
+"locked": true
+},
+{
+"id": "c1.5.5",
+"emoji": "🎧",
+"title": "Écouter des contenus authentiques",
+"locked": true
+},
+{
+"id": "c1.5.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Lire entre les lignes",
+"dialogue": "subtext"
+},
+{
+"id": "c1.5.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "c1.6",
+"emoji": "🏆",
+"title": "Anglais professionnel",
+"goal": "Négocier, diriger et convaincre au travail.",
+"lessons": [
+{
+"id": "c1.6.1",
+"emoji": "🤝",
+"title": "Négocier",
+"locked": true
+},
+{
+"id": "c1.6.2",
+"emoji": "🧑‍🏫",
+"title": "Donner du feedback",
+"locked": true
+},
+{
+"id": "c1.6.3",
+"emoji": "🎙️",
+"title": "Animer une réunion",
+"locked": true
+},
+{
+"id": "c1.6.4",
+"emoji": "📣",
+"title": "Persuader par écrit",
+"locked": true
+},
+{
+"id": "c1.6.5",
+"emoji": "🌐",
+"title": "Le small talk professionnel",
+"locked": true
+},
+{
+"id": "c1.6.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Négocier un salaire",
+"dialogue": "salary"
+},
+{
+"id": "c1.6.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+}
+]
+},
+{
+"id": "c2",
+"code": "C2",
+"name": "Maîtrise",
+"emoji": "🏆",
+"desc": "Comprendre pratiquement tout et t’exprimer avec la précision et la finesse d’un locuteur natif instruit.",
+"units": [
+{
+"id": "c2.1",
+"emoji": "🎯",
+"title": "Précision",
+"goal": "Choisir le mot exact et la nuance juste.",
+"lessons": [
+{
+"id": "c2.1.1",
+"emoji": "🔬",
+"title": "Quasi-synonymes et connotations",
+"locked": true
+},
+{
+"id": "c2.1.2",
+"emoji": "🎚️",
+"title": "Changer de registre",
+"locked": true
+},
+{
+"id": "c2.1.3",
+"emoji": "🗡️",
+"title": "Les figures de style",
+"locked": true
+},
+{
+"id": "c2.1.4",
+"emoji": "🧱",
+"title": "Grammaire de haut niveau",
+"locked": true
+},
+{
+"id": "c2.1.5",
+"emoji": "🧭",
+"title": "Nuances de modalité",
+"locked": true
+},
+{
+"id": "c2.1.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Choisir le mot juste",
+"dialogue": "words"
+},
+{
+"id": "c2.1.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "c2.2",
+"emoji": "🎭",
+"title": "Culture et références",
+"goal": "Comprendre les références culturelles des anglophones.",
+"lessons": [
+{
+"id": "c2.2.1",
+"emoji": "📜",
+"title": "Shakespeare et la Bible au quotidien",
+"locked": true
+},
+{
+"id": "c2.2.2",
+"emoji": "⚽",
+"title": "Les métaphores sportives",
+"locked": true
+},
+{
+"id": "c2.2.3",
+"emoji": "🗞️",
+"title": "Proverbes et dictons",
+"locked": true
+},
+{
+"id": "c2.2.4",
+"emoji": "🎬",
+"title": "L’humour et les jeux de mots",
+"locked": true
+},
+{
+"id": "c2.2.5",
+"emoji": "🌍",
+"title": "Les variétés de l’anglais",
+"locked": true
+},
+{
+"id": "c2.2.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Soirée basketball",
+"dialogue": "hockey"
+},
+{
+"id": "c2.2.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "c2.3",
+"emoji": "✒️",
+"title": "Écriture experte",
+"goal": "Écrire avec l’aisance d’un auteur.",
+"lessons": [
+{
+"id": "c2.3.1",
+"emoji": "🧠",
+"title": "L’essai critique",
+"locked": true
+},
+{
+"id": "c2.3.2",
+"emoji": "✂️",
+"title": "La concision",
+"locked": true
+},
+{
+"id": "c2.3.3",
+"emoji": "🎨",
+"title": "L’écriture créative",
+"locked": true
+},
+{
+"id": "c2.3.4",
+"emoji": "🧾",
+"title": "La critique et la recension",
+"locked": true
+},
+{
+"id": "c2.3.5",
+"emoji": "🏛️",
+"title": "L’anglais académique",
+"locked": true
+},
+{
+"id": "c2.3.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Atelier d’écriture",
+"dialogue": "workshop"
+},
+{
+"id": "c2.3.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+},
+{
+"id": "c2.4",
+"emoji": "🎤",
+"title": "Oral expert",
+"goal": "Parler avec impact, naturel et précision.",
+"lessons": [
+{
+"id": "c2.4.1",
+"emoji": "🎭",
+"title": "L’art de raconter",
+"locked": true
+},
+{
+"id": "c2.4.2",
+"emoji": "🛡️",
+"title": "Répliquer dans un débat",
+"locked": true
+},
+{
+"id": "c2.4.3",
+"emoji": "🎶",
+"title": "Intonation et accent tonique",
+"locked": true
+},
+{
+"id": "c2.4.4",
+"emoji": "🎤",
+"title": "Parler en public",
+"locked": true
+},
+{
+"id": "c2.4.5",
+"emoji": "🧘",
+"title": "L’aisance naturelle",
+"locked": true
+},
+{
+"id": "c2.4.dialogue",
+"emoji": "🎭",
+"title": "Dialogue : Répliquer en débat public",
+"dialogue": "rebuttal"
+},
+{
+"id": "c2.4.review",
+"emoji": "🏁",
+"title": "Bilan de l’unité",
+"review": true,
+"locked": true
+}
+]
+}
+]
+}
+],
+"scenarios": [
+{
+"id": "intro",
+"emoji": "👋",
+"title": "Se présenter",
+"level": "A1",
+"intro": "Tu rencontres quelqu’un à une fête.",
+"turns": [
+{
+"coach": "Hi! I’m Kevin. What’s your name?",
+"fr": "Salut! Je suis Kevin. Comment t’appelles-tu?"
+},
+{
+"options": [
+"My name is Julie.",
+"I call me Julie.",
+"My name Julie."
+],
+"answer": 0,
+"explain": "« Je m’appelle » = My name is… ou I’m… « I call me » est un calque du français."
+},
+{
+"coach": "Nice to meet you, Julie! Where are you from?",
+"fr": "Enchanté, Julie! D’où viens-tu?"
+},
+{
+"options": [
+"I’m come from Paris.",
+"I’m from Paris.",
+"I from Paris."
+],
+"answer": 1,
+"explain": "I’m from + lieu. Pas de « come » après « I’m »."
+},
+{
+"coach": "Cool! How old are you, if I may ask?",
+"fr": "Cool! Quel âge as-tu, si je peux me permettre?"
+},
+{
+"options": [
+"I have thirty years.",
+"I’m thirty.",
+"I’m thirty years."
+],
+"answer": 1,
+"explain": "L’âge se dit avec be : I’m thirty (ou thirty years old)."
+},
+{
+"coach": "And what do you do?",
+"fr": "Et que fais-tu dans la vie?"
+},
+{
+"options": [
+"I’m nurse.",
+"I’m a nurse.",
+"I work nurse."
+],
+"answer": 1,
+"explain": "Le métier prend a ou an : I’m a nurse."
+},
+{
+"coach": "That’s great! Do you speak other languages?",
+"fr": "Super! Parles-tu d’autres langues?"
+},
+{
+"options": [
+"Yes, I speak french and a little english.",
+"Yes, I speak French and a little English.",
+"Yes, I speak French and little English."
+],
+"answer": 1,
+"explain": "Majuscules aux langues, et « a little » = un peu."
+},
+{
+"coach": "Awesome. It was really nice to meet you, Julie!",
+"fr": "Génial. C’était vraiment un plaisir de te rencontrer, Julie!"
+}
+],
+"unit": "a1.1"
+},
+{
+"id": "cafe",
+"emoji": "☕",
+"title": "Au café",
+"level": "A1",
+"intro": "Tu commandes ton café du matin.",
+"unit": "a1.4",
+"locked": true
+},
+{
+"id": "directions",
+"emoji": "🗺️",
+"title": "Demander son chemin",
+"level": "A1",
+"intro": "Tu es perdu au centre-ville de Chicago.",
+"unit": "a1.5",
+"locked": true
+},
+{
+"id": "day",
+"emoji": "☀️",
+"title": "Ma journée",
+"level": "A1",
+"intro": "Le chat te demande comment s’est passée ta journée.",
+"unit": "a1.2",
+"locked": true
+},
+{
+"id": "hobbies",
+"emoji": "🎸",
+"title": "Mes loisirs",
+"level": "A2",
+"intro": "Tu parles de tes passe-temps avec un nouveau collègue.",
+"unit": "a2.4",
+"locked": true
+},
+{
+"id": "doctor",
+"emoji": "🩺",
+"title": "Chez le médecin",
+"level": "A2",
+"intro": "Tu consultes une médecin à la clinique.",
+"unit": "a2.5",
+"locked": true
+},
+{
+"id": "hotel",
+"emoji": "🏨",
+"title": "À l’hôtel",
+"level": "A2",
+"intro": "Tu arrives à l’hôtel à Boston.",
+"unit": "a2.6",
+"locked": true
+},
+{
+"id": "apartment",
+"emoji": "🏠",
+"title": "Visiter un appartement",
+"level": "B1",
+"intro": "Tu visites un logement à louer à New York.",
+"unit": "b1.5",
+"locked": true
+},
+{
+"id": "interview",
+"emoji": "💼",
+"title": "Entretien d’embauche",
+"level": "B1",
+"intro": "Tu passes un entretien pour un poste de coordinateur.",
+"unit": "b1.6",
+"locked": true
+},
+{
+"id": "support",
+"emoji": "📞",
+"title": "Service client",
+"level": "B1",
+"intro": "Tu appelles pour un colis jamais livré.",
+"locked": true
+},
+{
+"id": "networking",
+"emoji": "🤝",
+"title": "Réseautage",
+"level": "B2",
+"intro": "Tu rencontres une professionnelle lors d’un événement.",
+"unit": "b2.5",
+"locked": true
+},
+{
+"id": "salary",
+"emoji": "💰",
+"title": "Négocier un salaire",
+"level": "C1",
+"intro": "On t’offre un poste. Tu négocies le salaire.",
+"unit": "c1.6",
+"locked": true
+},
+{
+"id": "family",
+"emoji": "👨‍👩‍👧",
+"title": "Ma famille",
+"level": "A1",
+"intro": "Une collègue regarde la photo sur ton bureau.",
+"unit": "a1.3",
+"locked": true
+},
+{
+"id": "weekend",
+"emoji": "🏕️",
+"title": "Ton week-end",
+"level": "A1",
+"intro": "Lundi matin, un collègue te parle de ton week-end.",
+"unit": "a1.6",
+"locked": true
+},
+{
+"id": "memory",
+"emoji": "📖",
+"title": "Un souvenir de voyage",
+"level": "A2",
+"intro": "Tu racontes une anecdote de voyage à une amie.",
+"unit": "a2.1",
+"locked": true
+},
+{
+"id": "phoneshop",
+"emoji": "📱",
+"title": "Choisir un téléphone portable",
+"level": "A2",
+"intro": "Tu compares deux téléphones dans un magasin.",
+"unit": "a2.2",
+"locked": true
+},
+{
+"id": "plans",
+"emoji": "🗓️",
+"title": "Planifier une sortie",
+"level": "A2",
+"intro": "Tu organises une sortie avec un ami.",
+"unit": "a2.3",
+"locked": true
+},
+{
+"id": "oldfriend",
+"emoji": "🤗",
+"title": "Retrouver un vieil ami",
+"level": "B1",
+"intro": "Tu croises un ami du lycée que tu n’as pas vu depuis longtemps.",
+"unit": "b1.1",
+"locked": true
+},
+{
+"id": "whatif",
+"emoji": "🤔",
+"title": "Et si on déménageait?",
+"level": "B1",
+"intro": "Ton conjoint ou ta conjointe a reçu une offre d’emploi à San Francisco.",
+"unit": "b1.2",
+"locked": true
+},
+{
+"id": "tour",
+"emoji": "🗽",
+"title": "Visite guidée de New York",
+"level": "B1",
+"intro": "Tu es guide et tu fais visiter New York à des touristes.",
+"unit": "b1.3",
+"locked": true
+},
+{
+"id": "message",
+"emoji": "📨",
+"title": "Transmettre un message",
+"level": "B1",
+"intro": "Ta collègue revient de vacances. Tu lui transmets les messages reçus.",
+"unit": "b1.4",
+"locked": true
+},
+{
+"id": "missed",
+"emoji": "⏰",
+"title": "Un rendez-vous manqué",
+"level": "B2",
+"intro": "Tu as raté un dîner important. Tu t’expliques avec une amie.",
+"unit": "b2.1",
+"locked": true
+},
+{
+"id": "mystery",
+"emoji": "🕵️",
+"title": "Le mystère du bureau",
+"level": "B2",
+"intro": "Quelqu’un a mangé le déjeuner de ta collègue dans le frigo.",
+"unit": "b2.2",
+"locked": true
+},
+{
+"id": "movie",
+"emoji": "🎬",
+"title": "Recommander un film",
+"level": "B2",
+"intro": "Un ami te demande quoi regarder ce soir.",
+"unit": "b2.3",
+"locked": true
+},
+{
+"id": "news",
+"emoji": "📰",
+"title": "Les nouvelles du jour",
+"level": "B2",
+"intro": "Tu discutes de l’actualité au déjeuner avec des collègues.",
+"unit": "b2.4",
+"locked": true
+},
+{
+"id": "debate",
+"emoji": "⚔️",
+"title": "Débat : le télétravail",
+"level": "B2",
+"intro": "En réunion, on débat du retour au bureau.",
+"unit": "b2.6",
+"locked": true
+},
+{
+"id": "toast",
+"emoji": "🥂",
+"title": "Un discours pour une collègue",
+"level": "C1",
+"intro": "Tu portes un toast au départ à la retraite d’une collègue.",
+"unit": "c1.1",
+"locked": true
+},
+{
+"id": "launch",
+"emoji": "🚀",
+"title": "Planifier un lancement",
+"level": "C1",
+"intro": "Tu prépares le lancement d’un produit avec ta responsable.",
+"unit": "c1.2",
+"locked": true
+},
+{
+"id": "email",
+"emoji": "✉️",
+"title": "Un e-mail délicat",
+"level": "C1",
+"intro": "Ta responsable t’aide à réviser un e-mail à un client mécontent.",
+"unit": "c1.3",
+"locked": true
+},
+{
+"id": "dinner",
+"emoji": "🍷",
+"title": "Dîner entre amis",
+"level": "C1",
+"intro": "Au dîner, tes amis anglophones parlent de façon très familière.",
+"unit": "c1.4",
+"locked": true
+},
+{
+"id": "subtext",
+"emoji": "😏",
+"title": "Lire entre les lignes",
+"level": "C1",
+"intro": "Tu présentes une idée en réunion. Les réactions sont… ambiguës.",
+"unit": "c1.5",
+"locked": true
+},
+{
+"id": "words",
+"emoji": "🔬",
+"title": "Choisir le mot juste",
+"level": "C2",
+"intro": "Tu révises le texte d’un collègue avec une éditrice.",
+"unit": "c2.1",
+"locked": true
+},
+{
+"id": "hockey",
+"emoji": "🏀",
+"title": "Soirée basketball",
+"level": "C2",
+"intro": "Tu regardes un match avec des collègues de Chicago.",
+"unit": "c2.2",
+"locked": true
+},
+{
+"id": "workshop",
+"emoji": "✒️",
+"title": "Atelier d’écriture",
+"level": "C2",
+"intro": "Tu participes à un atelier d’écriture. L’animatrice commente ton texte.",
+"unit": "c2.3",
+"locked": true
+},
+{
+"id": "rebuttal",
+"emoji": "🛡️",
+"title": "Répliquer en débat public",
+"level": "C2",
+"intro": "Lors d’un débat municipal, une opposante conteste ton projet de pistes cyclables.",
+"unit": "c2.4",
+"locked": true
+}
+]
+}

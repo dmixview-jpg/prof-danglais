@@ -9,10 +9,17 @@ const path = require('node:path');
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pd-abo-'));
 execFileSync('python3', [path.join(__dirname, '..', 'outils', 'programme', 'construire.py'), '--essai', dir]);
 const pub = JSON.parse(fs.readFileSync(path.join(dir, 'curriculum.json'), 'utf8'));
-const prem = JSON.parse(fs.readFileSync(path.join(dir, 'contenu.json'), 'utf8'));
-const fullDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pd-tout-'));
-execFileSync('python3', [path.join(__dirname, '..', 'outils', 'programme', 'construire.py'), '--tout', fullDir]);
-const full = JSON.parse(fs.readFileSync(path.join(fullDir, 'curriculum.json'), 'utf8'));
+// Leçons payantes présentes seulement avec le dépôt privé dans outils/programme/contenu/
+const COMPLET = fs.existsSync(path.join(__dirname, '..', 'outils', 'programme', 'contenu', 'dialogues.py'));
+const SANS_PAYANT = !COMPLET && 'leçons payantes absentes (testées par le dépôt privé)';
+let prem = null;
+let full = null;
+if (COMPLET) {
+  prem = JSON.parse(fs.readFileSync(path.join(dir, 'contenu.json'), 'utf8'));
+  const fullDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pd-tout-'));
+  execFileSync('python3', [path.join(__dirname, '..', 'outils', 'programme', 'construire.py'), '--tout', fullDir]);
+  full = JSON.parse(fs.readFileSync(path.join(fullDir, 'curriculum.json'), 'utf8'));
+}
 const committed = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'public', 'curriculum.json'), 'utf8'));
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'outils', 'programme', 'abonnement.json'), 'utf8'));
 const lessons = (data) => data.levels.flatMap((lv) => lv.units.flatMap((u) => u.lessons.map((l) => ({ lv: lv.id, l }))));
@@ -47,7 +54,7 @@ test('les dialogues offerts sont complets et non verrouillés', () => {
   assert.ok(offered.length <= 2, 'pas plus de 2 dialogues offerts');
 });
 
-test('tout le contenu retiré se retrouve dans le fichier Premium', () => {
+test('tout le contenu retiré se retrouve dans le fichier Premium', { skip: SANS_PAYANT }, () => {
   for (const { lv, l } of lessons(full).filter((x) => x.lv !== 'pre' && x.l.content)) {
     assert.deepStrictEqual(prem.levels[lv].lessons[l.id], l.content, l.id);
   }
@@ -57,7 +64,7 @@ test('tout le contenu retiré se retrouve dans le fichier Premium', () => {
   }
 });
 
-test('aucun texte payant ne fuit dans le fichier public', () => {
+test('aucun texte payant ne fuit dans le fichier public', { skip: SANS_PAYANT }, () => {
   const text = JSON.stringify(pub);
   const sample = lessons(full).filter((x) => x.lv === 'b2' && x.l.content).slice(0, 5);
   for (const { l } of sample) {
@@ -67,7 +74,11 @@ test('aucun texte payant ne fuit dans le fichier public', () => {
   assert.ok(pub.abonnement && pub.abonnement.essaiJours >= 0 && pub.abonnement.prix.length);
 });
 
+test('sans les leçons payantes, aucun fichier Premium n’est produit', { skip: COMPLET && 'leçons payantes présentes' }, () => {
+  assert.ok(!fs.existsSync(path.join(dir, 'contenu.json')), 'un fichier Premium vide effacerait les leçons dans Firebase');
+});
+
 test('public/curriculum.json est à jour et suit le réglage actif de abonnement.json', () => {
-  assert.deepStrictEqual(committed, config.actif ? pub : full,
+  assert.deepStrictEqual(committed, config.actif || !COMPLET ? pub : full,
     'Lance python3 outils/programme/construire.py puis enregistre public/curriculum.json');
 });

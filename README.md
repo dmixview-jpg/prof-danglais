@@ -57,9 +57,10 @@ Le contenu est écrit en Python, dans un format simple, dans `outils/programme/`
 | Fichier | Contenu |
 |---|---|
 | `premiers_pas.py` | Niveau Pré-A1 |
-| `contenu/a1_u1.py` … `contenu/c2_u4.py` | Une unité par fichier (5 leçons) |
-| `contenu/dialogues.py` | Les premiers dialogues guidés |
-| `contenu/dialogues_unites.py` | Les dialogues des unités, et l'unité à laquelle chaque dialogue est rattaché |
+| `contenu/a1_u1.py` … `contenu/c2_u4.py` | Une unité par fichier (5 leçons), **dans le dépôt privé** |
+| `contenu/dialogues.py` | Les premiers dialogues guidés, **dans le dépôt privé** |
+| `contenu/dialogues_unites.py` | Les dialogues des unités, et l'unité à laquelle chaque dialogue est rattaché, **dans le dépôt privé** |
+| `parcours_public.json` | Titres et cadenas des niveaux payants, réécrit par `construire.py` |
 | `aide.py` | Les petites fonctions pour écrire une leçon : étape, exemple, mot, réplique, exercice |
 
 Après une modification, régénère le fichier lu par l'app :
@@ -67,6 +68,8 @@ Après une modification, régénère le fichier lu par l'app :
 ```bash
 python3 outils/programme/construire.py
 ```
+
+Les leçons payantes (A1 à C2) et les dialogues sont dans le dépôt **privé** `prof-danglais-premium`, pour ne pas être lisibles ici. Pour les modifier, clone-le dans `outils/programme/contenu/` (dossier ignoré par Git) : `git clone https://github.com/dmixview-jpg/prof-danglais-premium.git outils/programme/contenu`. Sans lui, `construire.py` reconstruit seulement Pré-A1 et reprend les titres des niveaux payants dans `parcours_public.json`, et les tests du contenu complet sont sautés.
 
 Le script vérifie le contenu (3 options distinctes, bonne réponse valide, phrases à remettre en ordre…). Il refuse de construire s'il trouve une erreur, puis écrit `public/curriculum.json`. Les bilans d'unité sont assemblés automatiquement à partir des leçons.
 
@@ -182,6 +185,7 @@ Le code reste en place si tu veux un jour vendre aussi sur le site (commission d
 
 **Comment le contenu est protégé**
 - Avec l'abonnement actif, `construire.py` ne met dans `public/curriculum.json` que le contenu gratuit ; les niveaux payants n'y gardent que leurs titres (avec un cadenas). Le contenu payant va dans `outils/premium/contenu.json` (jamais publié ni enregistré dans Git).
+- Les sources des leçons payantes sont dans le dépôt privé `prof-danglais-premium`, pas dans ce dépôt public.
 - `outils/programme/publier_premium.mjs` l'envoie dans Firestore (`contenu/{niveau}`). Les règles de `firestore.rules` ne le laissent lire qu'aux comptes abonnés (`stripeRole == 'premium'`, ajouté par l'extension Stripe). Les abonnés en gardent une copie sur l'appareil pour l'usage hors connexion ; elle est retirée si l'abonnement se termine.
 - Le code est dans `public/abonnement.js` (page « Débloque tout le parcours », paiement, gestion de l'abonnement).
 
@@ -192,9 +196,9 @@ Le code reste en place si tu veux un jour vendre aussi sur le site (commission d
 4. **Stripe → Paramètres → Portail client** : active-le (annulation, changement de formule, carte de paiement).
 5. **Firebase → Extensions → « Run Payments with Stripe »** : installe-la en suivant ses instructions (clé API Stripe, webhook à créer dans Stripe). Collections : `customers` et `products`. Pour « Automatically delete Stripe customer objects », garde « Do not delete » (l'historique des paiements reste dans Stripe pour ta comptabilité). Reporte dans `abonnement.json` la région choisie (`region`) et, si tu as changé l'identifiant de l'extension, le nom de la fonction du portail (`fonctionPortail` : `ext-<identifiant>-createPortalLink`).
 6. Dans `outils/programme/abonnement.json` : remplace les `price_A_REMPLACER_…` par les identifiants de tes prix Stripe, vérifie les montants affichés et l'adresse de ton site dans `sites`, puis mets `"actif": true`. Lance `python3 outils/programme/construire.py` : il recopie les prix, l'adresse et la durée de l'essai dans `firestore.rules`. Republie ensuite les règles dans Firebase.
-7. **Firebase → Paramètres du projet → Comptes de service → Générer une nouvelle clé privée**. Copie tout le contenu du fichier dans un secret GitHub nommé `FIREBASE_SERVICE_ACCOUNT` (**Settings → Secrets and variables → Actions**). Cette clé est secrète : ne la mets jamais dans le dépôt.
-8. **Rends le dépôt GitHub privé** : sinon les leçons payantes restent lisibles dans les fichiers du programme (`outils/programme/`). Avec un compte GitHub gratuit, GitHub Pages ne publie pas un dépôt privé : héberge alors `public/` sur Netlify ou Cloudflare Pages (gratuits, reliés au dépôt privé), et ajoute la nouvelle adresse aux domaines autorisés de Firebase.
-9. Lance `python3 outils/programme/construire.py`, puis publie sur `main`. Le workflow « Publier le contenu Premium » envoie le contenu payant dans Firebase. Tu peux vérifier en local avec `node outils/programme/publier_premium.mjs --essai`.
+7. **Firebase → Paramètres du projet → Comptes de service → Générer une nouvelle clé privée**. Copie tout le contenu du fichier dans un secret GitHub nommé `FIREBASE_SERVICE_ACCOUNT` du dépôt **privé** `prof-danglais-premium` (**Settings → Secrets and variables → Actions**). Cette clé est secrète : ne la mets jamais dans le dépôt.
+8. Les leçons payantes sont déjà dans le dépôt privé `prof-danglais-premium` : ce dépôt-ci peut rester public (GitHub Pages gratuit). Attention, l'historique Git de ce dépôt contient encore les anciennes versions des leçons.
+9. Publie les leçons sur `main` du dépôt privé : son workflow « Publier le contenu Premium » envoie le contenu payant dans Firebase. Tu peux vérifier en local avec `node outils/programme/publier_premium.mjs --essai`.
 10. Teste un abonnement en mode test avec la carte `4242 4242 4242 4242`, puis passe Stripe en mode réel (nouvelles clés dans l'extension, nouveaux identifiants de prix dans `abonnement.json`).
 
 **Règles de gestion déjà programmées**

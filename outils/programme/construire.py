@@ -5,6 +5,11 @@
 # par publier_premium.mjs et lisible seulement par les abonnés.
 #   python3 outils/programme/construire.py --essai DOSSIER   (tests : abonnement forcé, sorties dans DOSSIER)
 #   python3 outils/programme/construire.py --tout DOSSIER    (tests : tout le contenu, sans abonnement)
+#
+# Les leçons payantes (contenu/) sont dans le dépôt privé prof-danglais-premium, pas dans ce
+# dépôt public. Pour tout construire, place ce dépôt privé dans outils/programme/contenu/
+# (ignoré par Git). Sans lui, le script reconstruit public/curriculum.json à partir de
+# Pré-A1 et de parcours_public.json (titres et cadenas des niveaux payants, sans leur contenu).
 import hashlib
 import importlib
 import json
@@ -18,6 +23,9 @@ sys.path.insert(0, os.path.join(HERE, "contenu"))
 from premiers_pas import PRE  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(HERE))
+# Plan public des niveaux payants (titres, cadenas), réécrit à chaque construction complète
+PLAN = os.path.join(HERE, "parcours_public.json")
+COMPLET = os.path.exists(os.path.join(HERE, "contenu", "dialogues.py"))
 
 # (id, code, nom, emoji, description, nombre d'unités) — chaque unité est dans contenu/<id>_u<n>.py
 LEVELS = [
@@ -183,7 +191,8 @@ def split_premium(data, config):
     for sc in data["scenarios"]:
         lid = code_to_id.get(sc["level"])
         if lid and lid not in free and sc["id"] not in free_dialogues:
-            premium.setdefault(lid, {"lessons": {}, "scenarios": {}})["scenarios"][sc["id"]] = sc.pop("turns")
+            if "turns" in sc:
+                premium.setdefault(lid, {"lessons": {}, "scenarios": {}})["scenarios"][sc["id"]] = sc.pop("turns")
             sc["locked"] = True
     data["abonnement"] = {k: config[k] for k in ("gratuit", "essaiJours", "region", "fonctionPortail", "taxesAutomatiques", "prix")}
     data["abonnement"]["dialoguesGratuits"] = sorted(free_dialogues)
@@ -239,19 +248,29 @@ def main():
         if flag in args:
             test_dir = args[args.index(flag) + 1]
             config["actif"] = actif
-    scenarios = load_scenarios()
+    if not COMPLET and "--tout" in args:
+        print("--tout demande les leçons payantes : place le dépôt privé dans outils/programme/contenu/")
+        sys.exit(1)
     levels = [build_level(PRE[0], PRE[1], PRE[2], PRE[3], PRE[5],
                           [(t, em, g, [(le, lt, c) for le, lt, c in ls]) for t, em, g, ls in PRE[6]])]
     missing = []
-    for lid, code, name, emoji, desc, count in LEVELS:
-        units = []
-        for n in range(1, count + 1):
-            try:
-                units.append(importlib.import_module(f"{lid}_u{n}").UNIT)
-            except ModuleNotFoundError:
-                missing.append(f"{lid}_u{n}")
-        if units:
-            levels.append(build_level(lid, code, name, emoji, desc, units))
+    if COMPLET:
+        scenarios = load_scenarios()
+        for lid, code, name, emoji, desc, count in LEVELS:
+            units = []
+            for n in range(1, count + 1):
+                try:
+                    units.append(importlib.import_module(f"{lid}_u{n}").UNIT)
+                except ModuleNotFoundError:
+                    missing.append(f"{lid}_u{n}")
+            if units:
+                levels.append(build_level(lid, code, name, emoji, desc, units))
+    else:
+        with open(PLAN, encoding="utf-8") as f:
+            plan = json.load(f)
+        levels += plan["levels"]
+        scenarios = plan["scenarios"]
+        print("Leçons payantes absentes : niveaux payants repris de parcours_public.json (titres seulement)")
 
     problems = []
     ids = []
@@ -259,9 +278,9 @@ def main():
         for u in lv["units"]:
             for l in u["lessons"]:
                 ids.append(l["id"])
-                if "dialogue" not in l:
+                if "dialogue" not in l and not l.get("locked"):
                     check_lesson(l["id"], l["content"], problems)
-            if lv["id"] != "pre" and u["id"] not in DIALOGUE_OF_UNIT:
+            if COMPLET and lv["id"] != "pre" and u["id"] not in DIALOGUE_OF_UNIT:
                 problems.append(f"unité {u['id']} sans dialogue guidé")
             sc = DIALOGUE_OF_UNIT.get(u["id"])
             if sc and sc["level"] != lv["code"]:
@@ -271,7 +290,7 @@ def main():
     if len(ids) != len(set(ids)):
         problems.append("identifiants en double")
     for s in scenarios:
-        for i, turn in enumerate(s["turns"]):
+        for i, turn in enumerate(s.get("turns", [])):
             if "options" in turn and (len(set(turn["options"])) != 3 or not 0 <= turn["answer"] <= 2):
                 problems.append(f"dialogue {s['id']} réplique {i} : options invalides")
     if problems:
@@ -286,6 +305,14 @@ def main():
 
     data = {"version": 2, "levels": levels, "scenarios": scenarios}
     premium = split_premium(data, config) if config.get("actif") else None
+    if not COMPLET:
+        premium = None  # jamais de fichier Premium vide : il effacerait les leçons dans Firebase
+    elif premium is not None and not test_dir:
+        free = set(config["gratuit"])
+        with open(PLAN, "w", encoding="utf-8") as f:
+            json.dump({"levels": [lv for lv in data["levels"] if lv["id"] not in free],
+                       "scenarios": data["scenarios"]}, f, ensure_ascii=False, indent=0)
+            f.write("\n")
     out_dir = test_dir or os.path.join(ROOT, "public")
     path = os.path.join(out_dir, "curriculum.json")
     os.makedirs(out_dir, exist_ok=True)
