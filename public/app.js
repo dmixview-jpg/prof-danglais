@@ -322,8 +322,23 @@ function otherVoice() {
 
 // Lettres épelées (« A », « J, A, C, K. ») : en majuscule, certaines voix disent « capital A ».
 // En minuscule, elles disent seulement le nom de la lettre.
+// Lettres épelées (« A », « B, O, B ») : on fait lire le nom de la lettre écrit en toutes lettres.
+// Lue seule, « A » est annoncée « capital A » ou « alphabet A », et « a » devient l'article « uh ».
 const SPELLED = /^[A-Z](\s*,\s*[A-Z])*\.?$/;
-const forVoice = (text) => (SPELLED.test(text.trim()) ? text.toLowerCase() : text);
+const LETTER_NAMES = {
+  A: 'ay', B: 'bee', C: 'see', D: 'dee', E: 'ee', F: 'eff', G: 'gee', H: 'aitch', I: 'eye', J: 'jay', K: 'kay', L: 'ell', M: 'em',
+  N: 'en', O: 'oh', P: 'pee', Q: 'cue', R: 'are', S: 'ess', T: 'tee', U: 'you', V: 'vee', W: 'double you', X: 'ex', Y: 'why', Z: 'zee',
+};
+const forVoice = (text) => (SPELLED.test(text.trim())
+  ? text.trim().replace(/\.$/, '').split(/\s*,\s*/).map((l) => LETTER_NAMES[l]).join(', ')
+  : text);
+// iPhone : un speak() lancé juste après cancel() est parfois perdu ; on attend un instant si une voix parlait.
+function say(u) {
+  const busy = speechSynthesis.speaking || speechSynthesis.pending;
+  if (busy) speechSynthesis.cancel();
+  if (speechSynthesis.paused) speechSynthesis.resume();
+  if (busy) setTimeout(() => speechSynthesis.speak(u), 80); else speechSynthesis.speak(u);
+}
 function utterance(text, rate, v = voice) {
   const u = new SpeechSynthesisUtterance(forVoice(text));
   u.lang = 'en-US'; // sans voix choisie, l'appareil prend sa voix américaine par défaut
@@ -338,13 +353,12 @@ function speak(text, talker, rate) {
     toast('La synthèse vocale n’est pas disponible sur cet appareil.');
     return;
   }
-  speechSynthesis.cancel();
   const u = utterance(text, rate);
   if (talker) {
     u.onstart = () => setMood(talker, 'talk');
     u.onend = u.onerror = () => setMood(talker, talker.dataset.base);
   }
-  speechSynthesis.speak(u);
+  say(u);
 }
 
 // Réglages de la voix : choix de la voix américaine, vitesse, essai.
@@ -793,14 +807,17 @@ function dialogueCard(lines) {
 // Lit une suite de répliques ; deux voix différentes si l'appareil en a.
 function speakSequence(items) {
   if (!('speechSynthesis' in window)) return toast('La synthèse vocale n’est pas disponible sur cet appareil.');
-  speechSynthesis.cancel();
+  const busy = speechSynthesis.speaking || speechSynthesis.pending;
+  if (busy) speechSynthesis.cancel();
+  if (speechSynthesis.paused) speechSynthesis.resume();
   const other = otherVoice();
-  items.forEach((it) => {
+  const queue = () => items.forEach((it) => {
     const u = utterance(it.text, null, it.alt ? other : voice);
     u.onstart = () => it.row.classList.add('playing');
     u.onend = u.onerror = () => it.row.classList.remove('playing');
     speechSynthesis.speak(u);
   });
+  if (busy) setTimeout(queue, 80); else queue();
 }
 
 function tipCard(tip) {
