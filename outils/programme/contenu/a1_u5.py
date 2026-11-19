@@ -56,7 +56,7 @@ L("🧥", "Les vêtements et la météo",
   [ch("___ cold today.", ["It’s", "Is", "He’s"], 0, "Météo : It’s + adjectif."),
    ch("What’s the ___ like?", ["time", "weather", "whether"], 1, "weather = météo."),
    ch("Look! It’s ___.", ["snow", "snowing", "snows"], 1, "En ce moment : It’s snowing."),
-   ch("She’s ___ a red coat.", ["wearing", "carrying", "putting"], 0, "wear = porter un vêtement."),
+   ch("« Elle porte un manteau rouge (sur elle) » = « She’s ___ a red coat. »", ["wearing", "bringing", "putting"], 0, "wear = porter un vêtement sur soi."),
    li("It’s freezing outside!", ["It’s freezing outside!", "It’s raining outside!", "It’s freezing inside!"], 0, "freezing = glacial."),
    od("Don’t forget your mittens", "N’oublie pas tes moufles", "Don’t forget + objet.")]),
 
