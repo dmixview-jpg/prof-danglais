@@ -2,10 +2,10 @@
 // =====================================================================
 // ACHATS DANS L'APP (App Store et Google Play), avec RevenueCat
 // Dans les apps installées depuis les magasins, Apple et Google exigent leur propre système de
-// paiement pour débloquer du contenu : Stripe n'y est jamais proposé.
+// paiement pour débloquer du contenu. Le site Web ne vend rien : on s'abonne seulement ici.
 // - RevenueCat gère les achats des deux magasins ; l'identifiant client est l'uid Firebase.
 // - La fonction Firebase revenuecatWebhook (functions/) ajoute revenueCatEntitlements = ['premium'] au jeton de connexion,
-//   que firestore.rules accepte comme stripeRole = 'premium' (même contenu, même compte).
+//   lu par firestore.rules pour donner accès au contenu payant (même compte sur l'app et le site).
 // - Clés publiques des SDK dans abonnement.json (magasins.ios, magasins.android).
 // Sur le Web, ce module ne fait rien.
 // =====================================================================

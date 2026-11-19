@@ -3,17 +3,15 @@
 // vue d'ensemble (comptes, activité, niveaux), liste des utilisateurs et abonnements.
 // Les chiffres sur les comptes viennent de la fonction statsAdmin (functions/), qui vérifie
 // elle-même la marque admin : l'app n'a jamais accès à la liste des comptes.
-// Lit en lecture seule les abonnements que l'extension Stripe recopie dans Firestore
-// (customers/{uid}/subscriptions/{id}) ; firestore.rules en interdit l'accès aux autres comptes.
+// Lit en lecture seule les abonnements App Store et Google Play (revenuecat/{uid}) ;
+// firestore.rules en interdit l'accès aux autres comptes.
 (function () {
   const SDK = 'vendor/firebase/'; // SDK Firebase 12.19.0 (compat), inclus dans l'app
   const CONFIG = window.PD_FIREBASE;
   const $ = (sel) => document.querySelector(sel);
   let auth = null;
   let db = null;
-  let lignes = []; // tous les abonnements : site (Stripe) et magasins (RevenueCat)
-  let customers = {};
-  let retractations = [];
+  let lignes = []; // tous les abonnements des magasins (RevenueCat)
   // Abonnements App Store et Google Play : documents revenuecat/{uid} écrits par la fonction
   // revenuecatWebhook (functions/), au format des abonnés RevenueCat.
   const COLLECTION_MAGASINS = 'revenuecat';
@@ -68,7 +66,7 @@
     unpaid: ['Impayé', 'bad'], canceled: ['Annulé', 'off'], incomplete: ['Paiement incomplet', 'warn'],
     incomplete_expired: ['Expiré', 'off'], paused: ['En pause', 'off'],
   };
-  // Abonnement d'un magasin (format RevenueCat) → même forme qu'un abonnement Stripe.
+  // Abonnement d'un magasin (format RevenueCat) → forme commune affichée par le tableau de bord.
   function depuisRevenueCat(uid, c) {
     const subs = c.subscriptions || {};
     const ids = Object.keys(subs);
@@ -101,12 +99,7 @@
 
   const late = (r) => r.status === 'past_due' || r.status === 'unpaid';
   const ending = (r) => (r.status === 'active' || r.status === 'trialing') && r.cancel_at_period_end;
-  const email = (r) => (customers[r.uid] && customers[r.uid].email) || r.courriel || `Compte ${r.uid.slice(0, 8)}…`;
-  function stripeLink(r) {
-    if (r.source && r.source !== 'Site') return null; // magasins : pas de fiche Stripe
-    const c = customers[r.uid] || {};
-    return c.stripeLink || (c.stripeId ? `https://dashboard.stripe.com/customers/${c.stripeId}` : null);
-  }
+  const email = (r) => r.courriel || `Compte ${r.uid.slice(0, 8)}…`;
   function nextLine(r) {
     if (r.status === 'trialing') return `${r.cancel_at_period_end ? 'Essai sans suite, se termine' : 'Fin de l’essai'} le ${date(r.trial_end)}`;
     if (r.status === 'canceled' || r.status === 'incomplete_expired') return `Terminé le ${date(r.ended_at || r.canceled_at)}`;
@@ -128,7 +121,7 @@
     const kpi = (label, value, sub, tone = '') => h('div', { class: `kpi card ${tone}` },
       h('span', { class: 'kpi-label' }, label), h('span', { class: 'kpi-value' }, value), h('span', { class: 'kpi-sub' }, sub));
     $('#kpis').replaceChildren(
-      kpi('Abonnés payants', String(active.length), ((n, m) => `dont ${n} annuel${n > 1 ? 's' : ''} · ${m} par les magasins`)(active.filter((r) => plan(r).interval === 'year').length, active.filter((r) => r.source !== 'Site').length)),
+      kpi('Abonnés payants', String(active.length), ((n) => `dont ${n} annuel${n > 1 ? 's' : ''}`)(active.filter((r) => plan(r).interval === 'year').length)),
       kpi('Essais en cours', String(trials.length), soon.length ? `${soon.length} ${soon.length > 1 ? 'se terminent' : 'se termine'} d’ici 3 jours` : 'aucun ne se termine d’ici 3 jours'),
       kpi('Revenu par mois', money(Math.round(mrr)), `ce que rapportent chaque mois les abonnés actuels · ≈ ${money(Math.round(mrr * 12))} par an, avant frais et commissions`),
       kpi('Paiements en retard', String(rows.filter(late).length), 'le service de paiement réessaie automatiquement', rows.some(late) ? 'alert' : ''),
@@ -136,24 +129,16 @@
       kpi('Abonnements terminés (30 jours)', String(recent.length), 'personnes qui ne sont plus abonnées depuis 30 jours'));
 
     const todo = [
-      ...retractations.filter((x) => !x.traiteLe).map((x) => ({
-        r: x, icon: '↩️', fait: x,
-        text: `Rétractation demandée le ${date(x.demandeLe)} (${x.pays}). ${x.pays === 'Autre pays' ? 'Vérifie si la loi de son pays l’impose. ' : ''}Dans Stripe : annule l’abonnement et rembourse, puis confirme par e-mail.`,
-      })),
-      ...rows.filter(late).map((r) => ({ r, icon: '⚠️', text: r.source === 'Site'
-        ? `Paiement en retard (${plan(r).texte || plan(r).nom}). Stripe réessaie ; écris à la personne si ça dure.`
-        : `Problème de paiement chez ${r.source} : le magasin réessaie et prévient la personne.` })),
+      ...rows.filter(late).map((r) => ({ r, icon: '⚠️', text: `Problème de paiement chez ${r.source} : le magasin réessaie et prévient la personne.` })),
       ...soon.map((r) => ({ r, icon: '⏳', text: `Fin de l’essai le ${date(r.trial_end)} : premier paiement de ${plan(r).texte || plan(r).nom}.` })),
       ...rows.filter(ending).map((r) => ({ r, icon: '👋', text: `A demandé l’annulation : accès jusqu’au ${date(r.cancel_at || r.current_period_end || r.trial_end)}.` })),
     ];
-    $('#todo').replaceChildren(...(todo.length ? todo.map(({ r, icon, text, fait }) => h('li', null,
+    $('#todo').replaceChildren(...(todo.length ? todo.map(({ r, icon, text }) => h('li', null,
       h('span', { class: 'todo-icon', 'aria-hidden': 'true' }, icon),
-      h('span', { class: 'todo-text' }, h('strong', null, email(r)), ' ', text),
-      stripeLink(r) ? h('a', { href: stripeLink(r), target: '_blank', rel: 'noopener', class: 'todo-link' }, 'Stripe ↗') : null,
-      fait ? h('button', { type: 'button', class: 'todo-link todo-done', onclick: (e) => traiter(fait, e.currentTarget) }, 'Marquer comme traitée') : null))
+      h('span', { class: 'todo-text' }, h('strong', null, email(r)), ' ', text)))
       : [h('li', { class: 'todo-empty' }, 'Rien à signaler. 🎉')]));
 
-    const FILTERS = [['all', 'Tous', () => true], ['magasins', 'App Store / Google Play', (r) => r.source !== 'Site'], ['active', 'Actifs', (r) => r.status === 'active'], ['trialing', 'Essais', (r) => r.status === 'trialing'],
+    const FILTERS = [['all', 'Tous', () => true], ['active', 'Actifs', (r) => r.status === 'active'], ['trialing', 'Essais', (r) => r.status === 'trialing'],
       ['late', 'En retard', late], ['canceled', 'Terminés', (r) => r.status === 'canceled' || r.status === 'incomplete_expired']];
     $('#filters').replaceChildren(...FILTERS.map(([id, label, test]) => h('button', {
       type: 'button', class: `chip${filter === id ? ' on' : ''}`, 'aria-pressed': String(filter === id),
@@ -169,8 +154,7 @@
         h('div', { class: 'sub-plan' }, h('span', null, p.nom), h('span', { class: 'muted' }, p.texte)),
         h('div', { class: 'sub-status' }, h('span', { class: `pill ${tone}` }, label), ending(r) ? h('span', { class: 'pill off' }, 'Annulation demandée') : null,
           h('span', { class: 'pill src' }, r.source), r.test ? h('span', { class: 'pill warn' }, 'Test') : null),
-        h('div', { class: 'sub-next muted' }, nextLine(r)),
-        stripeLink(r) ? h('a', { class: 'btn ghost small sub-link', href: stripeLink(r), target: '_blank', rel: 'noopener' }, 'Stripe ↗') : h('span'));
+        h('div', { class: 'sub-next muted' }, nextLine(r)), h('span'));
     }) : [h('p', { class: 'muted subs-empty' }, rows.length ? 'Aucun abonnement dans cette catégorie.' : 'Aucun abonnement pour l’instant. Ils apparaîtront ici dès le premier essai.')]));
     $('#updated').textContent = `Mis à jour le ${new Date().toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })}`;
     show('dash');
@@ -227,7 +211,7 @@
     // Même calcul que l'onglet Abonnements : payants et essais en cours, achats de test exclus.
     const reels = lignes.filter((r) => !r.test && (r.status === 'active' || r.status === 'trialing' || late(r)));
     const uidsReels = new Set(reels.map((r) => r.uid));
-    const premiumReels = { total: uidsReels.size, magasin: new Set(reels.filter((r) => r.source !== 'Site').map((r) => r.uid)).size };
+    const premiumReels = { total: uidsReels.size, magasin: uidsReels.size };
     $('#kpis-app').replaceChildren(
       kpiCarte('Comptes', nombre(u.total), `${nombre(u.verifies)} avec e-mail confirmé`),
       kpiCarte('Nouveaux', nombre(u.nouveaux7), `cette semaine · ${nombre(u.nouveaux30)} en 30 jours`),
@@ -292,7 +276,7 @@
         h('span', null, `${nombre(c.lecons)} leçon${c.lecons > 1 ? 's' : ''}`), h('span', null, `${nombre(c.joursPratique)} jour${c.joursPratique > 1 ? 's' : ''} de pratique`),
         c.niveau && NOMS_NIVEAUX[c.niveau] ? h('span', null, `Niveau ${NOMS_NIVEAUX[c.niveau]}`) : null),
       h('div', { class: 'compte-pills' },
-        c.premium ? h('span', { class: 'pill good' }, c.premium === 'magasin' ? 'Premium · magasin' : 'Premium · site') : h('span', { class: 'pill off' }, 'Gratuit'),
+        c.premium ? h('span', { class: 'pill good' }, 'Premium') : h('span', { class: 'pill off' }, 'Gratuit'),
         c.verifie ? null : h('span', { class: 'pill warn' }, 'Non confirmé'),
         c.desactive ? h('span', { class: 'pill bad' }, 'Désactivé') : null,
         c.admin ? h('span', { class: 'pill info' }, 'Admin') : null)))
@@ -310,41 +294,17 @@
     });
   }
 
-  // Rétractation réglée dans Stripe : on la retire de « À faire ».
-  async function traiter(x, btn) {
-    btn.disabled = true;
-    try {
-      await db.collection('customers').doc(x.uid).collection('retractations').doc(x.id)
-        .set({ traiteLe: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-      x.traiteLe = new Date();
-      render();
-    } catch {
-      btn.disabled = false;
-      alert('Impossible d’enregistrer. Vérifie ta connexion, puis réessaie.');
-    }
-  }
-
   async function load() {
     $('#refresh').disabled = true;
     try {
       const demandeStats = firebase.app().functions(REGION_FONCTIONS).httpsCallable('statsAdmin')()
         .then((r) => r.data).catch(() => null);
-      const [snap, retr, rc, cur] = await Promise.all([
-        db.collectionGroup('subscriptions').get(), db.collectionGroup('retractations').get(),
+      const [rc, cur] = await Promise.all([
         db.collection(COLLECTION_MAGASINS).get().catch(() => ({ docs: [] })), // fonctions RevenueCat pas encore déployées
         fetch('curriculum.json').then((r) => r.json()).catch(() => ({})),
       ]);
       for (const p of ((cur.abonnement || {}).prix || [])) prixConf[p.periode === 'an' ? 'year' : 'month'] = centimes(p.montant);
-      lignes = [
-        ...snap.docs.map((d) => ({ id: d.id, uid: d.ref.parent.parent.id, source: 'Site', ...d.data() })),
-        ...rc.docs.flatMap((d) => depuisRevenueCat(d.id, d.data())),
-      ];
-      retractations = retr.docs.map((d) => ({ id: d.id, uid: d.ref.parent.parent.id, ...d.data() }));
-      const uids = [...new Set([...lignes, ...retractations].map((r) => r.uid))];
-      customers = Object.fromEntries(await Promise.all(uids.map(async (uid) => {
-        const c = await db.collection('customers').doc(uid).get();
-        return [uid, c.exists ? c.data() : {}];
-      })));
+      lignes = rc.docs.flatMap((d) => depuisRevenueCat(d.id, d.data()));
       stats = await demandeStats;
       render();
       renderApercu();

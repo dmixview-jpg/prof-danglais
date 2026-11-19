@@ -2,7 +2,7 @@
 //   FIREBASE_SERVICE_ACCOUNT="$(cat cle.json)" node outils/admin/nommer_admin.mjs courriel@exemple.com
 //   … nommer_admin.mjs courriel@exemple.com --retirer
 // Le compte doit déjà exister (créé dans l'app). Ajoute la marque admin=true au compte sans toucher
-// aux autres (ex. stripeRole de l'abonnement). La personne doit se déconnecter puis se reconnecter.
+// aux autres (ex. revenueCatEntitlements de l'abonnement). La personne doit se déconnecter puis se reconnecter.
 // Sur GitHub : Actions → « Nommer un administrateur » → Run workflow.
 import { cleDeService, jetonGoogle } from '../google.mjs';
 
