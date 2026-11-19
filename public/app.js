@@ -320,18 +320,22 @@ function otherVoice() {
   return usVoices.find((v) => v !== voice && voiceScore(v) >= 0) || voice;
 }
 
-// Lettres épelées (« A », « J, A, C, K. ») : en majuscule, certaines voix disent « capital A ».
-// En minuscule, elles disent seulement le nom de la lettre.
-// Lettres épelées (« A », « B, O, B ») : on fait lire le nom de la lettre écrit en toutes lettres.
-// Lue seule, « A » est annoncée « capital A » ou « alphabet A », et « a » devient l'article « uh ».
+// Lettres épelées (« J », « B, O, B ») et sigles (« BBC », « USA », « ID ») : chaque lettre est lue par son nom,
+// écrit comme le mot anglais qui se prononce pareil (B = bee, I = eye). A et E restent des majuscules :
+// « ay » serait lu comme « aye » (comme I), et une majuscule seule est lue par son nom de lettre.
 const SPELLED = /^[A-Z](\s*,\s*[A-Z])*\.?$/;
+const ACRONYM = /^[A-Z]{2,5}\.?$/;
 const LETTER_NAMES = {
-  A: 'ay', B: 'bee', C: 'see', D: 'dee', E: 'ee', F: 'eff', G: 'gee', H: 'aitch', I: 'eye', J: 'jay', K: 'kay', L: 'ell', M: 'em',
+  A: 'A', B: 'bee', C: 'see', D: 'dee', E: 'E', F: 'eff', G: 'gee', H: 'aitch', I: 'eye', J: 'jay', K: 'kay', L: 'ell', M: 'em',
   N: 'en', O: 'oh', P: 'pee', Q: 'cue', R: 'are', S: 'ess', T: 'tee', U: 'you', V: 'vee', W: 'double you', X: 'ex', Y: 'why', Z: 'zee',
 };
-const forVoice = (text) => (SPELLED.test(text.trim())
-  ? text.trim().replace(/\.$/, '').split(/\s*,\s*/).map((l) => LETTER_NAMES[l]).join(', ')
-  : text);
+const spell = (letters) => letters.map((l) => LETTER_NAMES[l]).join(', ');
+const forVoice = (text) => {
+  const t = text.trim();
+  if (SPELLED.test(t)) return spell(t.replace(/\.$/, '').split(/\s*,\s*/));
+  if (ACRONYM.test(t) && t !== 'OK') return spell([...t.replace(/\.$/, '')]);
+  return text;
+};
 // iPhone : un speak() lancé juste après cancel() est parfois perdu ; on attend un instant si une voix parlait.
 function say(u) {
   const busy = speechSynthesis.speaking || speechSynthesis.pending;
