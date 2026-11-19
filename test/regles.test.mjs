@@ -113,6 +113,24 @@ test('progression : seulement ses données, et seulement les champs prévus', as
   await assertFails(getDoc(doc(db, 'users', 'bob')));
 });
 
+test('progression : types et tailles limités (pas de document énorme ni de valeur absurde)', async () => {
+  const db = confirme('ana');
+  const ecrire = (data) => setDoc(doc(db, 'users', 'ana'), { name: 'Ana', data, updatedAt: serverTimestamp() });
+  // Ce que l'app envoie vraiment, y compris null pour ce qui n'existe pas encore
+  await assertSucceeds(ecrire({ progress: { 'a1.1.1': { stars: 3, at: '2026-11-19' } }, lessons: 12, days: ['2026-11-19'],
+    dialogues: { intro: 3 }, vocab: [{ en: 'cat', fr: 'chat' }], level: 'A1', pathLevel: 'a1' }));
+  await assertSucceeds(ecrire({ progress: null, lessons: null, days: null, dialogues: null, vocab: null, level: null, pathLevel: null }));
+  await assertSucceeds(ecrire({ vocab: Array.from({ length: 3000 }, (_, i) => ({ en: `w${i}` })) }));
+  await assertFails(ecrire({ vocab: Array.from({ length: 3001 }, (_, i) => ({ en: `w${i}` })) }));
+  await assertFails(ecrire({ vocab: 'x'.repeat(1000) }));
+  await assertFails(ecrire({ lessons: 1e300 }));
+  await assertFails(ecrire({ lessons: -1 }));
+  await assertFails(ecrire({ lessons: '12' }));
+  await assertFails(ecrire({ days: Array.from({ length: 401 }, () => '2026-01-01') }));
+  await assertFails(ecrire({ level: 'x'.repeat(11) }));
+  await assertFails(ecrire({ progress: ['a1.1.1'] }));
+});
+
 test('contenu Premium : abonnés seulement', async () => {
   await prepare((db) => setDoc(doc(db, 'contenu', 'b1'), { lessons: {} }));
   await assertFails(getDoc(doc(confirme('ana'), 'contenu', 'b1')));
@@ -129,6 +147,9 @@ test('rétractation : avec le courriel de son propre compte', async () => {
   const r = (courriel) => addDoc(collection(db, 'customers', 'ana', 'retractations'), { abonnement: 'sub_1', pays: 'France', courriel, demandeLe: serverTimestamp() });
   await assertSucceeds(r('ana@exemple.com'));
   await assertFails(r('autre@exemple.com'));
+  // Courriel non confirmé : pas de demande au nom d'une autre adresse
+  await assertFails(addDoc(collection(nonConfirme('ana'), 'customers', 'ana', 'retractations'),
+    { abonnement: 'sub_1', pays: 'France', courriel: 'ana@exemple.com', demandeLe: serverTimestamp() }));
 });
 
 test('les constantes des règles suivent abonnement.json', () => {

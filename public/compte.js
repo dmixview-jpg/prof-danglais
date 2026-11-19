@@ -10,6 +10,7 @@
   const CONFIG = window.PD_FIREBASE;
   if (!CONFIG || !CONFIG.apiKey) return;
 
+  const REGION_FONCTIONS = 'northamerica-northeast1'; // région des fonctions Firebase (functions/)
   const SDK = 'vendor/firebase/'; // SDK Firebase 12.19.0 (compat), inclus dans l'app
   const OWNER = 'pd.owner'; // compte à qui appartiennent les données de cet appareil
   const PENDING = 'pd.syncPending'; // des changements attendent d'être envoyés
@@ -43,7 +44,9 @@
     'auth/network-request-failed': 'Pas de connexion Internet. Connecte-toi au Wi-Fi ou aux données, puis réessaie.',
     'auth/requires-recent-login': 'Par sécurité, déconnecte-toi puis reconnecte-toi, et recommence.',
   };
-  const message = (e) => MESSAGES[e && e.code] || 'Une erreur est survenue. Réessaie dans un instant.';
+  const message = (e) => MESSAGES[e && e.code]
+    || (e && /^functions\//.test(e.code || '') && e.message && e.code !== 'functions/internal' ? e.message : '')
+    || 'Une erreur est survenue. Réessaie dans un instant.';
 
   // ---------------------------------------------------------------- Écran de connexion
   const screen = h('div', { class: 'auth', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'auth-title' });
@@ -222,9 +225,22 @@
         if (usesPassword) {
           await user.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(user.email, delPass.value));
         }
-        await db.collection('users').doc(user.uid).delete();
-        erased = true;
-        await user.delete();
+        // Suppression complète côté serveur (fonction supprimerCompte) : progression, abonnement des
+        // magasins, données de paiement, fiche RevenueCat et compte. Si la fonction n'est pas encore
+        // déployée, l'app efface au moins la progression et le compte, comme avant.
+        let serveur = false;
+        try {
+          await firebase.app().functions(REGION_FONCTIONS).httpsCallable('supprimerCompte')();
+          serveur = true;
+        } catch (e) {
+          // Fonction absente : 404 (« not-found »), souvent vu comme « internal » faute d'en-têtes CORS
+          if (!e || !['functions/not-found', 'functions/internal'].includes(e.code)) throw e;
+        }
+        if (!serveur) {
+          await db.collection('users').doc(user.uid).delete();
+          erased = true;
+          await user.delete();
+        }
         forgetDevice();
         location.reload();
       } catch (err) {

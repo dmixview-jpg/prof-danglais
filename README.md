@@ -353,12 +353,14 @@ L'app web est emballée en vraies apps iPhone/iPad et Android avec **Capacitor**
 4. **Fonctions Firebase** (dossier `functions/`, remplacent l'extension RevenueCat : les extensions Firebase s'arrêtent le 31 mars 2027) :
    - `revenuecatWebhook` reçoit chaque changement d'abonnement (achat, renouvellement, échec de paiement, annulation, expiration, remboursement). Elle ne croit pas le message : elle relit l'abonnement chez RevenueCat avec la clé secrète, puis met à jour l'attribut `revenueCatEntitlements` du compte (lu par `firestore.rules`) et le document `revenuecat/{uid}` (tableau de bord, fin de la période payée).
    - `synchroniserMagasin` : l'app l'appelle juste après un achat ou une restauration, pour activer l'accès sans attendre le webhook. Elle ne touche que le compte connecté, au plus une fois toutes les 10 secondes.
+   - `supprimerCompte` : l'app l'appelle quand la personne supprime son compte. Elle efface la progression, la copie de l'abonnement (`revenuecat/{uid}`), la marque d'essai, les données de paiement du site (`customers/{uid}`), la fiche RevenueCat, puis le compte de connexion. Elle exige une connexion de moins de 10 minutes (l'app redemande le mot de passe). Tant qu'elle n'est pas déployée, l'app efface seulement la progression et le compte.
+   - `statsAdmin` : chiffres du tableau de bord. La liste nominative des comptes n'est envoyée que lorsque l'administration la demande (bouton de l'onglet des comptes).
    - Deux secrets, rangés dans Secret Manager (jamais dans le code ni dans le chat) :
      - `REVENUECAT_WEBHOOK_SECRET` : une longue valeur aléatoire, aussi collée dans RevenueCat (**Integrations → Webhooks → Authorization header value**) ;
      - `REVENUECAT_API_KEY` : clé API secrète RevenueCat, version V1 (**Project settings → API keys → + New secret API key**).
    - Déploiement depuis **Google Cloud Shell** (<https://shell.cloud.google.com>, déjà connecté à ton compte, rien à installer) :
      ```
-     git clone -b claude/project-thread-l0v983 https://github.com/dmixview-jpg/prof-danglais.git && cd prof-danglais
+     git clone https://github.com/dmixview-jpg/prof-danglais.git && cd prof-danglais
      npx -y firebase-tools@15 functions:secrets:set REVENUECAT_WEBHOOK_SECRET --project prof-danglais-f2db6
      npx -y firebase-tools@15 functions:secrets:set REVENUECAT_API_KEY --project prof-danglais-f2db6
      (cd functions && npm ci)

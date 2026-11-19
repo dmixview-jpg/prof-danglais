@@ -59,8 +59,8 @@ Le niveau Pré-A1 est entièrement gratuit. Avec Premium, débloque les niveaux 
 
 L'abonnement se renouvelle automatiquement, sauf annulation au moins 24 heures avant la fin de la période en cours. Le paiement est débité de ton compte Apple ou Google Play. Tu peux gérer ou annuler ton abonnement en tout temps dans les réglages de ton compte.
 
-Conditions d'utilisation : https://<ton-site>/conditions.html
-Politique de confidentialité : https://<ton-site>/confidentialite.html
+Conditions d'utilisation : https://dmixview-jpg.github.io/prof-danglais/conditions.html
+Politique de confidentialité : https://dmixview-jpg.github.io/prof-danglais/confidentialite.html
 ```
 
 ## Notes de version (première version)

@@ -72,6 +72,19 @@ async function lireAbonne(uid, cleApi, fetchFn = fetch) {
   return corps.subscriber;
 }
 
+// Suppression de la fiche client chez RevenueCat (courriel, historique d'achats) quand le compte
+// est supprimé. 404 = aucune fiche (jamais d'achat dans l'app) : rien à effacer.
+async function supprimerAbonne(uid, cleApi, fetchFn = fetch) {
+  const rep = await fetchFn(`https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(uid)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${cleApi}`, Accept: 'application/json' },
+    signal: AbortSignal.timeout(10000),
+  });
+  if (rep.status === 404) return false;
+  if (!rep.ok) throw new Error(`RevenueCat a répondu ${rep.status}`);
+  return true;
+}
+
 // Copie gardée dans Firestore (revenuecat/{uid}) : seulement les champs que l'app et le tableau
 // de bord lisent. Rien de sensible (pas de reçu, pas de jeton d'achat).
 function copiePourFirestore(abonne) {
@@ -94,4 +107,4 @@ function copiePourFirestore(abonne) {
   };
 }
 
-module.exports = { autorise, estUid, comptesTouches, droitsActifs, nouveauxAttributs, memes, lireAbonne, copiePourFirestore };
+module.exports = { autorise, estUid, comptesTouches, droitsActifs, nouveauxAttributs, memes, lireAbonne, supprimerAbonne, copiePourFirestore };
