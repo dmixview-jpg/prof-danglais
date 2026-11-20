@@ -51,10 +51,36 @@
     if (courriel) await Purchases.setEmail({ email: courriel }).catch(() => {});
   }
 
+  // Durée d'une période d'essai en jours (iOS : introPrice ; Android : freePhase.billingPeriod).
+  const UNITES = { DAY: 1, WEEK: 7, MONTH: 30, YEAR: 365 };
+  function joursEssai(p) {
+    const intro = p.product.introPrice;
+    if (intro && intro.price === 0 && intro.periodNumberOfUnits) {
+      return intro.periodNumberOfUnits * (UNITES[intro.periodUnit] || 0) * (intro.cycles || 1);
+    }
+    const libre = p.product.defaultOption && p.product.defaultOption.freePhase;
+    const per = libre && libre.billingPeriod;
+    if (per && per.value) return per.value * (UNITES[per.unit] || 0) * (libre.billingCycleCount || 1);
+    return 0;
+  }
+
+  // iOS : l'App Store n'offre l'essai qu'une fois ; on demande à RevenueCat si la personne y a
+  // encore droit. Android : Google Play ne renvoie déjà que les offres auxquelles elle a droit.
+  async function droitEssai(paquets) {
+    if (plateforme !== 'ios' || typeof Purchases.checkTrialOrIntroductoryPriceEligibility !== 'function') return null;
+    try {
+      const r = await Purchases.checkTrialOrIntroductoryPriceEligibility({ productIdentifiers: paquets.map((p) => p.product.identifier) });
+      return r || null;
+    } catch { return {}; } // doute : pas d'essai annoncé
+  }
+  const ELIGIBLE = 2; // INTRO_ELIGIBILITY_STATUS_ELIGIBLE
+
   // Formules du magasin, avec le prix local fourni par Apple ou Google (devise et taxes du pays).
   async function offres() {
     const { current } = await Purchases.getOfferings();
     const paquets = (current && current.availablePackages) || [];
+    const droits = await droitEssai(paquets);
+    const aDroit = (p) => !droits || (droits[p.product.identifier] && droits[p.product.identifier].status === ELIGIBLE);
     return paquets
       .filter((p) => p.packageType === 'MONTHLY' || p.packageType === 'ANNUAL')
       .map((p) => {
@@ -64,7 +90,8 @@
         return {
           id: p.identifier, paquet: p, nom: annuel ? 'Annuel' : 'Mensuel', periode: annuel ? 'an' : 'mois',
           montant: p.product.priceString, badge: annuel ? rabais(paquets, p) : null, parDefaut: !annuel,
-          essai: !!((intro && intro.price === 0) || libre),
+          essai: !!((intro && intro.price === 0) || libre) && aDroit(p),
+          essaiJours: joursEssai(p),
         };
       })
       .sort((a, b) => (a.periode === 'mois' ? -1 : 1) - (b.periode === 'mois' ? -1 : 1));

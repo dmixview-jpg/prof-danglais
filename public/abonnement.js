@@ -53,7 +53,9 @@
     const M = magasin();
     let prix = c.prix;
     if (M) prix = M.actif() ? await M.offres().catch(() => []) : [];
-    const essaiDe = (p) => (p && p.essai ? c.essaiJours || 0 : 0);
+    // Essai : seulement si le magasin confirme que la personne y a droit, avec sa vraie durée
+    // (règle 3.1.2(c) d'Apple). Un ancien abonné voit donc directement le prix.
+    const essaiDe = (p) => (p && p.essai ? p.essaiJours || c.essaiJours || 0 : 0);
     // Ce que Premium débloque, compté dans le programme (reste juste si on ajoute des leçons)
     const payants = COURSE.levels.filter((l) => !c.gratuit.includes(l.id));
     const etapes = payants.flatMap((l) => l.units.flatMap((u) => u.lessons));
@@ -69,6 +71,8 @@
     const note = h('p', { class: 'auth-msg', role: 'alert', hidden: true });
     const tell = (text, kind = 'bad') => { note.hidden = !text; note.textContent = text; note.dataset.kind = kind; };
     const fine = h('p', { class: 'paywall-fine' });
+    // Prix du renouvellement, en caractères lisibles juste sous le bouton (règle 3.1.2(c) d'Apple)
+    const prixLigne = h('p', { class: 'paywall-price' });
     const confirmer = aConfirmer && !navigator.onLine;
     const cta = h('button', { type: 'button', class: 'btn yellow paywall-cta' });
     const plans = prix.map((p) => h('button', {
@@ -81,16 +85,22 @@
     const plansBox = h('div', { class: 'plans', role: 'radiogroup', 'aria-label': 'Formule' }, ...plans);
     function maj() {
       plans.forEach((b) => b.setAttribute('aria-checked', String(!!choix && b.dataset.id === choix.id)));
-      if (!choix) { cta.textContent = 'S’abonner'; fine.hidden = true; return; }
+      if (!choix) { cta.textContent = 'S’abonner'; fine.hidden = true; prixLigne.hidden = true; return; }
       const essai = essaiDe(choix);
       cta.textContent = essai ? `Commencer mes ${essai} jours gratuits` : `S’abonner : ${choix.montant} / ${choix.periode}`;
       const debut = `${essai ? `Gratuit pendant ${essai} jours, puis ` : ''}${choix.montant} par ${choix.periode}`;
+      prixLigne.textContent = `${debut}. Sans engagement.`;
       fine.textContent = `${debut}, renouvelé automatiquement. Paiement par ${M.NOM}, avec ${M.COMPTE}. Annule à tout moment dans les réglages d’abonnement de ${M.NOM}, au moins 24 heures avant le renouvellement.`;
     }
     maj();
 
+    // Sans compte (essai sans compte) : l'abonnement suit le compte sur tous les appareils,
+    // il faut donc d'abord en créer un, gratuitement.
+    const sansCompte = !!(compte() && !compte().user() && compte().connexion);
     const pret = compte() && compte().user() && choix;
-    if (!pret) {
+    if (sansCompte && choix) {
+      tell('Crée ton compte gratuit pour t’abonner : ton abonnement et ta progression te suivront sur tous tes appareils.', 'good');
+    } else if (!pret) {
       cta.disabled = true;
       tell('Les abonnements ouvrent bientôt. Merci de ta patience!', 'good');
     }
@@ -103,6 +113,7 @@
       fine.hidden = true;
     }
     cta.addEventListener('click', async () => {
+      if (sansCompte) { fermer(); compte().connexion('signup'); return; }
       cta.disabled = true;
       cta.textContent = 'Ouverture de l’achat…';
       try {
@@ -121,6 +132,7 @@
       onclick: async (e) => {
         const btn = e.currentTarget; // currentTarget redevient null après le premier await
         if (!M.actif()) return tell('Les abonnements ouvrent bientôt. Merci de ta patience!', 'good');
+        if (sansCompte) { fermer(); compte().connexion('login'); return; }
         btn.disabled = true;
         try {
           if (await M.restaurer()) return activerApresAchat();
@@ -141,7 +153,7 @@
         h('li', null, `🎭 ${n.dialogues} dialogues guidés pour pratiquer de vraies situations`),
         h('li', null, '☁️ Ta progression sur tous tes appareils, même hors connexion')),
       plansBox,
-      note, cta, fine,
+      note, cta, prixLigne, fine,
       h('p', { class: 'paywall-fine' }, 'En t’abonnant, tu acceptes les ',
         h('a', { href: 'conditions.html#magasins', target: '_blank', rel: 'noopener' }, 'conditions de vente'),
         ' et la ', h('a', { href: 'confidentialite.html', target: '_blank', rel: 'noopener' }, 'politique de confidentialité'), '.'),
@@ -190,6 +202,7 @@
         prix.length ? ` (${prix.map((p) => `${p.montant} / ${p.periode}`).join(' ou ')}, ou l’équivalent dans ta devise)` : '',
         '. Ensuite, connecte-toi ici avec le même compte : tout le parcours se débloque aussi sur le site.'),
       ...magasins,
+      magasins.length ? null : h('p', { class: 'auth-msg', 'data-kind': 'good' }, 'L’app arrive bientôt dans l’App Store et Google Play.'),
       h('p', { class: 'paywall-fine' }, 'Le paiement, les renouvellements et les remboursements sont gérés par Apple ou Google. ',
         h('a', { href: 'conditions.html#premium', target: '_blank', rel: 'noopener' }, 'Conditions de vente')),
       note, verifier,

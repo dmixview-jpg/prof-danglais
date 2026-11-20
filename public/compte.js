@@ -2,6 +2,8 @@
 // =====================================================================
 // COMPTES UTILISATEURS (Firebase Authentication + Firestore)
 // Inactif tant que firebase-config.js n'est pas rempli : l'app marche alors sans comptes.
+// Le compte est facultatif pour le niveau gratuit (« Essayer sans compte », exigé par Apple,
+// règle 5.1.1(v)) : il sert à sauvegarder la progression en ligne et à s'abonner.
 // La progression reste d'abord sur l'appareil (localStorage), puis se copie dans le compte
 // (document users/{uid}). Hors connexion, la personne connectée garde l'app ; tout se
 // synchronise au retour d'Internet.
@@ -14,6 +16,7 @@
   const SDK = 'vendor/firebase/'; // SDK Firebase 12.19.0 (compat), inclus dans l'app
   const OWNER = 'pd.owner'; // compte à qui appartiennent les données de cet appareil
   const PENDING = 'pd.syncPending'; // des changements attendent d'être envoyés
+  const INVITE = 'pd.invite'; // la personne a choisi d'essayer sans compte
   const SYNCED = {
     progress: KEYS.progress, lessons: KEYS.lessons, days: KEYS.days, dialogues: KEYS.dialogues,
     vocab: KEYS.vocab, level: KEYS.level, pathLevel: KEYS.pathLevel,
@@ -77,6 +80,15 @@
         h('a', { href: 'conditions.html', target: '_blank', rel: 'noopener' }, 'Conditions d’utilisation et de vente'),
         ' et la ', h('a', { href: 'confidentialite.html', target: '_blank', rel: 'noopener' }, 'Politique de confidentialité'), '.')),
     msg, submit, forgot);
+  // Essai sans compte : le niveau gratuit marche sur l'appareil ; la progression rejoindra le
+  // compte à la première connexion (adopt).
+  const guest = h('button', { type: 'button', class: 'btn ghost auth-guest' }, 'Essayer sans compte');
+  guest.addEventListener('click', () => {
+    store.set(INVITE, true);
+    say('');
+    hideScreen();
+    renderAccount();
+  });
   const tabs = ['login', 'signup'].map((mode) => h('button', {
     type: 'button', role: 'tab', 'data-mode': mode, onclick: () => setMode(mode),
   }, mode === 'login' ? 'Se connecter' : 'Créer un compte'));
@@ -86,7 +98,7 @@
     mascot('wave', 'auth-buddy'),
     h('h1', { id: 'auth-title' }, 'Prof d’anglais'),
     h('p', { class: 'auth-sub' }, 'Ton coach d’anglais, de l’alphabet à la maîtrise.'),
-    loading, body,
+    loading, body, guest,
     h('p', { class: 'legal-links' },
       h('a', { href: 'conditions.html', target: '_blank', rel: 'noopener' }, 'Conditions'), ' · ',
       h('a', { href: 'confidentialite.html', target: '_blank', rel: 'noopener' }, 'Confidentialité'))));
@@ -115,12 +127,16 @@
     loading.lastChild.textContent = text;
     loading.hidden = false;
     body.hidden = true;
+    guest.hidden = true;
     screen.hidden = false;
     document.body.classList.add('auth-open');
   }
-  function showForm() {
+  function showForm(m) {
+    if (m) mode = m;
     loading.hidden = true;
     body.hidden = false;
+    guest.hidden = false;
+    guest.textContent = store.get(INVITE, false) ? 'Plus tard' : 'Essayer sans compte';
     screen.hidden = false;
     document.body.classList.add('auth-open');
     setMode(mode);
@@ -182,12 +198,18 @@
   const accountBtn = $('#account-btn');
   const sheet = h('div', { class: 'account-sheet', hidden: true, role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'account-title' });
   document.body.append(sheet);
-  accountBtn.addEventListener('click', openSheet);
+  accountBtn.addEventListener('click', () => (user ? openSheet() : showForm()));
   sheet.addEventListener('click', (e) => { if (e.target === sheet) closeSheet(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !sheet.hidden) closeSheet(); });
 
   function renderAccount() {
-    if (!user) { accountBtn.hidden = true; return; }
+    if (!user) {
+      // Sans compte : le bouton rond ouvre la connexion (sauvegarder sa progression, s'abonner).
+      accountBtn.textContent = '👤';
+      accountBtn.setAttribute('aria-label', 'Se connecter ou créer un compte');
+      accountBtn.hidden = !auth || !store.get(INVITE, false);
+      return;
+    }
     const label = (displayName() || user.email || '?').trim();
     accountBtn.textContent = label.charAt(0).toUpperCase();
     accountBtn.setAttribute('aria-label', `Mon compte : ${label}`);
@@ -333,7 +355,7 @@
   function forgetDevice() {
     clearLocal();
     // pd.premium : copie hors ligne du contenu payant (abonnement.js), propre à chaque compte
-    try { ['pd.premium', 'pd.erreurs', OWNER, PENDING].forEach((k) => localStorage.removeItem(k)); } catch { /* rien */ }
+    try { ['pd.premium', 'pd.erreurs', OWNER, PENDING, INVITE].forEach((k) => localStorage.removeItem(k)); } catch { /* rien */ }
   }
   const withTimeout = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error('timeout')), ms))]);
   const docRef = () => db.collection('users').doc(user.uid);
@@ -412,6 +434,7 @@
     user: () => user,
     db: () => db,
     functions: (region) => firebase.app().functions(region),
+    connexion: (m = 'signup') => { if (!user && auth) showForm(m); },
     message,
     forget: forgetDevice,
   };
@@ -434,7 +457,10 @@
       auth.onAuthStateChanged(async (u) => {
         user = u;
         renderAccount();
-        if (!u) { showForm(); return; }
+        if (!u) {
+          if (store.get(INVITE, false)) { hideScreen(); renderAccount(); } else showForm();
+          return;
+        }
         showLoading('Récupération de ta progression…');
         if (await adopt(u)) {
           greet(displayName());

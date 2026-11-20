@@ -142,7 +142,7 @@ Il n'y a ni clé ni donnée personnelle à protéger : ta progression reste sur 
 
 ## Comptes utilisateurs (Firebase, gratuit)
 
-L'app peut demander une connexion au démarrage : chaque personne crée son compte (prénom, courriel, mot de passe) et retrouve sa progression sur tous ses appareils. Tant que `public/firebase-config.js` contient `null`, l'app fonctionne **sans comptes**, comme avant.
+Au démarrage, l'app propose de se connecter ou d'**essayer sans compte** (niveau gratuit, progression gardée sur l'appareil ; exigé par Apple, règle 5.1.1(v)). Avec un compte (prénom, courriel, mot de passe), la progression est sauvegardée et suit la personne sur tous ses appareils ; le compte est nécessaire pour s'abonner. La progression faite sans compte rejoint le compte à la première connexion. Tant que `public/firebase-config.js` contient `null`, l'app fonctionne **sans comptes**, comme avant.
 
 **Activer les comptes (une seule fois, environ 10 minutes)**
 1. Va sur <https://console.firebase.google.com> avec ton compte Google, puis **Créer un projet** (nom : `prof-danglais`). Google Analytics n'est pas nécessaire.
@@ -352,7 +352,7 @@ L'app web est emballée en vraies apps iPhone/iPad et Android avec **Capacitor**
 **4. Fiche et examen**
 - Textes, mots-clés, visuels (`magasins/captures/`) et note pour l'équipe d'examen : `magasins/FICHE.md`.
 - Questionnaires de confidentialité (App Store « Confidentialité de l'app », Google « Sécurité des données ») : `magasins/DONNEES.md`.
-- Donne un **compte de démonstration** aux équipes d'examen : l'app demande une connexion au démarrage. Apple accepte une connexion obligatoire quand le compte sert vraiment (ici, la progression et l'abonnement sur tous les appareils). Si l'examen la refuse, on pourra laisser essayer Pré-A1 sans compte dans l'app.
+- Donne un **compte de démonstration** aux équipes d'examen : Pré-A1 s'essaie sans compte, mais l'achat de l'abonnement demande un compte (voir `magasins/DONNEES.md`).
 - Teste les achats avec des comptes de test : **Sandbox** chez Apple (TestFlight), **testeurs de licence** chez Google.
 
 ## 5. Ajouter l'app à l'écran d'accueil

@@ -586,9 +586,22 @@ function crumbOf(id) {
   return `${e.level.code} · Unité ${e.unit.id.split('.')[1]}`;
 }
 
+// Bouton « Continuer » : la prochaine leçon du niveau choisi, sauf si elle est réservée aux
+// abonnés ; on propose alors la prochaine leçon gratuite pas encore faite (regarder un niveau
+// payant ne doit pas mener tout droit à l'écran d'abonnement).
+function lessonLocked(lesson) {
+  return isLocked(lesson) || (!!lesson.dialogue && scenarioLocked(COURSE.scenarios.find((x) => x.id === lesson.dialogue)));
+}
+function continueId() {
+  const id = nextLessonId();
+  const e = id && courseIndex.get(id);
+  if (!e || !lessonLocked(e.lesson)) return id;
+  return courseOrder.find((x) => !isDone(x) && !lessonLocked(courseIndex.get(x).lesson)) || id;
+}
+
 function renderContinue() {
   const btn = $('#continue-btn');
-  const id = nextLessonId();
+  const id = continueId();
   const e = id && courseIndex.get(id);
   btn.hidden = !COURSE;
   if (!e) {

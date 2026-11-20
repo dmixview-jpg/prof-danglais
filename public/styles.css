@@ -1238,6 +1238,8 @@ input[type="email"] {
 .paywall-cta { width: 100%; min-height: 54px; font-size: 1.05rem; }
 .paywall-cta:disabled { opacity: .6; }
 .paywall-fine { margin: 0; color: var(--muted); font-size: .82rem; line-height: 1.4; }
+.paywall-price { margin: 0; text-align: center; font-weight: 700; font-size: 1rem; }
+.auth-guest { width: 100%; margin-top: 8px; }
 .account-premium { display: grid; gap: 8px; }
 .account-premium p { margin: 0; font-weight: 700; }
 .account-sub { display: grid; gap: 6px; }
