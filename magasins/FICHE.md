@@ -11,9 +11,11 @@ Les chiffres viennent du programme (`public/curriculum.json`) : à mettre à jou
 | Sous-titre (App Store) | Apprendre l'anglais pas à pas | 30 |
 | Identifiant de l'app (bundle / package) | `ca.profdanglais.app` (définitif après le premier envoi) | — |
 | Catégorie | Éducation (secondaire : Référence) | — |
-| Classification | 4+ (App Store) · Tout public (Google Play) : aucun contenu sensible | — |
+| Classification | 4+ (App Store) · Tout public (Google Play) : aucun contenu sensible. Le questionnaire porte sur le contenu ; l'âge minimum de 18 ans des conditions se déclare dans « Public cible » (Google) | — |
 | Public cible (Google Play) | 18 ans et plus (comme les conditions) | — |
 | Prix de l'app | Gratuite, avec abonnement Premium dans l'app | — |
+| URL d'assistance (obligatoire chez Apple) | `https://dmixview-jpg.github.io/prof-danglais/conditions.html#contact` (courriel de soutien) | — |
+| URL de suppression du compte (Google Play) | `https://dmixview-jpg.github.io/prof-danglais/confidentialite.html#suppression` | — |
 
 ## Mots-clés (App Store, 100 caractères)
 
@@ -36,7 +38,7 @@ Prof d'anglais est un vrai parcours, pensé pour les francophones : chaque leço
 
 UN PARCOURS COMPLET
 • 7 niveaux, de Pré-A1 à C2
-• 179 leçons courtes et 36 bilans pour vérifier tes progrès
+• 183 leçons courtes et 36 bilans pour vérifier tes progrès
 • Grammaire, vocabulaire, prononciation et situations de la vie courante
 • Des astuces de prof pour éviter les pièges des francophones
 
@@ -55,7 +57,7 @@ PENSÉ POUR TOI
 • Aucune publicité, aucun pisteur
 
 GRATUIT POUR COMMENCER
-Le niveau Pré-A1 est entièrement gratuit. Avec Premium, débloque les niveaux A1 à C2, leurs bilans et tous les dialogues guidés : abonnement mensuel ou annuel, avec essai gratuit de 7 jours pour un premier abonnement.
+Le niveau Pré-A1 est entièrement gratuit. Avec Premium, débloque les niveaux A1 à C2, leurs bilans et tous les dialogues guidés : abonnement mensuel ou annuel, avec essai gratuit de 7 jours pour un premier abonnement, si tu y as droit.
 
 L'abonnement se renouvelle automatiquement, sauf annulation au moins 24 heures avant la fin de la période en cours. Le paiement est débité de ton compte Apple ou Google Play. Tu peux gérer ou annuler ton abonnement en tout temps dans les réglages de ton compte.
 
